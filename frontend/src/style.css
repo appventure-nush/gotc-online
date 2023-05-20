@@ -64,6 +64,16 @@ h1 {
   color: #888;
 }
 
+.backend-calculation {
+  border-width: 3px;
+  border-color: steelblue;
+  border-style: solid;
+}
+
+.backend-calculation:hover {
+  border-color: cadetblue;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -82,6 +92,8 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+
 
 @media (prefers-color-scheme: light) {
   :root {
