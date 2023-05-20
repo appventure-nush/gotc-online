@@ -1,7 +1,7 @@
 import './style.css'
 import typescriptLogo from './typescript.svg'
 import { setupCounter } from './counter.js'
-import serverURL from './backend_address.txt'
+let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 import {setupBackendMathForm} from "./backendmathform";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -22,8 +22,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <p class="oran-berry-disc">
       Image below is fetched from backend
     </p>
-    <a href="${serverURL}/get_image" target="_blank">
-      <img src="${serverURL}/get_image" class="logo vanilla" alt="Test Image From backend. (if you see this text it's possible that you did not turn on backend)" />
+    <a href="${BACKEND_URL}/get_image" target="_blank">
+      <img src="${BACKEND_URL}/get_image" class="logo vanilla" alt="Test Image From backend. (if you see this text it's possible that you did not turn on backend)" />
     </a>
     <div id="backend_calculation" class="backend-calculation"></div>    
   </div>

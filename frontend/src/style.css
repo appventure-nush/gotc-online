@@ -68,6 +68,8 @@ h1 {
   border-width: 3px;
   border-color: steelblue;
   border-style: solid;
+  margin-top: 50px;
+  padding: 10px;
 }
 
 .backend-calculation:hover {

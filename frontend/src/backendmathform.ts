@@ -1,10 +1,10 @@
-import serverURL from './backend_address.txt'
+let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 
 export function setupBackendMathForm(element: HTMLDivElement) {
-    let result = "0"
+    let result = "waiting for input"
     element.innerHTML = `
-<input type="number" id = "cnum">
+<input type="number" id = "cnum" value="0">
 <button type="submit" id = "butt">backend math</button>
 <p style="border: white; border-width: 5px" id = "calculation_result">${result}</p>
 `
@@ -14,10 +14,11 @@ export function setupBackendMathForm(element: HTMLDivElement) {
     )
 
     const submit = (value : number) => {
+        setResult("waiting for result...")
         // send a post request to the calculate part of the backend
         // body of post request is a json
         // first 3 parts of json are just fluff, the actual thing that matters now is the value : value part
-        fetch(`${serverURL}/calculate`, {
+        fetch(`${BACKEND_URL}/calculate`, {
             method: "POST",
             body: JSON.stringify({
                 userId: 1,
@@ -34,11 +35,17 @@ export function setupBackendMathForm(element: HTMLDivElement) {
 
             // this converts the response promise into a string promise apparently
             // (resulting string should be the html text send by the flask)
-            .then((response) => response.text())
+            .then((response) => {
+                if(!response.ok) return Promise.reject(response)
+                else return response.text()
+            })
 
             // promised string response is sent to set result
             .then((text) => {
                 setResult(text)
+            })
+            .catch(error => {
+                setResult(error)
             });
     }
 
