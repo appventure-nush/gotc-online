@@ -2,6 +2,9 @@ from flask import Flask, request, send_file
 
 app = Flask(__name__)
 
+@app.route('/')
+def main():  # put application's code here
+    return 'Hello World!'
 
 @app.route('/hw')
 def hello_world():  # put application's code here
