@@ -14,7 +14,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </a>
     <h1>Vite + TypeScript</h1>
     <div class="card">
-      <button id="counter" type="button"></button>
+      <p>
+        Enter in username below (test version for accounts)
+      </p>
+      <p id="username-info">
+        Username is: 
+      </p>
+      <input id="username" type="text">
+      <button id="submit-username" type="button">Submit username</button>
+      <br>
+      <button id="counter" type="button">Did you run the backend?</button>
     </div>
     <p class="read-the-docs">
       Click on the Vite and TypeScript logos to learn more
