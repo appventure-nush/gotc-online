@@ -76,6 +76,18 @@ h1 {
   border-color: cadetblue;
 }
 
+.userform {
+  border-width: 3px;
+  border-color: mediumseagreen;
+  border-style: solid;
+  margin-top: 50px;
+  padding: 10px;
+}
+
+.userform:hover {
+  border-color: mediumaquamarine;
+}
+
 button {
   border-radius: 8px;
   border: 1px solid transparent;

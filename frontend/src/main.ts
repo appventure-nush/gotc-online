@@ -3,6 +3,7 @@ import typescriptLogo from './typescript.svg'
 import { setupCounter } from './counter.js'
 let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 import {setupBackendMathForm} from "./backendmathform";
+import {setupUserForm} from "./userform";
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
@@ -34,9 +35,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <a href="${BACKEND_URL}/get_image" target="_blank">
       <img src="${BACKEND_URL}/get_image" class="logo vanilla" alt="Test Image From backend. (if you see this text it's possible that you did not turn on backend)" />
     </a>
-    <div id="backend_calculation" class="backend-calculation"></div>    
+    <div id="backend_calculation" class="backend-calculation"></div>   
+    <div id="userform" class="userform"></div>    
   </div>
 `
 
 setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
 setupBackendMathForm(document.querySelector<HTMLDivElement>('#backend_calculation')!)
+setupUserForm(document.querySelector<HTMLDivElement>('#userform')!)
