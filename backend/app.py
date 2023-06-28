@@ -100,6 +100,31 @@ def sign_in():
         printUsers()
         return response
 
+@app.route('/sign_out',methods=['POST'])
+#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@cross_origin()
+def sign_out():
+    username = request.json['username']
+    response = {
+        "text" : "PLACEHOLDER",
+        "signout_success" : False
+    }
+
+    if request.method == "POST":
+        users_to_remove = []
+        for i in logged_in:
+            if i.name == username:
+                users_to_remove.append(i)
+        if(len(users_to_remove) > 0):
+            for i in users_to_remove:
+                logged_in.remove(i)
+            response["text"] = "signed out successfully"
+            response["signout_success"] = True
+        else:
+            response["text"] = "nobody was signed out"
+            response["signout_success"] = False
+        return response
+
 @app.route('/user_activity_ping',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()

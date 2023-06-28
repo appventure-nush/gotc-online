@@ -9,7 +9,8 @@ export function setupUserForm(element: HTMLDivElement) {
     element.innerHTML = `
 <p style="border: white; border-width: 5px" id = "userform_status_top">Sign In:</p>
 <input type="text" id = "username_textin" value="" placeholder="enter username">
-<button type="submit" id = "userform_butt">sign in</button>
+<button type="submit" id = "userform_butt" >sign in</button> <br>
+<button type="submit" id = "signout_butt" disabled="disabled">sign out</button>
 <p style="border: white; border-width: 5px" id = "userform_status_bottom">${result}</p>
 `
     element.children.namedItem("userform_butt")!.addEventListener(
@@ -20,6 +21,13 @@ export function setupUserForm(element: HTMLDivElement) {
                 element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = "Please enter a username"
             }
             else submit(proposed_name)
+        }
+    )
+
+    element.children.namedItem("signout_butt")!.addEventListener(
+        "click",
+        () => {
+            signout_submit()
         }
     )
 
@@ -53,9 +61,41 @@ export function setupUserForm(element: HTMLDivElement) {
                     curr_user = json_response["confirmed_username"]
                     refreshText(json_response)
                     activity_pinger_id = setInterval(activity_ping, 20_000)
+                    element.querySelector<HTMLButtonElement>("#userform_butt")!.disabled = true
+                    element.querySelector<HTMLButtonElement>("#signout_butt")!.disabled = false
                 }
                 else {
                     refreshText(json_response)
+                }
+            })
+
+            .catch(error => {
+                refreshText(error)
+            });
+    }
+
+    const signout_submit = () => {
+        fetch(`${BACKEND_URL}/sign_out`, {
+            method: "POST",
+            body: JSON.stringify({
+                username : curr_user
+            }),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            }
+        })
+            // this results in a response promise that promises some sort of response
+            // will be received from where the post was sent to
+
+
+            .then((response) => {
+                if(!response.ok) return Promise.reject(response)
+                else return response.text()
+            })
+            .then((json_text) => {
+                let json_response = JSON.parse(json_text)
+                if(json_response["signout_success"] === true) {
+                    signout(json_response["text"])
                 }
             })
 
@@ -92,10 +132,7 @@ export function setupUserForm(element: HTMLDivElement) {
                     if (json_response["still_active"] === true) {
                         element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
                     } else {
-                        clearInterval(activity_pinger_id)
-                        curr_user = ""
-                        element.querySelector<HTMLParagraphElement>("#userform_status_top")!.innerHTML = "Sign In:"
-                        element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
+                        signout(json_response["text"])
                     }
                 })
 
@@ -133,10 +170,7 @@ export function setupUserForm(element: HTMLDivElement) {
                     if (json_response["still_active"] === true) {
                         element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
                     } else {
-                        clearInterval(activity_pinger_id)
-                        curr_user = ""
-                        element.querySelector<HTMLParagraphElement>("#userform_status_top")!.innerHTML = "Sign In:"
-                        element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
+                        signout(json_response["text"])
                     }
                 })
 
@@ -154,6 +188,15 @@ export function setupUserForm(element: HTMLDivElement) {
         // plain vite seems to work anyway so I ain't complaining
         if (json_response["login_success"]) element.querySelector<HTMLParagraphElement>("#userform_status_top")!.innerHTML = json_response["text"]
         element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
+    }
+
+    const signout = (json_response_text : string) => {
+        clearInterval(activity_pinger_id)
+        curr_user = ""
+        element.querySelector<HTMLParagraphElement>("#userform_status_top")!.innerHTML = "Sign In:"
+        element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response_text
+        element.querySelector<HTMLButtonElement>("#userform_butt")!.disabled = false
+        element.querySelector<HTMLButtonElement>("#signout_butt")!.disabled = true
     }
 
 
