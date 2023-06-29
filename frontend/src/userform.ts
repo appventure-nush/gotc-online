@@ -63,6 +63,7 @@ export function setupUserForm(element: HTMLDivElement) {
                     activity_pinger_id = setInterval(activity_ping, 20_000)
                     element.querySelector<HTMLButtonElement>("#userform_butt")!.disabled = true
                     element.querySelector<HTMLButtonElement>("#signout_butt")!.disabled = false
+                    window.document.dispatchEvent(new CustomEvent("SignInEvent", {detail:curr_user}))
                 }
                 else {
                     refreshText(json_response)
@@ -197,6 +198,7 @@ export function setupUserForm(element: HTMLDivElement) {
         element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response_text
         element.querySelector<HTMLButtonElement>("#userform_butt")!.disabled = false
         element.querySelector<HTMLButtonElement>("#signout_butt")!.disabled = true
+        window.document.dispatchEvent(new CustomEvent("SignOutEvent"))
     }
 
 
