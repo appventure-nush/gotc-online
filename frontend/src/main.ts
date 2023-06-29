@@ -46,13 +46,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
 setupBackendMathForm(document.querySelector<HTMLDivElement>('#backend_calculation')!)
 setupUserForm(document.querySelector<HTMLDivElement>('#userform')!)
+//listens for sign in event emitted by userform on document
 document.addEventListener(
     "SignInEvent",
-    function(e) {
+    function(e: { detail: string; }) {
         console.log("Sign in happened")
         document.querySelector<HTMLDivElement>('#foo')!.innerHTML = "Sign in happened with username " + e.detail
     }.bind(this)
 )
+//listens for sign out event emitted by userform on document
 document.addEventListener(
     "SignOutEvent",
     function() {
