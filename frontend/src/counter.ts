@@ -3,8 +3,11 @@ let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export async function setupCounter(element: HTMLButtonElement) {
   let counter = 0
-    // todo: disable counter when username is ""
   let username = ""
+  // username cannot be ""
+  element.disabled = true
+  element.innerHTML = "sign in first"
+
   const setCounter = (count: number) => {
     counter = count
     element.innerHTML = `count is ${counter}`
@@ -22,6 +25,7 @@ export async function setupCounter(element: HTMLButtonElement) {
 
   document.addEventListener("SignInEvent", async function (e: { detail: string; }) {
       username = e.detail
+      element.disabled = false
 
       setCounter(
           await fetch(`${BACKEND_URL}/get_counter`, {
@@ -38,36 +42,11 @@ export async function setupCounter(element: HTMLButtonElement) {
       )
   })
 
-    document.addEventListener("SignOutEvent", async function () {
+    document.addEventListener("SignOutEvent", function () {
         username = ""
-
-        setCounter(
-            await fetch(`${BACKEND_URL}/get_counter`, {
-                method: "POST",
-                body: JSON.stringify({
-                    username: username
-                }),
-                headers: {
-                    "Content-type": "application/json; charset=UTF-8"
-                }
-            })
-                .then((response) => response.json())
-                .then((data) => parseInt(data))
-        )
+        element.disabled = true
+        element.innerHTML = "sign in first"
     })
 
   element.addEventListener('click', () => setCounter(counter + 1))
-  setCounter(
-      await fetch(`${BACKEND_URL}/get_counter`, {
-        method: "POST",
-        body: JSON.stringify({
-          username: username
-        }),
-        headers: {
-          "Content-type": "application/json; charset=UTF-8"
-        }
-      })
-          .then((response) => response.json())
-          .then((data) => parseInt(data))
-  )
 }
