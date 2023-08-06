@@ -41,7 +41,8 @@ export function setupUserForm(element: HTMLDivElement) {
         fetch(`${BACKEND_URL}/sign_in`, {
             method: "POST",
             body: JSON.stringify({
-                proposed_username : value
+                proposed_username : value,
+                login_session_key : localStorage.getItem("LoginSessionKey")
             }),
             headers: {
                 "Content-type": "application/json; charset=UTF-8"
@@ -59,6 +60,7 @@ export function setupUserForm(element: HTMLDivElement) {
                 let json_response = JSON.parse(json_text)
                 if(json_response["login_success"] === true) {
                     curr_user = json_response["confirmed_username"]
+                    localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
                     refreshText(json_response)
                     activity_pinger_id = setInterval(activity_ping, 20_000)
                     element.querySelector<HTMLButtonElement>("#userform_butt")!.disabled = true
