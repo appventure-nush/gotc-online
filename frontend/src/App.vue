@@ -12,8 +12,8 @@ import backendmathform from "./components/backendmathform.vue";
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="Vite + Vue\nPLEASE USE VUE FROM NOW ON" />
-  <backendmathform />
+  <HelloWorld msg="PLEASE USE VITE + VUE FROM NOW ON"/>
+  <div class="backend-calculation"><backendmathform/></div>
 </template>
 
 <style scoped>

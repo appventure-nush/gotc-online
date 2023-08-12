@@ -5,7 +5,7 @@ export function setupUserForm(element: HTMLDivElement) {
     let result = "waiting for input"
     let curr_user = ""
     // @ts-ignore
-    let activity_pinger_id : number = 0
+    let activity_pinger_id : NodeJS.Timer = 0
     element.innerHTML = `
 <p style="border: white; border-width: 5px" id = "userform_status_top">Sign In:</p>
 <input type="text" id = "username_textin" value="" placeholder="enter username">
