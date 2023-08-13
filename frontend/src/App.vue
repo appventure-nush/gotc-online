@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import HelloWorld from './components/HelloWorld.vue'
 import backendmathform from "./components/backendmathform.vue";
+import userform from "./components/userform.vue";
 </script>
 
 <template>
@@ -14,6 +15,7 @@ import backendmathform from "./components/backendmathform.vue";
   </div>
   <HelloWorld msg="PLEASE USE VITE + VUE FROM NOW ON"/>
   <div class="backend-calculation"><backendmathform/></div>
+  <div class="userform"><userform/></div>
 </template>
 
 <style scoped>

@@ -191,6 +191,9 @@ export function setupUserForm(element: HTMLDivElement) {
         // update result variable and result element
         // (vue can automatically update element when variable is updated im too lazy to find out how to use vue)
         // plain vite seems to work anyway so I ain't complaining
+
+        // I AM COMPLAINING
+        // USE VUE INSTEAD!!!!!!!!!
         if (json_response["login_success"]) element.querySelector<HTMLParagraphElement>("#userform_status_top")!.innerHTML = json_response["text"]
         element.querySelector<HTMLParagraphElement>("#userform_status_bottom")!.innerHTML = json_response["text"]
     }

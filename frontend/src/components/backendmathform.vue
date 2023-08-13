@@ -63,7 +63,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <input type="number" id = "cnum" v-model.number="math_input" />
+  <input type="number" id = "cnum" v-model.number="math_input" />&nbsp;
   <button type="submit" id = "butt" @click="submit_math">backend math</button>
   <p style="border: white; border-width: 5px" id = "calculation_result">{{ result }}</p>
 </template>
