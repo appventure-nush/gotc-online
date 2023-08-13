@@ -1,3 +1,9 @@
+/*
+THIS CODE IS NOW DEPRECATED
+Since this project is going to use the Vue 3 framework from now on, this code has been converted to its vue equivilant
+and is now deprecated.
+ */
+
 let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 

@@ -2,7 +2,7 @@
 
 import {defineComponent} from "vue"
 
-let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export default defineComponent({
   data(){
