@@ -24,6 +24,12 @@ export default defineComponent({
   },
   methods:{
     signin_submit(_event : Event){
+      if (this.proposed_username === "") {
+        // prevent username from being blank string
+        // as blank string is used to detect if signed in
+        this.result = "Blank usernames are not allowed. Not signed in."
+        return
+      }
       fetch(`${BACKEND_URL}/sign_in`, {
         method: "POST",
         body: JSON.stringify({
