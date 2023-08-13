@@ -7,16 +7,11 @@ let BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 export default defineComponent({
   data() {
     return {
-      math_input : {
-        type : Number,
-        value: 0,
-      },
-      result : {
-        type : String,
-        value : "waiting for input"
-      }
+      math_input: 0 as Number,
+      result: "waiting for input" as String,
     }
-  },
+  }
+  ,
   methods:{
 
     submit_math(_event : Event){
@@ -30,7 +25,7 @@ export default defineComponent({
           userId: 1,
           title: "Fix my bugs",
           completed: false,
-          value : this.math_input.value
+          value : this.math_input
         }),
         headers: {
           "Content-type": "application/json; charset=UTF-8"
@@ -58,7 +53,7 @@ export default defineComponent({
       // update result variable and result element
       // (vue can automatically update element when variable is updated im too lazy to find out how to use vue)
       // plain vite seems to work anyway so I ain't complaining
-      this.result.value  = value
+      this.result  = value
       //element.querySelector<HTMLParagraphElement>("#calculation_result")!.innerHTML = result
     },
 
@@ -68,9 +63,9 @@ export default defineComponent({
 </script>
 
 <template>
-  <input type="number" id = "cnum" v-model.number="math_input.value" />
+  <input type="number" id = "cnum" v-model.number="math_input" />
   <button type="submit" id = "butt" @click="submit_math">backend math</button>
-  <p style="border: white; border-width: 5px" id = "calculation_result">{{ result.value }}</p>
+  <p style="border: white; border-width: 5px" id = "calculation_result">{{ result }}</p>
 </template>
 
 <style scoped>
