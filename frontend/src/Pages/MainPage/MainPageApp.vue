@@ -1,6 +1,5 @@
 <script setup lang="ts">
 
-import TopBarButtonBar from "./components/topbarbuttonbar.vue";
 import Topbarbuttonbar from "./components/topbarbuttonbar.vue";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
@@ -28,6 +27,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
   font-weight: 600;
 }
 
+/* :deep means that this css will also be aplied to child vue components used in this vue component */
 :deep button {
   border-radius: 10pt;
   background-color: #d9c779ff; /* Green background */
