@@ -37,7 +37,9 @@ const routes = [
 // keep it simple for now.
 const router = createRouter({
     // 4. Provide the history implementation to use.
-    history: createWebHistory(),
+    history: createWebHistory(
+        import.meta.env.VITE_BASEPATH
+    ),
     routes, // short for `routes: routes`
 })
 

@@ -1,25 +1,16 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [vue()],
-  base: process.env.NODE_ENV === 'production'
-      ? '/stuff/'
-      : '/'
-  ,
+export default ({ mode }) => {
+  // Load app-level env vars to node-level env vars.
+  process.env = {...process.env, ...loadEnv(mode, process.cwd())};
 
-  /*
-  build:{
-    rollupOptions:{
-      input:{
-        main: resolve(__dirname, "index.html"),
-        MainPage: resolve(__dirname, "MainPage/index.html"),
-        NotVue: resolve(__dirname, "NotVue/index_notvue.html"),
-      },
-    },
-  },
-   */
-})
+  return defineConfig({
+    // To access env vars here use process.env.TEST_VAR
+    plugins: [vue()],
+    base: process.env.VITE_BASEPATH
+    ,
+  });
+}
 
