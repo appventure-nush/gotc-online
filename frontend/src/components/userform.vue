@@ -30,6 +30,7 @@ export default defineComponent({
         this.result = "Blank usernames are not allowed. Not signed in."
         return
       }
+      this.result = "Sending sign in request..."
       fetch(`${BACKEND_URL}/sign_in`, {
         method: "POST",
         body: JSON.stringify({
@@ -65,11 +66,12 @@ export default defineComponent({
           })
 
           .catch(error => {
-            this.refreshText(error)
+            this.result = error.toString()
           });
     },
 
     signout_submit(_e : Event){
+      this.result = "Sending sign out request..."
       fetch(`${BACKEND_URL}/sign_out`, {
         method: "POST",
         body: JSON.stringify({
@@ -95,7 +97,7 @@ export default defineComponent({
           })
 
           .catch(error => {
-            this.refreshText(error)
+            this.result = error.toString()
           });
     },
 
@@ -132,7 +134,7 @@ export default defineComponent({
             })
 
             .catch(error => {
-              this.refreshText(error)
+              this.result = error.toString()
             });
       }
     },
@@ -171,7 +173,7 @@ export default defineComponent({
               })
 
               .catch(error => {
-                this.refreshText(error)
+                this.result = error.toString()
               });
         }
       }

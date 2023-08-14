@@ -1,14 +1,35 @@
 <script setup lang="ts">
-import HelloWorld from '../../components/HelloWorld.vue'
-import backendmathform from "../../components/backendmathform.vue";
+/*
+Here we import the (FrontPage-specific) Vue UI Components from the components folder in the Frontpage folder.
+Those components could be used elsewhere but since they are probably only going to be used in the FrontPage, we put
+them in Frontpage's very own components folder for tidiness
+ */
+import HelloWorld from './components/HelloWorld.vue'
+import backendmathform from "./components/backendmathform.vue";
+/*
+Meanwhile this userform login/out Vue component is placed in the src's main/public components folder since it is
+probably versatile enough to be used across multiple pages.
+ */
 import userform from "../../components/userform.vue";
-import {startMainPage} from "../MainPage/main";
 
+// import the backend url from the .env (for development server), .env.production (for production server),
+// or .env.production.local (for private production server whose IP address should ideally not be committed to Git
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 </script>
 
 <template>
+  <!--
+  This FrontPageApp.vue file is the first page shown to the user (as of now) as dictated by the vue-router
+  in RoutingApp.vue.
+  Its main purpose is to define what the FontPageApp's main layout is using html components and
+  custom-made Vue UI components.
+  The functionality of those Vue UI components is dictated through their respective vue files.
+
+  The vue-router in RoutingApp.vue and main.ts decides which vue component is mounted (displayed to the user) based on the
+  defined url routes.
+  More info can be found in the RoutingApp.vue file
+  -->
   <div class="app">
     <div>
       <a href="https://vitejs.dev" target="_blank">
@@ -37,7 +58,9 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 <style scoped>
 
-@import "../../../src/style.css";
+/*
+Here we specify the style of the components in the FontPageApp vue component.
+ */
 
 .app {
   max-width: 1280px;
