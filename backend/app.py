@@ -1,4 +1,5 @@
 import random
+import secrets
 import time
 import threading
 from datetime import datetime
@@ -58,23 +59,43 @@ def calculate():
 @app.route('/set_counter', methods=['POST'])
 @cross_origin()
 def set_counter():
-    if request.method == "POST":
-        with open("data.json", "r") as data_file:
-            data = json.load(data_file)
-        with open("data.json", "w") as data_file:
-            data[request.json["username"]] = request.json["value"]
-            json.dump(data, data_file)
-        return "success"  # every method should return something
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if (i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            break
+    # if indeed logged in then do the set counter stuff
+    if (target_user_logged_in):
+        if request.method == "POST":
+            with open("data.json", "r") as data_file:
+                data = json.load(data_file)
+            with open("data.json", "w") as data_file:
+                data[request.json["username"]] = request.json["value"]
+                json.dump(data, data_file)
+            return "success"  # every method should return something
 
 @app.route('/get_counter', methods=['POST'])
 @cross_origin()
 def get_counter():
-    with open("data.json", "r") as data_file:
-        data = json.load(data_file)
-        if request.json["username"] in data:
-            return str(data[request.json["username"]])
-        else:
-            return "0"
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if(i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            break
+    #if indeed logged in then do the get counter stuff
+    if(target_user_logged_in):
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+            if username in data:
+                return str(data[username])
+            else:
+                return "0"
 
 
 
@@ -92,12 +113,13 @@ def sign_in():
     }
     if request.method == "POST":
         for i in logged_in:
-            if (i.name == proposed_username) and (i.login_session_key != sent_login_sesh_key):
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"
                 printUsers()
                 return response
-            elif (i.name == proposed_username) and (i.login_session_key == sent_login_sesh_key):
-                new_login_session_key = str(random.randint(0, 10_000_000))
+            elif (i.name == proposed_username) and keys_equal:
+                new_login_session_key = secrets.token_hex()
                 i.login_session_key = new_login_session_key
                 i.last_checkin = datetime.now().timestamp()
                 response["text"] = "Logged in as " + proposed_username
@@ -106,7 +128,7 @@ def sign_in():
                 response["login_success"] = True
                 return response
         #else
-        login_session_key = str(random.randint(0, 10_000_000))
+        login_session_key = secrets.token_hex()
         logged_in.append(User(proposed_username, int(datetime.now().timestamp()), login_session_key))
         response["text"] = "Logged in as " + proposed_username
         response["confirmed_username"] = proposed_username
@@ -120,6 +142,7 @@ def sign_in():
 @cross_origin()
 def sign_out():
     username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
     response = {
         "text" : "PLACEHOLDER",
         "signout_success" : False
@@ -128,7 +151,8 @@ def sign_out():
     if request.method == "POST":
         users_to_remove = []
         for i in logged_in:
-            if i.name == username:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == username) and keys_equal:
                 users_to_remove.append(i)
         if(len(users_to_remove) > 0):
             for i in users_to_remove:
@@ -145,13 +169,15 @@ def sign_out():
 @cross_origin()
 def user_activity_ping():
     pinger_username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
     response = {
         "text" : "PLACEHOLDER",
         "still_active" : False
     }
     if request.method == "POST":
         for i in logged_in:
-            if i.name == pinger_username:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == pinger_username) and keys_equal:
                 i.last_checkin = int(datetime.now().timestamp())
                 response["text"] = "activity sucessfully registered"
                 response["still_active"] = True

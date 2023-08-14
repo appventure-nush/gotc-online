@@ -49,6 +49,6 @@
 }
 
 .play_b:hover{
-  border-color: aquamarine !important;
+  border-color: DeepSkyBlue !important;
 }
 </style>

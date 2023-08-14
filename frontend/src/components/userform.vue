@@ -75,7 +75,8 @@ export default defineComponent({
       fetch(`${BACKEND_URL}/sign_out`, {
         method: "POST",
         body: JSON.stringify({
-          username : this.curr_user
+          username : this.curr_user,
+          login_session_key: localStorage.getItem("LoginSessionKey"),
         }),
         headers: {
           "Content-type": "application/json; charset=UTF-8"
@@ -110,7 +111,8 @@ export default defineComponent({
         fetch(`${BACKEND_URL}/user_activity_ping`, {
           method: "POST",
           body: JSON.stringify({
-            username: this.curr_user
+            username: this.curr_user,
+            login_session_key: localStorage.getItem("LoginSessionKey"),
           }),
           headers: {
             "Content-type": "application/json; charset=UTF-8"
@@ -149,7 +151,8 @@ export default defineComponent({
           fetch(`${BACKEND_URL}/activity_status_request`, {
             method: "POST",
             body: JSON.stringify({
-              username: this.curr_user
+              username: this.curr_user,
+              login_session_key: localStorage.getItem("LoginSessionKey"),
             }),
             headers: {
               "Content-type": "application/json; charset=UTF-8"

@@ -69,6 +69,7 @@ export default defineComponent({
         method: "POST",
         body: JSON.stringify({
           username: this.username,
+          login_session_key: localStorage.getItem("LoginSessionKey"),
           value : this.count
         }),
         headers: {
@@ -84,7 +85,8 @@ export default defineComponent({
           await fetch(`${BACKEND_URL}/get_counter`, {
             method: "POST",
             body: JSON.stringify({
-              username: this.username
+              username: this.username,
+              login_session_key: localStorage.getItem("LoginSessionKey"),
             }),
             headers: {
               "Content-type": "application/json; charset=UTF-8"
