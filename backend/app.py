@@ -11,8 +11,11 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
+LOG_FILE = "runtime.log"
+
 
 logged_in = []
+
 
 class User:
     def __init__(self, name, last_checkin, login_session_key):
@@ -23,9 +26,21 @@ class User:
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
 
-def printUsers():
+
+def usersListString():
+    ret_string = ""
     for i in logged_in:
-        print(i)
+        ret_string += str(i) + "\n"
+    return ret_string.strip()
+
+
+def writeLog(log_string):
+    with open(LOG_FILE, "a") as f:
+        print(log_string, file=f)
+
+
+writeLog("Started @ " + str(int(datetime.now().timestamp())))
+
 
 def clear_inactive_users_from_login():
     while True:
@@ -36,10 +51,11 @@ def clear_inactive_users_from_login():
                 users_to_log_off.append(i)
         for i in users_to_log_off:
             logged_in.remove(i)
-        print("after clearing cycle @" + str(curr_time) + ":")
-        printUsers()
-        print("===")
+        writeLog("after clearing cycle @" + str(curr_time) + ": {")
+        writeLog(usersListString())
+        writeLog("}")
         time.sleep(2*60) # do the check ever 2 mins
+
 
 log_in_clearer_daemon = threading.Thread(target=clear_inactive_users_from_login, daemon=True)
 log_in_clearer_daemon.start()
@@ -49,12 +65,14 @@ log_in_clearer_daemon.start()
 def main():  # put application's code here
     return 'Hello World!'
 
+
 @app.route('/calculate',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def calculate():
     if request.method == "POST":
         return str(request.json['value'] ** 2)
+
 
 @app.route('/set_counter', methods=['POST'])
 @cross_origin()
@@ -75,7 +93,8 @@ def set_counter():
             with open("data.json", "w") as data_file:
                 data[request.json["username"]] = request.json["value"]
                 json.dump(data, data_file)
-            return "success"  # every method should return something
+    return "end of function"  # every method should return something
+
 
 @app.route('/get_counter', methods=['POST'])
 @cross_origin()
@@ -96,7 +115,7 @@ def get_counter():
                 return str(data[username])
             else:
                 return "0"
-
+    return "end of function"  # every method should return something
 
 
 @app.route('/sign_in',methods=['POST'])
@@ -116,7 +135,7 @@ def sign_in():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"
-                printUsers()
+                writeLog(usersListString())
                 return response
             elif (i.name == proposed_username) and keys_equal:
                 new_login_session_key = secrets.token_hex()
@@ -134,8 +153,9 @@ def sign_in():
         response["confirmed_username"] = proposed_username
         response["login_session_key"] = login_session_key
         response["login_success"] = True
-        printUsers()
+        writeLog(usersListString())
         return response
+
 
 @app.route('/sign_out',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
@@ -164,6 +184,7 @@ def sign_out():
             response["signout_success"] = False
         return response
 
+
 @app.route('/user_activity_ping',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
@@ -187,6 +208,7 @@ def user_activity_ping():
         response["still_active"] = False
         return response
 
+
 @app.route('/activity_status_request',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
@@ -208,11 +230,10 @@ def activity_status_request():
         return response
 
 
-
-
 @app.route('/get_image')
 def get_image():
     return send_file("Oran_Berry_Sprite.png", mimetype='image/png')
+
 
 if __name__ == '__main__':
     app.run()
