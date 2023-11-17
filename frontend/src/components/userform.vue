@@ -1,6 +1,7 @@
 <script lang="ts">
 
 import {defineComponent} from "vue"
+import {userSignInStore} from "./UserSignInStore";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -12,10 +13,13 @@ export default defineComponent({
       proposed_username : "" as String,
       curr_user : "" as String,
       activity_pinger_id : 0 as unknown as NodeJS.Timer,
+      userStore : userSignInStore
     }
   },
   mounted() {
     window.document.onfocus = this.check_if_signed_in
+  },
+  setup(){
   },
   computed:{
     userform_butt_disabled: function () {
@@ -53,6 +57,7 @@ export default defineComponent({
             let json_response = JSON.parse(json_text)
             if(json_response["login_success"] === true) {
               this.curr_user = json_response["confirmed_username"]
+              this.userStore.username = json_response["confirmed_username"]
               localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
               this.refreshText(json_response)
               this.activity_pinger_id = setInterval(this.activity_ping, 20_000)
@@ -185,6 +190,7 @@ export default defineComponent({
     signout(json_response_text : String){
       clearInterval(this.activity_pinger_id)
       this.curr_user = ""
+      this.userStore.username = ""
       this.userform_status_top_text = "Sign In:"
       this.result = json_response_text
       //emit sign out event to notify listeners of a sign out

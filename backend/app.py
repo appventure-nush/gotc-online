@@ -3,7 +3,7 @@ import secrets
 import time
 import threading
 from datetime import datetime
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, abort, Response
 from flask_cors import CORS, cross_origin
 import json
 
@@ -16,15 +16,86 @@ LOG_FILE = "runtime.log"
 
 logged_in = []
 
+standard_deck = [
+"communitysupport",
+"communitysupport",
+"communitysupport",
+
+
+"crisis-1",
+"crisis-2",
+"crisis-3",
+"crisis-4",
+"crisis-5",
+"crisis-6",
+
+
+"event-1",
+"event-2",
+"event-3",
+"event-4",
+"event-5",
+"event-6",
+"event-7",
+"event-8",
+"event-9",
+"event-10",
+"event-11",
+"event-12",
+
+"civil-1",
+"civil-1",
+"civil-2",
+"civil-2",
+"civil-3",
+"digital-1",
+"digital-1",
+"digital-2",
+"digital-2",
+"digital-3",
+"psychological-1",
+"psychological-1",
+"psychological-2",
+"psychological-2",
+"psychological-3",
+"social-1",
+"social-1",
+"social-2",
+"social-2",
+"social-3",
+"economic-1",
+"economic-2",
+"economic-3",
+"economic-4",
+"economic-5",
+"military-1",
+"military-1",
+"military-2",
+"military-3",
+"military-4",
+]
+
 
 class User:
     def __init__(self, name, last_checkin, login_session_key):
         self.name = name
         self.last_checkin = last_checkin
         self.login_session_key = login_session_key
+        self.deck = standard_deck.copy()
+        random.shuffle(self.deck)
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
+
+    def shuffleDeck(self):
+        random.shuffle(self.deck)
+
+    def popDeck(self):
+        return self.deck.pop()
+
+    def newDeck(self):
+        self.deck = standard_deck.copy()
+        random.shuffle(self.deck)
 
 
 def usersListString():
@@ -233,6 +304,66 @@ def activity_status_request():
 @app.route('/get_image')
 def get_image():
     return send_file("Oran_Berry_Sprite.png", mimetype='image/png')
+
+
+@app.route('/get_card', methods=["GET"])
+def get_card():
+    cardname = request.args.get('cardname')
+    return send_file(f"card_art/{cardname}.png", mimetype='image/png')
+
+
+@app.route('/get_deck', methods=["POST"])
+@cross_origin()
+def get_deck():
+    request_username = request.json['username']
+    response = {
+        "deck" : []
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            if i.name == request_username:
+                response["deck"] =  i.deck
+                return response
+        # else
+        return abort(Response(json.dumps({"Message": "Deck Unavailable"})), 404)
+
+
+@app.route('/pop_deck', methods=["POST"])
+@cross_origin()
+def pop_deck():
+    request_username = request.json['username']
+    response = {
+        "card" : "",
+        "cardsLeft" : 0
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            if i.name == request_username:
+                if len(i.deck) > 0:
+                    response["card"] =  i.popDeck()
+                    response["cardsLeft"] = len(i.deck)
+                    return response
+                else:
+                    return abort(Response(json.dumps({"Message": "Deck Empty"})), 404)
+        # else
+        return abort(Response(json.dumps({"Message": "Deck Unavailable"})), 404)
+
+
+@app.route('/new_deck', methods=["POST"])
+@cross_origin()
+def new_deck():
+    request_username = request.json['username']
+    response = {
+        "deck" : []
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            if i.name == request_username:
+                i.newDeck()
+                response["deck"] = i.deck
+                return response
+        # else
+        return abort(Response(json.dumps({"Message": "Unable to Reshuffle Deck"})), 404)
 
 
 if __name__ == '__main__':

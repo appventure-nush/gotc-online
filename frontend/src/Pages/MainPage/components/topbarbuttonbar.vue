@@ -4,51 +4,69 @@
 
 <template>
   <div class="btn-group">
-    <button>HELP</button>
-    <button>REPLAY</button>
-    <button>LADDER</button>
-    <button class="play_b">PLAY</button>
+    <router-link to="/" v-slot="{href, route, navigate}" class="nav help">
+      <div class="navdiv">HELP</div>
+    </router-link>
+    <router-link to="/" v-slot="{href, route, navigate}" class="nav replay">
+      <div class="navdiv">REPLAY</div>
+    </router-link>
+    <router-link to="/" v-slot="{href, route, navigate}" class="nav ladder">
+      <div class="navdiv">LADDER</div>
+    </router-link>
+    <router-link to="/GameArea" v-slot="{href, route, navigate}" class="nav play">
+      <div class="navdiv">PLAY</div>
+    </router-link>
+
+
+
+
   </div>
 </template>
 
 <style scoped>
 
-.btn-group button {
-  border-radius: 0;
+.nav{
+  display: inline-block;
+  font-size: 20pt;
+  border-left: 1px white solid;
+  border-right: 1px white solid;
+  height: 1.2em;
+  width: 5em;
+  text-align: center;
 }
 
-.btn-group button:not(:last-child, :first-child) {
-  border-radius: 0;
+.navdiv{
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.btn-group button:not(:last-child,) {
-  border-right: none; /* Prevent double borders */
+.help{
+  color: white;
+}
+.help:hover{
+  color: #31c3ff;
 }
 
-.btn-group button:first-child {
-  border-top-left-radius: 10pt;
-  border-bottom-left-radius: 10pt;
+.replay{
+  color: white;
+}
+.replay:hover{
+  color: #31c3ff;
 }
 
-.btn-group button:last-child {
-  border-top-right-radius: 10pt;
-  border-bottom-right-radius: 10pt;
+.ladder{
+  color: white;
+}
+.ladder:hover{
+  color: #31c3ff;
 }
 
-/* Clear floats (clearfix hack) */
-.btn-group:after {
-  content: "";
-  clear: both;
-  display: table;
+.play{
+  color: greenyellow;
+}
+.play:hover{
+  color: mediumspringgreen;
 }
 
-.play_b {
-  border-color: #9ed813ff !important;
 
-  transition: border-color 0.3s !important;
-}
-
-.play_b:hover{
-  border-color: DeepSkyBlue !important;
-}
 </style>
