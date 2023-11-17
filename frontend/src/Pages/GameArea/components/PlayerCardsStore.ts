@@ -16,7 +16,7 @@ export const playerCardsStore  = defineStore({
 
     },
     actions:{
-        drawDeck(){
+        drawDeck() : string | void {
             fetch(`${BACKEND_URL}/pop_deck`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -48,10 +48,14 @@ export const playerCardsStore  = defineStore({
                         this.newDeck()
                     }
 
+                    return json_response["card"]
+
                 })
                 .catch(error => {
                     console.log(error.toString())
                 });
+
+            return
         },
 
         newDeck(){

@@ -2,6 +2,7 @@
 import {defineComponent} from 'vue'
 import CardHolder from "./CardHolder.vue";
 import {playerCardsStore} from "./PlayerCardsStore";
+import {userSignInStore} from "../../../components/UserSignInStore";
 
 export default defineComponent({
   name: "Pile",
@@ -20,6 +21,11 @@ export default defineComponent({
     drawRemainderOpacity : function () {
       return this.drawHover ? 1 : 0
     }
+  },
+  methods:{
+    drawDeck(){
+      if(userSignInStore.username !== "") playerCardsStore.drawDeck()
+    }
   }
 })
 </script>
@@ -29,7 +35,7 @@ export default defineComponent({
   <div class="pile-component-div">
 
     <div class="pile-component-card-wrapper" v-on:mouseover="drawHover=true" v-on:mouseout="drawHover=false">
-      <CardHolder card-name="back-black" class="pile-component-card" rename-play="Draw" :enable-details="false" :play-button-func="playerCards.drawDeck"/>
+      <CardHolder card-name="back-black" class="pile-component-card" rename-play="Draw" :enable-details="false" :play-button-func="drawDeck"/>
       <p class="draw-remainder">{{ playerCards.cardsLeft }} Left</p>
     </div>
 
