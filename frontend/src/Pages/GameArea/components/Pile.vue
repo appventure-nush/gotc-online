@@ -24,7 +24,7 @@ export default defineComponent({
   },
   methods:{
     drawDeck(){
-      playerCardsStore.drawDeck()
+      if(userSignInStore.username !== "") playerCardsStore.drawDeck()
     }
   }
 })
