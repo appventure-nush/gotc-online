@@ -325,7 +325,7 @@ def get_deck():
                 response["deck"] =  i.deck
                 return response
         # else
-        return abort(Response(json.dumps({"Message": "Deck Unavailable"})), 404)
+        abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
 
 @app.route('/pop_deck', methods=["POST"])
@@ -344,10 +344,9 @@ def pop_deck():
                     response["cardsLeft"] = len(i.deck)
                     return response
                 else:
-                    return abort(Response(json.dumps({"Message": "Deck Empty"})), 404)
+                    return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
         # else
-        return abort(Response(json.dumps({"Message": "Deck Unavailable"})), 404)
-
+        abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
 @app.route('/new_deck', methods=["POST"])
 @cross_origin()
@@ -363,7 +362,7 @@ def new_deck():
                 response["deck"] = i.deck
                 return response
         # else
-        return abort(Response(json.dumps({"Message": "Unable to Reshuffle Deck"})), 404)
+        abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
 
 if __name__ == '__main__':
