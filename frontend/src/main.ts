@@ -57,4 +57,5 @@ createApp(RoutingApp)
     .mount('#app')
 // Make sure to _use_ the router instance to make the
 // whole app router-aware.
+// also use the Global Pinia Instance to have a global Pinia Store
 

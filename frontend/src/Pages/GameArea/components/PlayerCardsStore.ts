@@ -4,6 +4,11 @@ import {globalPiniaInstance} from "../../../global";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
+// this store is used to store the cards currently in handm the number of cards left, and the discard deck
+// this store also has action functions that pop cards from the deck in server
+// cardsLeft is manually updated in the deck functions whenever a card is popped. For the most, part don't worry about it
+
+
 export const playerCardsStore  = defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: 'playerCards',
@@ -16,12 +21,22 @@ export const playerCardsStore  = defineStore({
 
     },
     actions:{
+        resetStore (){
+            // reset the store to its default values
+            this.handList = [] as string[]
+            this.discardDeck = ["back-black"] as string[]
+            this.cardsLeft = 51
+        },
+
         drawDeck() : string | void {
+            // post draw deck request to the packend with username and sessionkey
+            // the top card in the undrawn deck will be sent over
+            // use this over getdeck when possible as it pops out the top card & doesn't send the whole deck
             fetch(`${BACKEND_URL}/pop_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
-                    login_session_key : localStorage.getItem("LoginSessionKey")
+                    login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
@@ -59,11 +74,13 @@ export const playerCardsStore  = defineStore({
         },
 
         newDeck(){
+            // post new deck request to the backend with username and sessionkey
+            // an entirely new full deck will be generated
             fetch(`${BACKEND_URL}/new_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
-                    login_session_key : localStorage.getItem("LoginSessionKey")
+                    login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
@@ -85,11 +102,13 @@ export const playerCardsStore  = defineStore({
         },
 
         getDeck(): string[] | string {
-            fetch(`${BACKEND_URL}/new_deck`, {
+            // post get deck request to the packend with username and sessionkey
+            // the whole undrawn deck will be sent over
+            fetch(`${BACKEND_URL}/get_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
-                    login_session_key : localStorage.getItem("LoginSessionKey")
+                    login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
