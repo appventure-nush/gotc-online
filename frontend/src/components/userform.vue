@@ -2,8 +2,12 @@
 
 import {defineComponent} from "vue"
 import {userSignInStore} from "./UserSignInStore";
+import {playerCardsStore} from "../Pages/GameArea/components/PlayerCardsStore";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
+// NOTE: Use the userStore from this commit onwards
+// the SignInEvent and SignOutEvents are DEPRECATED
 
 export default defineComponent({
   data(){
@@ -11,19 +15,22 @@ export default defineComponent({
       userform_status_top_text: "Sign In:" as String,
       result : "waiting for input" as String,
       proposed_username : "" as String,
-      curr_user : "" as String,
       activity_pinger_id : 0 as unknown as NodeJS.Timer,
-      userStore : userSignInStore
+      userStore : userSignInStore, // NOTE: USE THE USERSTORE AND NOT THE SIGN IN/OUT EVENTS FROM THIS COMMIT ON
+      playerStore : playerCardsStore,
     }
   },
   mounted() {
     window.document.onfocus = this.check_if_signed_in
+    if(this.userform_butt_disabled){
+      this.result = "Signed In as " + this.userStore.username
+    }
   },
   setup(){
   },
   computed:{
     userform_butt_disabled: function () {
-      return this.curr_user !== ""
+      return this.userStore.isSignedIn
     },
   },
   methods:{
@@ -39,7 +46,7 @@ export default defineComponent({
         method: "POST",
         body: JSON.stringify({
           proposed_username : this.proposed_username,
-          login_session_key : localStorage.getItem("LoginSessionKey")
+          login_session_key : this.userStore.login_session_key()
         }),
         headers: {
           "Content-type": "application/json; charset=UTF-8"
@@ -56,14 +63,17 @@ export default defineComponent({
           .then((json_text) => {
             let json_response = JSON.parse(json_text)
             if(json_response["login_success"] === true) {
-              this.curr_user = json_response["confirmed_username"]
+              //this.curr_user = json_response["confirmed_username"]
               this.userStore.username = json_response["confirmed_username"]
-              localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
+              this.userStore.setLoginSessionKey(json_response["login_session_key"])
+              //localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
+              //console.log(localStorage.getItem("LoginSessionKey"))
+              //console.log(userSignInStore.login_session_key())
               this.refreshText(json_response)
               this.activity_pinger_id = setInterval(this.activity_ping, 20_000)
               //emit a sign in event with current user's username in detail param
               //emitted on document for ease of listening
-              window.document.dispatchEvent(new CustomEvent("SignInEvent", {detail:this.curr_user}))
+              window.document.dispatchEvent(new CustomEvent("SignInEvent", {detail:this.userStore.username}))
             }
             else {
               this.refreshText(json_response)
@@ -80,8 +90,8 @@ export default defineComponent({
       fetch(`${BACKEND_URL}/sign_out`, {
         method: "POST",
         body: JSON.stringify({
-          username : this.curr_user,
-          login_session_key: localStorage.getItem("LoginSessionKey"),
+          username : this.userStore.username,
+          login_session_key: this.userStore.login_session_key(),
         }),
         headers: {
           "Content-type": "application/json; charset=UTF-8"
@@ -108,7 +118,7 @@ export default defineComponent({
     },
 
     activity_ping(){
-      if(this.curr_user !== "" && window.document.hasFocus()) {
+      if(this.userStore.isSignedIn && window.document.hasFocus()) {
         this.result = "pinging for activity..."
         // send a post request to the calculate part of the backend
         // body of post request is a json
@@ -116,8 +126,8 @@ export default defineComponent({
         fetch(`${BACKEND_URL}/user_activity_ping`, {
           method: "POST",
           body: JSON.stringify({
-            username: this.curr_user,
-            login_session_key: localStorage.getItem("LoginSessionKey"),
+            username: this.userStore.username,
+            login_session_key: this.userStore.login_session_key(),
           }),
           headers: {
             "Content-type": "application/json; charset=UTF-8"
@@ -148,7 +158,7 @@ export default defineComponent({
 
     check_if_signed_in(){
       {
-        if(this.curr_user !== "") {
+        if(this.userStore.isSignedIn) {
           this.result = "pinging for activity..."
           // send a post request to the calculate part of the backend
           // body of post request is a json
@@ -156,8 +166,8 @@ export default defineComponent({
           fetch(`${BACKEND_URL}/activity_status_request`, {
             method: "POST",
             body: JSON.stringify({
-              username: this.curr_user,
-              login_session_key: localStorage.getItem("LoginSessionKey"),
+              username: this.userStore.username,
+              login_session_key: this.userStore.login_session_key(),
             }),
             headers: {
               "Content-type": "application/json; charset=UTF-8"
@@ -189,12 +199,16 @@ export default defineComponent({
 
     signout(json_response_text : String){
       clearInterval(this.activity_pinger_id)
-      this.curr_user = ""
+      this.userStore.username = ""
       this.userStore.username = ""
       this.userform_status_top_text = "Sign In:"
       this.result = json_response_text
-      //emit sign out event to notify listeners of a sign out
-      //emitted on document for ease of listening
+      // reset the PlayerCardsStore
+      this.playerStore.resetStore()
+
+      // DEPRECATED: use the UserSignInStore instead!
+      // emit sign out event to notify listeners of a sign out
+      // emitted on document for ease of listening
       window.document.dispatchEvent(new CustomEvent("SignOutEvent"))
     },
 

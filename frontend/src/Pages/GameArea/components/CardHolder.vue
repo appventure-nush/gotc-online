@@ -2,7 +2,6 @@
 import {defineComponent} from 'vue'
 import { expandButtonStore } from "./ExpandButtonStore";
 
-
 export default defineComponent({
   name: "CardHolder",
   props: {
@@ -84,7 +83,10 @@ export default defineComponent({
     },
   },
   setup(){
+    //import the backend url here so that we may use it
+    //setup is part of the vue lifecycle, go read up about it
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+    //import the store so we may use the variables within
     const expButtonStore = expandButtonStore
     return{ BACKEND_URL, expButtonStore }
   },
@@ -95,15 +97,18 @@ export default defineComponent({
   },
   computed:{
     cardImgSrc : function (){
+      // constructs the src url for te card, served by backend function
       return this.BACKEND_URL+'/get_card?cardname='+this.cardName
     },
 
     overlayOpacity : function () {
+      // controls the opacity of the overlay buttons & div if they exist
       return this.cardHover? 1 : 0
     }
   },
   methods:{
     expandButton(){
+      // enables the enlarged card view
       this.expButtonStore.expand = true
       this.expButtonStore.imageSrc = this.cardImgSrc
       //console.log(expandButtonStore().expand)
@@ -111,6 +116,15 @@ export default defineComponent({
   }
 })
 </script>
+
+<!--
+  This is the component that displays each individual card
+
+  When hovering over the card, two buttons can appear, both can be disabled by passing values to props.
+  The card also dims via the appearance of a partially transparent grey overlay, this can also be disabled by passing a prop value.
+  Details button has only one use, to magnify the card when clicked.
+  Play button can be customised to run a function passed into the playButtonFunc prop.
+--->
 
 <template>
 
