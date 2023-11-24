@@ -7,11 +7,20 @@ export default defineComponent({
   name: "Hand",
   components: {CardHolder},
   setup(){
+    //this imports the playerCardsStore, allowing us to use the variables stored within
     const playerCards = playerCardsStore
     return { playerCards }
   },
 })
 </script>
+
+<!--
+  This is the component that displays up to 7 cards in the player's hand
+
+  Uses v-for to horizontally stack cardholders
+  The hand itself is stored in the playerCards Store's handlist
+  player logic can be attached to the CardHolder's playButtonFunc later
+--->
 
 <template>
   <div class="hand-component-div">

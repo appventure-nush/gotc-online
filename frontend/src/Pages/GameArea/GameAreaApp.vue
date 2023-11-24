@@ -14,7 +14,12 @@ export default defineComponent({
 })
 </script>
 
+<!--
+  This GameApp App/Page is the page that will be shown when going to [url]/gamearea as specified in the vue router in main.ts
+-->
+
 <template>
+
   <div class="gamearea">
     <div class="userform-temp" >
       <userform/>

@@ -16,6 +16,7 @@ LOG_FILE = "runtime.log"
 
 logged_in = []
 
+# standard deck is a list of the name strings of cards
 standard_deck = [
 "communitysupport",
 "communitysupport",
@@ -82,7 +83,7 @@ class User:
         self.last_checkin = last_checkin
         self.login_session_key = login_session_key
         self.deck = standard_deck.copy()
-        random.shuffle(self.deck)
+        random.shuffle(self.deck) # upon creation of the user, shuffle the deck
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -315,13 +316,16 @@ def get_card():
 @app.route('/get_deck', methods=["POST"])
 @cross_origin()
 def get_deck():
+    # return a user's full undrawn deck if username and login session key fits
+    sent_login_sesh_key = request.json['login_session_key']
     request_username = request.json['username']
     response = {
         "deck" : []
     }
     if request.method == "POST":
         for i in logged_in:
-            if i.name == request_username:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
                 response["deck"] =  i.deck
                 return response
         # else
@@ -331,6 +335,8 @@ def get_deck():
 @app.route('/pop_deck', methods=["POST"])
 @cross_origin()
 def pop_deck():
+    # pop the top of a user's undrawn deck if username and login session key fits & return
+    sent_login_sesh_key = request.json['login_session_key']
     request_username = request.json['username']
     response = {
         "card" : "",
@@ -338,7 +344,8 @@ def pop_deck():
     }
     if request.method == "POST":
         for i in logged_in:
-            if i.name == request_username:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
                 if len(i.deck) > 0:
                     response["card"] =  i.popDeck()
                     response["cardsLeft"] = len(i.deck)
@@ -351,13 +358,16 @@ def pop_deck():
 @app.route('/new_deck', methods=["POST"])
 @cross_origin()
 def new_deck():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
     request_username = request.json['username']
     response = {
         "deck" : []
     }
     if request.method == "POST":
         for i in logged_in:
-            if i.name == request_username:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
                 i.newDeck()
                 response["deck"] = i.deck
                 return response
