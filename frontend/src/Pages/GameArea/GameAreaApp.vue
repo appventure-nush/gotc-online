@@ -30,10 +30,8 @@ export default defineComponent({
 
     <player-side class="player-side"/>
 
+    <big-card-holder/>
 
-    <div class="bigcard-overlay">
-      <big-card-holder/>
-    </div>
   </div>
 
 
@@ -75,16 +73,6 @@ export default defineComponent({
   top: 0;
   left: 0;
   background-color: maroon;
-}
-
-.bigcard-overlay{
-  position: absolute;
-  height: 80vh;
-  width: 40vw;
-  top: 10vh;
-  left: 30vw;
-  display: inline-block;
-  align-items: center;
 }
 
 </style>
