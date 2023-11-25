@@ -38,15 +38,6 @@ export default defineComponent({
 
 <style scoped>
 
-.bigcardholder {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  top: 0;
-  left: 0;
-  align-items: center;
-  background-color: transparent;
-}
 .bigcardholder>img{
   position: absolute;
   height: 100%;
@@ -64,5 +55,17 @@ export default defineComponent({
   right: 0;
   display: block;
 }
+
+.bigcardholder{
+  position: absolute;
+  height: 80vh;
+  width: 40vw;
+  top: 10vh;
+  left: 30vw;
+  display: inline-block;
+  align-items: center;
+  background-color: transparent;
+}
+
 
 </style>
