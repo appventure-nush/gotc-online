@@ -96,6 +96,7 @@ export default defineComponent({
 .sign-in-reminder {
   background-color: rgba(178,34,34,0.7) !important;
   font-size: .95vw;
+  white-space: nowrap;
 }
 
 </style>
