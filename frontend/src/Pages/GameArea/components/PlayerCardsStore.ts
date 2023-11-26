@@ -15,7 +15,15 @@ export const playerCardsStore  = defineStore({
     state: () =>({
         handList : [] as string[],
         discardDeck : ["back-black"] as string[],
-        cardsLeft : 51 as number,
+        cardsLeft : 45 as number,
+
+        // played cards such as the crisis cards, community support and defence cards should be stored server side
+        // as they need to be displayed on opponent's end too
+        // local variables are to be updated and have their relevant value fetched from backend
+        // whenever they're needed (e.g. get crisis card at the start of a game, played cards before every turn)
+        crisis : "back-white" as string,
+
+
     }),
     getters: {
 
@@ -122,6 +130,69 @@ export const playerCardsStore  = defineStore({
                     let json_response = JSON.parse(json_text)
 
                     return json_response["deck"]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                });
+            return "something wrong happened"
+        },
+
+
+        // get crisis and new crisis
+        newCrisis(){
+            // post new deck request to the backend with username and sessionkey
+            // an entirely new full deck will be generated
+            fetch(`${BACKEND_URL}/new_crisis`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.crisis = json_response["crisis"]
+
+                    return json_response["crisis"]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                });
+        },
+        getCrisis(){
+            // post get deck request to the packend with username and sessionkey
+            // the whole undrawn deck will be sent over
+            fetch(`${BACKEND_URL}/get_crisis`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.crisis = json_response["crisis"]
+                    console.log(this.crisis)
+
+                    return json_response["crisis"]
 
                 })
                 .catch(error => {

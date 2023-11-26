@@ -21,15 +21,7 @@ standard_deck = [
 "communitysupport",
 "communitysupport",
 "communitysupport",
-
-
-"crisis-1",
-"crisis-2",
-"crisis-3",
-"crisis-4",
-"crisis-5",
-"crisis-6",
-
+"communitysupport",
 
 "event-1",
 "event-2",
@@ -54,16 +46,6 @@ standard_deck = [
 "digital-2",
 "digital-2",
 "digital-3",
-"psychological-1",
-"psychological-1",
-"psychological-2",
-"psychological-2",
-"psychological-3",
-"social-1",
-"social-1",
-"social-2",
-"social-2",
-"social-3",
 "economic-1",
 "economic-2",
 "economic-3",
@@ -74,6 +56,26 @@ standard_deck = [
 "military-2",
 "military-3",
 "military-4",
+"psychological-1",
+"psychological-1",
+"psychological-2",
+"psychological-2",
+"psychological-3",
+"social-1",
+"social-1",
+"social-2",
+"social-2",
+"social-3",
+]
+
+# select crisis from here
+crisis_deck = [
+"crisis-1",
+"crisis-2",
+"crisis-3",
+"crisis-4",
+"crisis-5",
+"crisis-6",
 ]
 
 
@@ -84,6 +86,7 @@ class User:
         self.login_session_key = login_session_key
         self.deck = standard_deck.copy()
         random.shuffle(self.deck) # upon creation of the user, shuffle the deck
+        self.crisis = random.choice(crisis_deck)
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -97,6 +100,10 @@ class User:
     def newDeck(self):
         self.deck = standard_deck.copy()
         random.shuffle(self.deck)
+
+    def newCrisis(self):
+        self.crisis = random.choice(crisis_deck)
+        return self.crisis
 
 
 def usersListString():
@@ -373,6 +380,43 @@ def new_deck():
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
+
+@app.route('/new_crisis', methods=["POST"])
+@cross_origin()
+def new_crisis():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    response = {
+        "crisis" : ""
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                response["crisis"] = i.newCrisis()
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "New Crisis Unavailable"}), 404))
+
+
+@app.route('/get_crisis', methods=["POST"])
+@cross_origin()
+def get_crisis():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    response = {
+        "crisis" : ""
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                response["crisis"] = i.crisis
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Crisis Unavailable"}), 404))
 
 
 if __name__ == '__main__':
