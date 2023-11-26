@@ -86,7 +86,8 @@ class User:
         self.login_session_key = login_session_key
         self.deck = standard_deck.copy()
         random.shuffle(self.deck) # upon creation of the user, shuffle the deck
-        self.crisis = random.choice(crisis_deck)
+        self.crisis = random.choice(crisis_deck) # server side crisis
+        self.hand = [] # server side hand; TODO: Hand Getter
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -104,6 +105,12 @@ class User:
     def newCrisis(self):
         self.crisis = random.choice(crisis_deck)
         return self.crisis
+
+    def addHandCard(self, cardName):
+        if len(self.hand) >= 7:
+            self.hand.pop(0)
+        self.hand += [cardName]
+        return self.hand
 
 
 def usersListString():
@@ -354,7 +361,9 @@ def pop_deck():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == request_username) and keys_equal:
                 if len(i.deck) > 0:
-                    response["card"] =  i.popDeck()
+                    poppedCard = i.popDeck()
+                    i.addHandCard(poppedCard) #add the popped card to the hand
+                    response["card"] =  poppedCard
                     response["cardsLeft"] = len(i.deck)
                     return response
                 else:
@@ -376,6 +385,7 @@ def new_deck():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == request_username) and keys_equal:
                 i.newDeck()
+                i.hand = [] #reset hand too
                 response["deck"] = i.deck
                 return response
         # else
