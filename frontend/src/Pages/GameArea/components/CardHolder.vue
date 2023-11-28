@@ -67,6 +67,10 @@ export default defineComponent({
       type : Boolean,
       default : true
     },
+    blockPlay : {
+      type : Boolean,
+      default : false
+    },
     renamePlay : {
       type : String,
       default : "Play"
@@ -132,7 +136,7 @@ export default defineComponent({
     <img :src="cardImgSrc" :alt="cardName" />
     <div v-if="enableOverlay" class="card-overlay" v-on:mouseover="cardHover=true" v-on:mouseout="cardHover=false">
       <button v-if="enableDetails" class="card-button details" @click="expandButton()" >Details</button>
-      <button v-if="enablePlay" class="card-button play" @click="playButtonFunc!()" >{{ renamePlay }}</button>
+      <button v-if="enablePlay" :disabled="blockPlay" class="card-button play" @click="playButtonFunc!()" >{{ renamePlay }}</button>
     </div>
 
   </div>

@@ -7,8 +7,34 @@ export default defineComponent({
   components: {CardHolder},
   props:{
     cards : {
-      type : Array,
-      default : ["civil-1","social-1","military-1","digital-1","psychological-1","economic-1"]
+      type: Array,
+      default: ["back-black", "back-white"]
+    },
+    enableDetails : {
+      type : Boolean,
+      default : true
+    },
+    enablePlay : {
+      type : Boolean,
+      default : true
+    },
+    blockPlay : {
+      type : Boolean,
+      default : false
+    },
+    renamePlay : {
+      type : String,
+      default : "Play"
+    },
+    playButtonFunc : {
+      type : Function,
+      default() {
+
+      }
+    },
+    enableOverlay : {
+      type : Boolean,
+      default : true
     },
   },
   data(){
@@ -18,7 +44,7 @@ export default defineComponent({
   },
   computed: {
     overflowBehavior: function (){
-      return this.cardHover ? 'auto' : 'clip'
+      return (this.cardHover && this.cards.length>1) ? 'auto' : 'clip'
     }
   },
   methods: {
@@ -28,7 +54,16 @@ export default defineComponent({
 
 <template>
   <div class="stackedcardholder-component-div" v-on:mouseover="cardHover=true" v-on:mouseout="cardHover=false" v-on:mouseenter="this.$refs.SCHDiv.scrollTop = 0" ref="SCHDiv">
-    <card-holder v-for="(val,key) in cards" v-bind:card-name="val" class="stackedcard" v-bind:style="cardHover?'top:0':'top:'+(-90*key)+'%'"/>
+    <card-holder v-for="(val,key) in cards"
+                 v-bind:card-name="val" class="stackedcard"
+                 v-bind:style="cardHover?'top:0':'top:'+(-90*key)+'%'"
+                 :enable-details="this.enableDetails"
+                 :enable-play="this.enablePlay"
+                 :block-play="this.blockPlay"
+                 :rename-play="this.renamePlay"
+                 :play-button-func="this.playButtonFunc"
+                 :enable-overlay="this.enableOverlay"
+    />
   </div>
 </template>
 

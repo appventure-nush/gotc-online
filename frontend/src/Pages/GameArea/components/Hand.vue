@@ -41,7 +41,7 @@ export default defineComponent({
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 9%;
+  width: 10%;
   height: 80%;
   display: inline-block;
 }
