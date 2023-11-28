@@ -31,7 +31,7 @@ export default defineComponent({
   bottom: 0;
   left: 0;
   height: 45%;
-  width: 75%;
+  width: 80%;
   background-color: rgba(70,130,180,0.6);
 }
 
@@ -40,7 +40,7 @@ export default defineComponent({
   bottom: 0;
   right: 0;
   height: 45%;
-  width: 25%;
+  width: 20%;
   background-color: rgba(70, 180, 130, 0.6);
 }
 
@@ -49,16 +49,16 @@ export default defineComponent({
   bottom: 45%;
   left: 0;
   height: 45%;
-  width: 10%;
+  width: 12.5%;
   background-color: rgba(180, 165, 70, 0.6);
 }
 
 .defences{
   position: absolute;
   bottom: 45%;
-  left: 10%;
+  left: 12.5%;
   height: 45%;
-  width: 70%;
+  width: 75%;
   background-color: rgba(119, 70, 180, 0.6);
 }
 
@@ -67,7 +67,7 @@ export default defineComponent({
   bottom: 45%;
   right: 0;
   height: 45%;
-  width: 20%;
+  width: 12.5%;
   background-color: rgba(70, 180, 180, 0.6);
 }
 

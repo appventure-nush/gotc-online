@@ -1,10 +1,41 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import StackedCardHolder from "./StackedCardHolder.vue";
+import {playerCardsStore} from "./PlayerCardsStore";
 
 export default defineComponent({
   name: "Defences",
-  components: {StackedCardHolder}
+  components: {StackedCardHolder},
+  setup(){
+    let playerStore = playerCardsStore
+    return { playerStore }
+  },
+  computed:{
+    civilDefenceList: function() {
+      let cdl = this.playerStore.field.filter((card) => card.substring(0,5)==="civil")
+      return cdl.length > 0 ? cdl : ["civil-placeholder"]
+    },
+    digitalDefenceList: function() {
+      let ddl = this.playerStore.field.filter((card) => card.substring(0,7)==="digital")
+      return ddl.length > 0 ? ddl : ["digital-placeholder"]
+    },
+    economicDefenceList: function() {
+      let edl = this.playerStore.field.filter((card) => card.substring(0,8)==="economic")
+      return edl.length > 0 ? edl : ["economic-placeholder"]
+    },
+    militaryDefenceList: function() {
+      let mdl = this.playerStore.field.filter((card) => card.substring(0,8)==="military")
+      return mdl.length > 0 ? mdl : ["military-placeholder"]
+    },
+    psychologicalDefenceList: function() {
+      let pdl = this.playerStore.field.filter((card) => card.substring(0,13)==="psychological")
+      return pdl.length > 0 ? pdl : ["psychological-placeholder"]
+    },
+    socialDefenceList: function() {
+      let sdl = this.playerStore.field.filter((card) => card.substring(0,6)==="social")
+      return sdl.length > 0 ? sdl : ["social-placeholder"]
+    },
+  }
 })
 </script>
 
@@ -16,12 +47,12 @@ export default defineComponent({
     later make it such that after every move we get the cards played from the backend and display it here
     when that's the case we can filter the defence card type according to the defence type as stated before the "-"
     -->
-    <stacked-card-holder class="sch civil-stack" :cards="['civil-1','civil-2','civil-3']"/>
-    <stacked-card-holder class="sch digital-stack" :cards="['digital-1','digital-2','digital-3']"/>
-    <stacked-card-holder class="sch economic-stack" :cards="['economic-1','economic-2','economic-3','economic-4','economic-5']"/>
-    <stacked-card-holder class="sch military-stack" :cards="['military-1','military-2','military-3','military-4']"/>
-    <stacked-card-holder class="sch psychological-stack" :cards="['psychological-1','psychological-2','psychological-3']"/>
-    <stacked-card-holder class="sch social-stack" :cards="['social-1','social-2','social-3']"/>
+    <stacked-card-holder class="sch" :cards="civilDefenceList" :enable-play="false"/>
+    <stacked-card-holder class="sch" :cards="digitalDefenceList" :enable-play="false"/>
+    <stacked-card-holder class="sch" :cards="economicDefenceList" :enable-play="false"/>
+    <stacked-card-holder class="sch" :cards="militaryDefenceList" :enable-play="false"/>
+    <stacked-card-holder class="sch" :cards="psychologicalDefenceList" :enable-play="false"/>
+    <stacked-card-holder class="sch" :cards="socialDefenceList" :enable-play="false"/>
   </div>
 </template>
 
@@ -35,7 +66,7 @@ export default defineComponent({
 
 .sch{
   position: relative;
-  width: 15%;
+  width: 12.5%;
   height: 80%;
   display: inline-block;
 }

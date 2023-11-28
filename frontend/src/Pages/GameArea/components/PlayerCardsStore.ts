@@ -22,6 +22,8 @@ export const playerCardsStore  = defineStore({
         // local variables are to be updated and have their relevant value fetched from backend
         // whenever they're needed (e.g. get crisis card at the start of a game, played cards before every turn)
         crisis : "back-white" as string,
+        // field consists of defences & community supports in play
+        field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
 
     }),

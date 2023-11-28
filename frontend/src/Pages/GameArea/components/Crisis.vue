@@ -49,7 +49,7 @@ export default defineComponent({
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 80%;
+  width: 70%;
   height: 80%;
   display: inline-block;
 }

@@ -1,14 +1,22 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import Userform from "../../../components/userform.vue";
 
 export default defineComponent({
-  name: "UtilBar"
+  name: "UtilBar",
+  components:{Userform}
 })
 </script>
 
 <template>
   <div class="utilbar-component-div" >
-    <p>UTIL/TOOLBAR</p>
+    <div class="userform-temp">
+      <userform />
+      <router-link to="/MainPage" v-slot="{href, route, navigate}" class="back-temp">
+        Back to MainPage
+      </router-link>
+    </div>
+
   </div>
 </template>
 
@@ -19,6 +27,28 @@ export default defineComponent({
   align-items: center;
   justify-content: space-evenly;
   background-color: rgb(128,128,128,0.75);
+}
+
+.utilbar-component-div>.userform-temp{
+  border: green 2px solid;
+  display: inline-flex;
+  height: 85%;
+  width: 75%;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+:deep(button){
+  height: 80%;
+  padding-top: .5%;
+  padding-bottom: .5%;
+}
+
+.back-temp{
+  position: relative;
+  border: steelblue 2px solid;
+  color: #03145b;
+  padding: .3% 1%;
 }
 
 </style>
