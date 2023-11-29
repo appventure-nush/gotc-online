@@ -81,6 +81,12 @@ export default defineComponent({
                            :block-play="communitySupportList.length < 1"
       />
     </div>
+    <div class="opponent-discard">
+      <stacked-card-holder class="opponent-discard-stack"
+                           :cards="opponentStore.discard"
+                           :enable-play = "false"
+      />
+    </div>
   </div>
 </template>
 
@@ -97,7 +103,7 @@ export default defineComponent({
   top: 0;
   left: 0;
   height: 100%;
-  width: 12.5%;
+  width: 10%;
   background-color: transparent;
   display: inline-flex;
   justify-content: space-evenly;
@@ -107,7 +113,7 @@ export default defineComponent({
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 70%;
+  width: 80%;
   height: 80%;
   display: inline-block;
 }
@@ -115,9 +121,9 @@ export default defineComponent({
 .opponent-defence{
   position: absolute;
   top: 0;
-  left: 12.5%;
+  left: 10%;
   height: 100%;
-  width: 75%;
+  width: 70%;
   background-color: transparent;
   display: inline-flex;
   justify-content: space-evenly;
@@ -133,9 +139,9 @@ export default defineComponent({
 .opponent-comunity-support{
   position: absolute;
   top: 0;
-  right: 0;
+  right: 10%;
   height: 100%;
-  width: 12.5%;
+  width: 10%;
   background-color: transparent;
   display: inline-flex;
   justify-content: space-evenly;
@@ -145,7 +151,27 @@ export default defineComponent({
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 70%;
+  width: 80%;
+  height: 80%;
+  display: inline-block;
+}
+
+.opponent-discard{
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 10%;
+  background-color: transparent;
+  display: inline-flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+.opponent-discard>.opponent-discard-stack{
+  position: relative;
+  margin-left: .5%;
+  margin-right: .5%;
+  width: 80%;
   height: 80%;
   display: inline-block;
 }

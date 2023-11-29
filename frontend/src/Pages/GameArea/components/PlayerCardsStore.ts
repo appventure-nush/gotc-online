@@ -15,7 +15,7 @@ export const playerCardsStore  = defineStore({
     state: () =>({
         handList : [] as string[],
         discardDeck : ["back-black"] as string[],
-        cardsLeft : 45 as number,
+        cardsLeft : 46 as number,
 
         // played cards such as the crisis cards, community support and defence cards should be stored server side
         // as they need to be displayed on opponent's end too
@@ -31,18 +31,46 @@ export const playerCardsStore  = defineStore({
 
     },
     actions:{
-        resetStore (){
+        async resetStore() {
             // reset the store to its default values
             this.handList = [] as string[]
             this.discardDeck = ["back-black"] as string[]
-            this.cardsLeft = 51
+            this.cardsLeft = await this.getStdDeckSize()
         },
 
-        drawDeck() : string | void {
+        getStdDeckSize() : Promise<number> {
+            return fetch(`${BACKEND_URL}/deck_size`)
+                // fetch() returns a promise. When we have received a response from the server,
+                // the promise's `then()` handler is called with the response.
+                .then((response) => {
+                    // Our handler throws an error if the request did not succeed.
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status}`);
+                    }
+                    // Otherwise (if the response succeeded), our handler fetches the response
+                    // as text by calling response.text(), and immediately returns the promise
+                    // returned by `response.text()`.
+                    return response.text();
+                })
+                // When response.text() has succeeded, the `then()` handler is called with
+                // the text, and we copy it into the `poemDisplay` box.
+                .then((text) => {
+                    return parseInt(text)
+                })
+                // Catch any errors that might happen, and display a message
+                // in the `poemDisplay` box.
+                .catch((error) => {
+                    console.log("Cannot get deck size")
+                    console.log(error.toString())
+                    return NaN
+                })
+
+        },
+
+        drawDeck() : Promise<string> {
             // post draw deck request to the packend with username and sessionkey
-            // the top card in the undrawn deck will be sent over
-            // use this over getdeck when possible as it pops out the top card & doesn't send the whole deck
-            fetch(`${BACKEND_URL}/pop_deck`, {
+            // the drawn card will be sent over and the hand will be updated
+            return fetch(`${BACKEND_URL}/pop_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
@@ -58,35 +86,30 @@ export const playerCardsStore  = defineStore({
                 })
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
-
-                    if(this.handList.length < 7){
-                        this.handList.push(json_response["card"])
-                    }
-                    else {
-                        this.discardDeck.push(this.handList.shift()!)
-                        this.handList.push(json_response["card"])
-                    }
-
-                    this.cardsLeft = json_response["cardsLeft"]
 
                     if(json_response["cardsLeft"] === 0){
                         this.newDeck()
                     }
 
-                    return json_response["card"]
+                    this.getHand()
+
+                    this.getDiscard()
+
+                    this.cardsLeft = json_response["cardsLeft"]
+
+                    return json_response["card"] as string
 
                 })
                 .catch(error => {
                     console.log(error.toString())
+                    return "Could not draw deck"
                 });
-
-            return
         },
 
-        newDeck(){
+        newDeck() : Promise<string|string[]> {
             // post new deck request to the backend with username and sessionkey
             // an entirely new full deck will be generated
-            fetch(`${BACKEND_URL}/new_deck`, {
+            return fetch(`${BACKEND_URL}/new_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
@@ -103,18 +126,19 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    console.log(json_response["deck"])
+                    return json_response["deck"] as string[]
 
                 })
                 .catch(error => {
                     console.log(error.toString())
+                    return "Could not make new deck"
                 });
         },
 
-        getDeck(): string[] | string {
+        getDeck() : Promise<string|string[]>  {
             // post get deck request to the packend with username and sessionkey
             // the whole undrawn deck will be sent over
-            fetch(`${BACKEND_URL}/get_deck`, {
+            return fetch(`${BACKEND_URL}/get_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
@@ -131,21 +155,52 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    return json_response["deck"]
+                    return json_response["deck"] as string[]
 
                 })
                 .catch(error => {
                     console.log(error.toString())
+                    return "Could not get deck"
                 });
-            return "something wrong happened"
+        },
+
+        getCardsLeft() : Promise<number> {
+            // post get cards left request to the packend with username and sessionkey
+            // the number of cards in the deck will be returned & updated
+            return fetch(`${BACKEND_URL}/get_cardsleft`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.cardsLeft = json_response["cardsLeft"] as number
+
+                    return json_response["cardsLeft"] as number
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return NaN
+                });
         },
 
 
         // get crisis and new crisis
-        newCrisis(){
+        newCrisis() : Promise<string> {
             // post new deck request to the backend with username and sessionkey
             // an entirely new full deck will be generated
-            fetch(`${BACKEND_URL}/new_crisis`, {
+            return fetch(`${BACKEND_URL}/new_crisis`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
@@ -162,19 +217,20 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.crisis = json_response["crisis"]
+                    this.crisis = json_response["crisis"] as string
 
-                    return json_response["crisis"]
+                    return json_response["crisis"] as string
 
                 })
                 .catch(error => {
                     console.log(error.toString())
+                    return "Could not get new crisis"
                 });
         },
-        getCrisis(){
-            // post get deck request to the packend with username and sessionkey
-            // the whole undrawn deck will be sent over
-            fetch(`${BACKEND_URL}/get_crisis`, {
+        getCrisis() : Promise<string> {
+            // post get crisis  request to the backend with username and sessionkey
+            // the crisis will be sent over
+            return fetch(`${BACKEND_URL}/get_crisis`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
@@ -191,16 +247,112 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.crisis = json_response["crisis"]
-                    console.log(this.crisis)
+                    this.crisis = json_response["crisis"] as string
+                    //console.log(this.crisis)
 
-                    return json_response["crisis"]
+                    return json_response["crisis"] as string
 
                 })
                 .catch(error => {
                     console.log(error.toString())
+                    return "Could not get crisis"
                 });
-            return "something wrong happened"
+        },
+
+        getHand() : Promise<string|string[]> {
+            // post get hand  request to the backend with username and sessionkey
+            // the hand will be sent over
+            return fetch(`${BACKEND_URL}/get_hand`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.handList = json_response["hand"] as string[]
+
+                    return json_response["hand"] as string[]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not get hand"
+                });
+        },
+
+        getDiscard() : Promise<string|string[]> {
+            // post get hand  request to the backend with username and sessionkey
+            // the hand will be sent over
+            return fetch(`${BACKEND_URL}/get_discard`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.discardDeck = json_response["discard"] as string[]
+
+                    return json_response["discard"] as string[]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not get discard"
+                });
+        },
+
+        playHand(hand_card_index : number) : Promise<string> {
+            // post get hand  request to the backend with username and sessionkey
+            // the hand will be sent over
+            return fetch(`${BACKEND_URL}/play_hand`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    login_session_key : userSignInStore.login_session_key(),
+                    card_index : hand_card_index
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.handList = json_response["hand"] as string[]
+                    this.discardDeck = json_response["discard"] as string[]
+                    this.cardsLeft = json_response["cardsLeft"] as number
+
+                    return json_response["cardPlayed"] as string
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not play hand"
+                });
         }
     },
 })(globalPiniaInstance)
