@@ -77,7 +77,7 @@ export default defineComponent({
   left: 0;
   height: 10%;
   width: 100%;
-  background: linear-gradient(to bottom,darkgray,grey);;
+  background: linear-gradient(to bottom,darkgray,grey);
 }
 
 

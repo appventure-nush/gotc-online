@@ -40,6 +40,7 @@ export default defineComponent({
 <template>
   <div class="oppfield-component-div">
     <div class="opponent-crisis">
+      <p class="cards-left">{{opponentStore.cardsLeft}} Cards Left</p>
       <CardHolder :card-name="opponentStore.crisis" class="crisiscard" :enable-play="false" />
     </div>
     <div class="opponent-defence">
@@ -110,12 +111,25 @@ export default defineComponent({
   align-items: center;
 }
 .opponent-crisis>.crisiscard{
-  position: relative;
-  margin-left: .5%;
-  margin-right: .5%;
+  position: absolute;
   width: 80%;
-  height: 80%;
-  display: inline-block;
+  height: 65%;
+  bottom: 10%;
+  display: block;
+}
+.opponent-crisis>.cards-left{
+  position: absolute;
+  width: 80%;
+  height: 12.5%;
+  margin: 0 0 2.5%;
+  top: 10%;
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+  background: linear-gradient(to bottom, dimgrey, darkslategrey);
+  color: white;
+  font-weight: 600;
+  font-size: 100%;
 }
 
 .opponent-defence{
@@ -149,8 +163,6 @@ export default defineComponent({
 }
 .opponent-comunity-support>.community-support-stack{
   position: relative;
-  margin-left: .5%;
-  margin-right: .5%;
   width: 80%;
   height: 80%;
   display: inline-block;
@@ -169,8 +181,6 @@ export default defineComponent({
 }
 .opponent-discard>.opponent-discard-stack{
   position: relative;
-  margin-left: .5%;
-  margin-right: .5%;
   width: 80%;
   height: 80%;
   display: inline-block;
