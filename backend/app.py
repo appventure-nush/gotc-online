@@ -87,7 +87,9 @@ class User:
         self.deck = standard_deck.copy()
         random.shuffle(self.deck) # upon creation of the user, shuffle the deck
         self.crisis = random.choice(crisis_deck) # server side crisis
-        self.hand = [] # server side hand; TODO: Hand Getter
+        self.hand = [] # server side hand
+        self.discard = []
+        self.field = []
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -100,6 +102,8 @@ class User:
 
     def newDeck(self):
         self.deck = standard_deck.copy()
+        self.discard = []
+        self.hand = []
         random.shuffle(self.deck)
 
     def newCrisis(self):
@@ -108,7 +112,7 @@ class User:
 
     def addHandCard(self, cardName):
         if len(self.hand) >= 7:
-            self.hand.pop(0)
+            self.discard = [self.hand.pop(0)] + self.discard
         self.hand += [cardName]
         return self.hand
 
@@ -346,6 +350,25 @@ def get_deck():
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
 
+@app.route('/get_cardsleft', methods=["POST"])
+@cross_origin()
+def get_cardsleft():
+    # return a user's full undrawn deck if username and login session key fits
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    response = {
+        "cardsLeft" : 0
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                response["cardsLeft"] = len(i.deck)
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Cards Left Unavailable"}), 404))
+
+
 @app.route('/pop_deck', methods=["POST"])
 @cross_origin()
 def pop_deck():
@@ -385,7 +408,6 @@ def new_deck():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == request_username) and keys_equal:
                 i.newDeck()
-                i.hand = [] #reset hand too
                 response["deck"] = i.deck
                 return response
         # else
@@ -410,6 +432,12 @@ def new_crisis():
         abort(Response(json.dumps({"Message": "New Crisis Unavailable"}), 404))
 
 
+@app.route('/deck_size')
+@cross_origin()
+def new_deck_size():
+    return str(len(standard_deck))
+
+
 @app.route('/get_crisis', methods=["POST"])
 @cross_origin()
 def get_crisis():
@@ -427,6 +455,74 @@ def get_crisis():
                 return response
         # else
         abort(Response(json.dumps({"Message": "Crisis Unavailable"}), 404))
+
+
+@app.route('/get_hand', methods=["POST"])
+@cross_origin()
+def get_hand():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    response = {
+        "hand" : []
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                response["hand"] = i.hand
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
+
+@app.route('/play_hand', methods=["POST"])
+@cross_origin()
+def play_hand():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    hand_index = request.json['card_index']
+    response = {
+        "cardPlayed" : "",
+        "hand" : [],
+        "discard" : [],
+        "cardsLeft" : 0,
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                if (hand_index < 0) or (hand_index >= len(i.hand)):
+                    abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                else:
+                    cardPlayed = i.hand.pop(hand_index)
+                    i.discard = [cardPlayed] + i.discard
+                    response["hand"] = i.hand
+                    response["discard"] = i.discard
+                    response["cardsLeft"] = len(i.deck)
+                    response["cardPlayed"] = cardPlayed
+                    return response
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+
+
+@app.route('/get_discard', methods=["POST"])
+@cross_origin()
+def get_discard():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    request_username = request.json['username']
+    response = {
+        "discard" : []
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == request_username) and keys_equal:
+                response["discard"] = ["discard-placeholder"] if (len(i.discard) < 1) else i.discard
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
 
 if __name__ == '__main__':

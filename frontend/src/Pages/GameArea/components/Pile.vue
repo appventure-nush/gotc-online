@@ -3,14 +3,27 @@ import {defineComponent} from 'vue'
 import CardHolder from "./CardHolder.vue";
 import {playerCardsStore} from "./PlayerCardsStore";
 import {userSignInStore} from "../../../components/UserSignInStore";
+import StackedCardHolder from "./StackedCardHolder.vue";
 
 export default defineComponent({
   name: "Pile",
-  components: {CardHolder},
+  components: {StackedCardHolder, CardHolder},
   setup(){
     const playerCards = playerCardsStore
     const userStore = userSignInStore
     return { playerCards, userStore }
+  },
+  beforeMount() {
+    // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
+    // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
+    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    // next time we can also check if a game's going on after checking if the user's signed in
+    this.userStore.$subscribe( () => {
+      if (this.userStore.isSignedIn) {
+        this.playerCards.getDiscard()
+        this.playerCards.getCardsLeft()
+      }
+    })
   },
   data(){
     return{
@@ -55,7 +68,7 @@ export default defineComponent({
     </div>
 
     <div class="pile-component-card-wrapper" v-on:mouseover="discHover=true" v-on:mouseout="discHover=false">
-      <CardHolder :card-name="playerCards.discardDeck[playerCards.discardDeck.length-1]" class="pile-component-card" :enable-play="false" :enable-details="true" />
+      <StackedCardHolder class="pile-component-card discardpile" :cards="playerCards.discardDeck" :enable-play="false"/>
     </div>
 
 
@@ -76,6 +89,11 @@ export default defineComponent({
   width: 40%;
   height: 80%;
   display: inline-block;
+}
+.pile-component-card-wrapper>.discardpile{
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
 
 .draw-remainder {

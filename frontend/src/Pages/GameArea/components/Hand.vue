@@ -2,6 +2,7 @@
 import {defineComponent} from 'vue'
 import CardHolder from "./CardHolder.vue";
 import {playerCardsStore} from "./PlayerCardsStore";
+import {userSignInStore} from "../../../components/UserSignInStore";
 
 export default defineComponent({
   name: "Hand",
@@ -9,8 +10,18 @@ export default defineComponent({
   setup(){
     //this imports the playerCardsStore, allowing us to use the variables stored within
     const playerCards = playerCardsStore
-    return { playerCards }
+    const userStore = userSignInStore
+    return { playerCards, userStore }
   },
+  beforeMount() {
+    // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
+    // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
+    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    // next time we can also check if a game's going on after checking if the user's signed in
+    this.userStore.$subscribe(() => {
+      if(this.userStore.isSignedIn) this.playerCards.getHand()
+    })
+  }
 })
 </script>
 
@@ -24,7 +35,12 @@ export default defineComponent({
 
 <template>
   <div class="hand-component-div">
-    <CardHolder v-for="(card,index) in playerCards.handList" :card-name="card" :key="card+index" class="handcard"/>
+    <CardHolder v-for="(card,index) in playerCards.handList"
+                :card-name="card"
+                :key="card+index"
+                :play-button-func="()=>{playerCards.playHand(index)}"
+                class="handcard"
+    />
   </div>
 
 </template>

@@ -18,6 +18,7 @@ export default defineComponent({
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
     // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    // next time we can also check if a game's going on after checking if the user's signed in
     this.userStore.$subscribe(() => {
       if(this.userStore.isSignedIn) this.playerStore.getCrisis()
       else this.playerStore.crisis = "back-white"

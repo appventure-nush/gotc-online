@@ -63,16 +63,17 @@ export default defineComponent({
           .then((json_text) => {
             let json_response = JSON.parse(json_text)
             if(json_response["login_success"] === true) {
-              //this.curr_user = json_response["confirmed_username"]
+              // this.curr_user = json_response["confirmed_username"]
               this.userStore.username = json_response["confirmed_username"]
               this.userStore.setLoginSessionKey(json_response["login_session_key"])
-              //localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
-              //console.log(localStorage.getItem("LoginSessionKey"))
-              //console.log(userSignInStore.login_session_key())
+              // localStorage.setItem("LoginSessionKey",json_response["login_session_key"])
+              // console.log(localStorage.getItem("LoginSessionKey"))
+              // console.log(userSignInStore.login_session_key())
               this.refreshText(json_response)
               this.activity_pinger_id = setInterval(this.activity_ping, 20_000)
-              //emit a sign in event with current user's username in detail param
-              //emitted on document for ease of listening
+              // emit a sign in event with current user's username in detail param
+              // emitted on document for ease of listening
+              // DEPRECATE, USE THE USER STORE
               window.document.dispatchEvent(new CustomEvent("SignInEvent", {detail:this.userStore.username}))
             }
             else {
