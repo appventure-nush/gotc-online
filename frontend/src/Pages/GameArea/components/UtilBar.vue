@@ -26,7 +26,6 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
   justify-content: space-evenly;
-  background-color: rgb(128,128,128,0.75);
 }
 
 .utilbar-component-div>.userform-temp{
