@@ -14,10 +14,8 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 LOG_FILE = "runtime.log"
 
 
-logged_in = []
-
 # standard deck is a list of the name strings of cards
-standard_deck = [
+standard_deck : list[str] = [
 "communitysupport",
 "communitysupport",
 "communitysupport",
@@ -69,7 +67,7 @@ standard_deck = [
 ]
 
 # select crisis from here
-crisis_deck = [
+crisis_deck : list[str] = [
 "crisis-1",
 "crisis-2",
 "crisis-3",
@@ -81,15 +79,15 @@ crisis_deck = [
 
 class User:
     def __init__(self, name, last_checkin, login_session_key):
-        self.name = name
-        self.last_checkin = last_checkin
-        self.login_session_key = login_session_key
-        self.deck = standard_deck.copy()
+        self.name : str = name
+        self.last_checkin : float = last_checkin
+        self.login_session_key : str = login_session_key
+        self.deck : list[str] = standard_deck.copy()
         random.shuffle(self.deck) # upon creation of the user, shuffle the deck
-        self.crisis = random.choice(crisis_deck) # server side crisis
-        self.hand = [] # server side hand
-        self.discard = []
-        self.field = []
+        self.crisis : str = random.choice(crisis_deck) # server side crisis
+        self.hand : list[str] = [] # server side hand
+        self.discard : list[str] = []
+        self.field : list[str] = []
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -115,6 +113,9 @@ class User:
             self.discard = [self.hand.pop(0)] + self.discard
         self.hand += [cardName]
         return self.hand
+
+
+logged_in : list[User] = []
 
 
 def usersListString():
