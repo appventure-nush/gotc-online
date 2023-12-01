@@ -2,6 +2,8 @@
 import FrontPageApp from "./Pages/FrontPage/FrontPageApp.vue";
 import MainPageApp from "./Pages/MainPage/MainPageApp.vue";
 import GameAreaApp from "./Pages/GameArea/GameAreaApp.vue";
+import HelpAreaApp from "./Pages/HelpArea/HelpAreaApp.vue";
+
 
 //import vue-router's things here
 import { createRouter, createWebHistory } from 'vue-router'
@@ -29,6 +31,7 @@ import {globalPiniaInstance} from "./global";
 const FrontPage = FrontPageApp
 const MainPage = MainPageApp
 const GameArea = GameAreaApp
+const HelpArea = HelpAreaApp
 
 // 2. Define some routes
 // Each route should map to a component.
@@ -36,7 +39,8 @@ const GameArea = GameAreaApp
 const routes = [
     { path: '/', component: FrontPage },
     { path: '/MainPage', component: MainPage },
-    { path: '/GameArea', component: GameArea}
+    { path: '/GameArea', component: GameArea},
+    { path: '/HelpArea', component: HelpArea}
 ]
 
 // 3. Create the router instance and pass the `routes` option

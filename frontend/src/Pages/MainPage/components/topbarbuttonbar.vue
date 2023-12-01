@@ -4,7 +4,7 @@
 
 <template>
   <div class="btn-group">
-    <router-link to="/" v-slot="{href, route, navigate}" class="nav help">
+    <router-link to="/HelpArea" v-slot="{href, route, navigate}" class="nav help">
       <div class="navdiv">HELP</div>
     </router-link>
     <router-link to="/" v-slot="{href, route, navigate}" class="nav replay">
