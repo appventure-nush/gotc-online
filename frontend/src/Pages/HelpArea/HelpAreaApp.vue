@@ -49,4 +49,9 @@ export default defineComponent({
   margin: 20px auto;
   backdrop-filter: blur(4px);
 }
+@media (prefers-color-scheme: dark) {
+  .rules{
+    color: black;
+  }
+}
 </style>
