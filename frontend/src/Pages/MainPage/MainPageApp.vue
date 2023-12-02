@@ -27,8 +27,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
   font-weight: 600;
 }
 
-/* :deep means that this css will also be aplied to child vue components used in this vue component */
-:deep button {
+/* :deep() means that this css will also be recursively applied to the components of components used in this vue component */
+:deep(button) {
   border-radius: 10pt;
   background-color: #d9c779ff; /* Green background */
   border: 5px solid #cd931bff; /* Green border */
@@ -45,7 +45,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
   transition: border-color 0.3s;
 }
 
-:deep button:hover{
+:deep(button:hover){
   border-color: firebrick;
 }
 

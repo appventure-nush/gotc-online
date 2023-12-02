@@ -5,13 +5,14 @@ import {playerCardsStore} from "./PlayerCardsStore";
 import {userSignInStore} from "../../../components/UserSignInStore";
 
 export default defineComponent({
-  name: "Hand",
+  name: "Crisis",
   components: {CardHolder},
-  setup(){
-    //this imports the playerCardsStore, allowing us to use the variables stored within
-    const playerCards = playerCardsStore
-    const userStore = userSignInStore
-    return { playerCards, userStore }
+  setup() {
+    let playerStore = playerCardsStore
+    let userStore = userSignInStore
+
+
+    return {playerStore, userStore}
   },
   beforeMount() {
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
@@ -19,45 +20,37 @@ export default defineComponent({
     // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
     // next time we can also check if a game's going on after checking if the user's signed in
     this.userStore.$subscribe(() => {
-      if(this.userStore.isSignedIn) this.playerCards.getHand()
+      if(this.userStore.isSignedIn) this.playerStore.getCrisis()
+      else this.playerStore.crisis = "back-white"
     })
-  }
+  },
+  methods:{
+    newCrisis: function (){
+      this.playerStore.newCrisis()
+    }
+  },
 })
 </script>
 
-<!--
-  This is the component that displays up to 7 cards in the player's hand
-
-  Uses v-for to horizontally stack cardholders
-  The hand itself is stored in the playerCards Store's handlist
-  player logic can be attached to the CardHolder's playButtonFunc later
---->
-
 <template>
-  <div class="hand-component-div">
-    <CardHolder v-for="(card,index) in playerCards.handList"
-                :card-name="card"
-                :key="card+index"
-                :play-button-func="()=>{playerCards.playHand(index)}"
-                class="handcard"
-    />
-  </div>
 
+  <div class="crisis-component-div">
+    <CardHolder :card-name="playerStore.crisis" class="crisiscard" :enable-play="false" />
+  </div>
 </template>
 
 <style scoped>
 
-.hand-component-div{
+.crisis-component-div{
   display: inline-flex;
   align-items: center;
   justify-content: space-evenly;
 }
-
-.handcard{
+.crisiscard{
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 10%;
+  width: 70%;
   height: 80%;
   display: inline-block;
 }

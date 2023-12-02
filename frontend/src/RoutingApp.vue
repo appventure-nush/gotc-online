@@ -1,5 +1,10 @@
 <script setup lang="ts">
 
+import {playerCardsStore} from "./Pages/GameArea/components/PlayerCardsStore";
+
+// this will set the initial cardsleft to the correct number as specified by the backend
+playerCardsStore.resetStore()
+
 </script>
 
 <template>

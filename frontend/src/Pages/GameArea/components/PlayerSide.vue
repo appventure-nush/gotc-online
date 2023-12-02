@@ -2,10 +2,14 @@
 import {defineComponent} from 'vue'
 import Hand from "./Hand.vue";
 import Pile from "./Pile.vue";
+import Crisis from "./Crisis.vue";
+import UtilBar from "./UtilBar.vue";
+import Defences from "./Defences.vue";
+import CommunitySupports from "./CommunitySupports.vue";
 
 export default defineComponent({
   name: "PlayerSide",
-  components: {Hand, Pile}
+  components: {CommunitySupports, Defences, UtilBar, Crisis, Hand, Pile}
 })
 </script>
 
@@ -13,6 +17,10 @@ export default defineComponent({
   <div>
     <Hand class="hand"/>
     <Pile class="pile"/>
+    <Crisis class="crisis"/>
+    <Defences class="defences"/>
+    <CommunitySupports class="community-supports"/>
+    <UtilBar class="utilbar"/>
   </div>
 </template>
 
@@ -22,18 +30,56 @@ export default defineComponent({
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 40%;
-  width: 75%;
-  background-color: rgba(70,130,180,0.2);
+  height: 45%;
+  width: 80%;
+  background-color: rgba(70,130,180,0.6);
 }
 
 .pile{
   position: absolute;
   bottom: 0;
   right: 0;
-  height: 40%;
-  width: 25%;
-  background-color: rgba(70, 180, 130, 0.2);
+  height: 45%;
+  width: 20%;
+  background-color: rgba(70, 180, 130, 0.6);
 }
+
+.crisis{
+  position: absolute;
+  bottom: 45%;
+  left: 0;
+  height: 45%;
+  width: 12.5%;
+  background-color: rgba(180, 165, 70, 0.6);
+}
+
+.defences{
+  position: absolute;
+  bottom: 45%;
+  left: 12.5%;
+  height: 45%;
+  width: 75%;
+  background-color: rgba(119, 70, 180, 0.6);
+}
+
+.community-supports{
+  position: absolute;
+  bottom: 45%;
+  right: 0;
+  height: 45%;
+  width: 12.5%;
+  background-color: rgba(70, 180, 180, 0.6);
+}
+
+.utilbar{
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 10%;
+  width: 100%;
+  background: linear-gradient(to bottom,darkgray,grey);
+}
+
+
 
 </style>
