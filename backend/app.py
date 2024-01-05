@@ -6,13 +6,14 @@ from datetime import datetime
 from flask import Flask, request, send_file, abort, Response
 from flask_cors import CORS, cross_origin
 import json
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 LOG_FILE = "runtime.log"
-
 
 # standard deck is a list of the name strings of cards
 standard_deck : list[str] = [
@@ -145,6 +146,7 @@ def clear_inactive_users_from_login():
         writeLog("after clearing cycle @" + str(curr_time) + ": {")
         writeLog(usersListString())
         writeLog("}")
+        socketio.emit('number logged in', {'data': len(logged_in)})
         time.sleep(2*60) # do the check ever 2 mins
 
 
@@ -245,6 +247,7 @@ def sign_in():
         response["login_session_key"] = login_session_key
         response["login_success"] = True
         writeLog(usersListString())
+        socketio.emit('number logged in', {'data': len(logged_in)})
         return response
 
 
@@ -265,11 +268,12 @@ def sign_out():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == username) and keys_equal:
                 users_to_remove.append(i)
-        if(len(users_to_remove) > 0):
+        if len(users_to_remove) > 0:
             for i in users_to_remove:
                 logged_in.remove(i)
             response["text"] = "signed out successfully"
             response["signout_success"] = True
+            socketio.emit('number logged in', {'data': len(logged_in)})
         else:
             response["text"] = "nobody was signed out"
             response["signout_success"] = False
@@ -325,6 +329,9 @@ def activity_status_request():
 def get_image():
     return send_file("Oran_Berry_Sprite.png", mimetype='image/png')
 
+@app.route('/get_number_logged_in')
+def get_number_logged_in():
+    return str(len(logged_in))
 
 @app.route('/get_card', methods=["GET"])
 def get_card():
@@ -349,7 +356,6 @@ def get_deck():
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
-
 
 @app.route('/get_cardsleft', methods=["POST"])
 @cross_origin()
@@ -525,6 +531,5 @@ def get_discard():
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
-
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app, allow_unsafe_werkzeug=True)
