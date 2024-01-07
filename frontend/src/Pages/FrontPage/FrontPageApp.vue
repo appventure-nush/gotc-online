@@ -11,10 +11,17 @@ Meanwhile this userform login/out Vue component is placed in the src's main/publ
 probably versatile enough to be used across multiple pages.
  */
 import userform from "../../components/userform.vue";
+import socketconnection from "./components/socketconnection.vue";
 
 // import the backend url from the .env (for development server), .env.production (for production server),
 // or .env.production.local (for private production server whose IP address should ideally not be committed to Git
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
+/*
+import { socket } from "../../socket"
+// in case of reload
+socket.disconnect()
+*/
 
 </script>
 
@@ -41,6 +48,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
     </div>
 
     <HelloWorld msg="PLEASE USE VITE + VUE FROM NOW ON"/>
+
+    <socketconnection></socketconnection>
 
     <p class="oran-berry-disc">
       Image below is fetched from backend

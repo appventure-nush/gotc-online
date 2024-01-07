@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
-import Topbarbuttonbar from "./components/topbarbuttonbar.vue";
+import topbarbuttonbar from "./components/topbarbuttonbar.vue";
+import userform from "../../components/userform.vue";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -11,7 +12,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
     <div class="topbar">
       <p class="gotc-online-pseudologo">GOTC<br>ONLINE</p>
       <topbarbuttonbar/>
-      <button>Sign In</button>
+      <userform/>
     </div>
   </div>
 </template>
@@ -69,9 +70,8 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
   align-items: center;
   justify-content: space-between;
 
-  padding-left: 10vw;
-  padding-right: 10vw;
+  padding-left: 5vw;
+  padding-right: 5vw;
 }
-
 
 </style>
