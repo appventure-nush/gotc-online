@@ -225,7 +225,10 @@ def sign_in():
     }
     if request.method == "POST":
         for i in logged_in:
-            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+
+            keys_equal = False if not type(
+                sent_login_sesh_key) == 'str' else secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+
             if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"
                 writeLog(usersListString())

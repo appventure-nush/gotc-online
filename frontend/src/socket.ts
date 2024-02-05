@@ -6,7 +6,7 @@ export const state = reactive({
     connected: false,
 })
 
-const URL = process.env.NODE_ENV === "production" ? window.location.toString() : "http://localhost:5000"
+const URL = import.meta.env.VITE_BACKEND_URL
 
 export const socket = io(URL, {
     withCredentials: true
