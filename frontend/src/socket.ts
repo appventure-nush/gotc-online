@@ -1,9 +1,9 @@
 import { reactive } from "vue"
 import { io } from "socket.io-client"
-import socketconnection from "./Pages/FrontPage/components/socketconnection.vue";
 
 export const state = reactive({
     connected: false,
+    numlogin: 0,
 })
 
 const URL = import.meta.env.VITE_BACKEND_URL
@@ -21,5 +21,5 @@ socket.on("disconnect", () => {
 })
 
 socket.on("number logged in", (args) => {
-    socketconnection.numlogin = args["data"]
+    state.numlogin = args["data"]
 });

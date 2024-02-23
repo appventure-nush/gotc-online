@@ -14,15 +14,13 @@ export default defineComponent({
   computed:{
     connected() {
       return state.connected
-    }
-  },
-  data() {
-    return {
-      numlogin: undefined as Number
+    },
+    numlogin() {
+      return state.numlogin
     }
   },
   async mounted() {
-    this.numlogin = await fetch(`${BACKEND_URL}/get_number_logged_in`)
+    state.numlogin = await fetch(`${BACKEND_URL}/get_number_logged_in`)
         .then((response) => response.json())
         .then((data) => parseInt(data))
   }
