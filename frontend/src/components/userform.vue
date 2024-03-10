@@ -216,9 +216,39 @@ export default defineComponent({
     refreshText(json_response : any){
       if (json_response["login_success"]) this.userform_status_top_text = json_response["text"]
       this.result = json_response["text"]
-    }
+    },
 
-  }
+    async leaving(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      await fetch(`${BACKEND_URL}/disconnect`, {
+        method: "POST",
+        body: JSON.stringify({
+          username: this.userStore.username,
+          login_session_key: localStorage.getItem("LoginSessionKey")
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+          .then((response) => {
+            if(!response.ok) return Promise.reject(response)
+            else return response.text()
+          })
+          .then((json_text) => {
+            let json_response = JSON.parse(json_text)
+            if(json_response["signout_success"] === true) {
+              this.signout(json_response["text"])
+            }
+          })
+
+          .catch(error => {
+            this.result = error.toString()
+          })
+    }
+  },
+  created() {
+    window.addEventListener("beforeunload", this.leaving);
+  },
 })
 
 </script>

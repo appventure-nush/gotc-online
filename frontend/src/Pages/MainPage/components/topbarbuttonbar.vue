@@ -1,13 +1,50 @@
 <script lang="ts">
 import {defineComponent} from "vue";
+import {userSignInStore} from "../../../components/UserSignInStore";
+import { state } from "../../../socket.js"
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export default defineComponent( {
+  data() {
+    return {
+      userStore : userSignInStore
+    }
+  },
   methods: {
     enableshow() {
-      document.getElementById("playdialog").showModal()
+      if (this.userStore.isSignedIn) { // logged in
+        document.getElementById("playdialog").showModal()
+      } else {
+        alert("Sign in first.")
+      }
     },
     disableshow() {
       document.getElementById("playdialog").close()
+    },
+    requestmatch() {
+      // todo
+    },
+    async randomopponent() {
+
+      let x = await fetch(`${BACKEND_URL}/random_opponent`, {
+        method: "POST",
+        body: JSON.stringify({
+          username: this.userStore.username,
+          login_session_key: localStorage.getItem("LoginSessionKey")
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+          .then((response) => response.json())
+      if (x["status"] == "Added to queue") {
+        document.getElementById("playdialog").close()
+        document.getElementById("connectingdialog").show()
+
+      } else {
+        this.$router.push("/GameArea")
+      }
     }
   }
 })
@@ -35,16 +72,20 @@ export default defineComponent( {
           </header>
           <div class="enclosedialog">
             <div class="center">
-              <button class="enclosedialog" @click="">Random Opponent</button>
+              <button class="enclosedialog" @click="this.randomopponent()" type='button'>Random Opponent</button>
               <button class="enclosedialog" @click="$router.push('/GameArea')">VS Computer</button>
             </div>
-            <div class="center">OR<br></div>
-            Send play request to <br>
-            <div class="center"><input/><button class="enclosedialog">Send</button></div>
+            <div class="center dialogtext">OR<br></div>
+            <div class="dialogtext">Send play request to</div> <br>
+            <div class="center"><input id="input"/><button class="enclosedialog" @click="this.requestmatch()" type='button'>Send</button></div>
           </div>
         </form>
       </dialog>
+
     </a>
+    <dialog id="connectingdialog" onblur="close()">
+      <div class="dialogtext">Finding opponent...<br>You may close this dialog but do not refresh the page</div>
+    </dialog>
     <!-- </router-link> -->
 
 
@@ -104,7 +145,11 @@ export default defineComponent( {
   dialog[open] {
     color: black;
   }
+  .dialogtext {
+    color: white;
+  }
 }
+
 
 .enclosedialog {
   font-size: 11pt;

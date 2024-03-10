@@ -3,7 +3,7 @@ import secrets
 import time
 import threading
 from datetime import datetime
-from flask import Flask, request, send_file, abort, Response
+from flask import Flask, request, send_file, abort, Response, jsonify
 from flask_cors import CORS, cross_origin
 import json
 from flask_socketio import SocketIO
@@ -83,6 +83,7 @@ class User:
         self.name : str = name
         self.last_checkin : float = last_checkin
         self.login_session_key : str = login_session_key
+        self.game: list = []
         self.deck : list[str] = standard_deck.copy()
         random.shuffle(self.deck) # upon creation of the user, shuffle the deck
         self.crisis : str = random.choice(crisis_deck) # server side crisis
@@ -117,7 +118,7 @@ class User:
 
 
 logged_in : list[User] = []
-
+queue: list[User] = []
 
 def usersListString():
     ret_string = ""
@@ -143,6 +144,8 @@ def clear_inactive_users_from_login():
                 users_to_log_off.append(i)
         for i in users_to_log_off:
             logged_in.remove(i)
+            if i in queue:
+                queue.remove(i)
         writeLog("after clearing cycle @" + str(curr_time) + ": {")
         writeLog(usersListString())
         writeLog("}")
@@ -274,6 +277,8 @@ def sign_out():
         if len(users_to_remove) > 0:
             for i in users_to_remove:
                 logged_in.remove(i)
+                if i in queue:
+                    queue.remove(i)
             response["text"] = "signed out successfully"
             response["signout_success"] = True
             socketio.emit('number logged in', {'data': len(logged_in)})
@@ -282,6 +287,36 @@ def sign_out():
             response["signout_success"] = False
         return response
 
+@app.route('/disconnect',methods=['POST'])
+#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@cross_origin()
+def disconnect():
+    # yes this is the same as sign out. might be changed later
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    response = {
+        "text" : "PLACEHOLDER",
+        "signout_success" : False
+    }
+
+    if request.method == "POST":
+        users_to_remove = []
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == username) and keys_equal:
+                users_to_remove.append(i)
+        if len(users_to_remove) > 0:
+            for i in users_to_remove:
+                logged_in.remove(i)
+                if i in queue:
+                    queue.remove(i)
+            response["text"] = "signed out successfully"
+            response["signout_success"] = True
+            socketio.emit('number logged in', {'data': len(logged_in)})
+        else:
+            response["text"] = "nobody was signed out"
+            response["signout_success"] = False
+        return response
 
 @app.route('/user_activity_ping',methods=['POST'])
 #we need this cross-origin stuff for post requests since this is how people decided the internet would work
@@ -335,6 +370,53 @@ def get_image():
 @app.route('/get_number_logged_in')
 def get_number_logged_in():
     return str(len(logged_in))
+
+@app.route('/request_match', methods=['POST'])
+@cross_origin()
+def requestmatch():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            break
+    #if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    return "Success"  # todo: notify opponent
+            return "User not logged in"
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+@app.route('/random_opponent', methods=['POST'])
+@cross_origin()
+def randomopponent():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    #if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            if len(queue) == 0:
+                queue.append(user)
+                return jsonify({"status": "Added to queue"})
+            else:
+                opponent = random.choice(queue)
+                queue.remove(opponent)
+                socketio.emit("random match request", {"username": opponent.name})
+                return jsonify({"status": "Found opponent", "opponent": opponent.name})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
 
 @app.route('/get_card', methods=["GET"])
 def get_card():

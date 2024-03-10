@@ -6,7 +6,7 @@
 <script lang="ts">
 
 import { defineComponent } from "vue"
-import { state } from "../../../socket"
+import { state } from "../../../socket.js"
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 

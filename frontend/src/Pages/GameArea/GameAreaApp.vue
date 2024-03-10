@@ -3,14 +3,14 @@ import {defineComponent} from 'vue'
 import CardHolder from "./components/CardHolder.vue";
 import BigCardHolder from "./components/BigCardHolder.vue";
 import PlayerSide from "./components/PlayerSide.vue";
-import OpponentSide from "./components/OpponentSide.vue";
+import OpponentSide from "./components/OpponentSide.vue"
 
 export default defineComponent({
   name: "GameAreaApp",
   components: {OpponentSide, PlayerSide, BigCardHolder, CardHolder},
   include:{
     CardHolder,
-  },
+  }
 })
 </script>
 

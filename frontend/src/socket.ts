@@ -1,9 +1,12 @@
-import { reactive } from "vue"
+import {reactive} from "vue"
 import { io } from "socket.io-client"
+import {userSignInStore} from "./components/UserSignInStore";
+import {router} from "./main";
 
 export const state = reactive({
     connected: false,
     numlogin: 0,
+    userStore: userSignInStore
 })
 
 const URL = import.meta.env.VITE_BACKEND_URL
@@ -22,4 +25,11 @@ socket.on("disconnect", () => {
 
 socket.on("number logged in", (args) => {
     state.numlogin = args["data"]
-});
+})
+
+socket.on("random match request", (args) => {
+    console.log(args['username'])
+    if (args["username"] == state.userStore.username) {
+        router.push("/GameArea")
+    }
+})
