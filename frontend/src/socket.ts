@@ -28,8 +28,7 @@ socket.on("number logged in", (args) => {
 })
 
 socket.on("random match request", (args) => {
-    console.log(args['username'])
     if (args["username"] == state.userStore.username) {
-        router.push("/GameArea")
+        router.push("/GameArea/"+args["id"])
     }
 })

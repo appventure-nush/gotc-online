@@ -1,7 +1,6 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 import {userSignInStore} from "../../../components/UserSignInStore";
-import { state } from "../../../socket.js"
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -43,7 +42,7 @@ export default defineComponent( {
         document.getElementById("connectingdialog").show()
 
       } else {
-        this.$router.push("/GameArea")
+        this.$router.push("/GameArea/"+x["id"])
       }
     }
   }
@@ -73,7 +72,7 @@ export default defineComponent( {
           <div class="enclosedialog">
             <div class="center">
               <button class="enclosedialog" @click="this.randomopponent()" type='button'>Random Opponent</button>
-              <button class="enclosedialog" @click="$router.push('/GameArea')">VS Computer</button>
+              <button class="enclosedialog" @click="$router.push('/GameArea/default')">VS Computer</button>
             </div>
             <div class="center dialogtext">OR<br></div>
             <div class="dialogtext">Send play request to</div> <br>

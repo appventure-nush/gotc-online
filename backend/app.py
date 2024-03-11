@@ -2,6 +2,7 @@ import random
 import secrets
 import time
 import threading
+import uuid
 from datetime import datetime
 from flask import Flask, request, send_file, abort, Response, jsonify
 from flask_cors import CORS, cross_origin
@@ -16,83 +17,76 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 LOG_FILE = "runtime.log"
 
 # standard deck is a list of the name strings of cards
-standard_deck : list[str] = [
-"communitysupport",
-"communitysupport",
-"communitysupport",
-"communitysupport",
+standard_deck: list[str] = [
+    "communitysupport",
+    "communitysupport",
+    "communitysupport",
+    "communitysupport",
 
-"event-1",
-"event-2",
-"event-3",
-"event-4",
-"event-5",
-"event-6",
-"event-7",
-"event-8",
-"event-9",
-"event-10",
-"event-11",
-"event-12",
+    "event-1",
+    "event-2",
+    "event-3",
+    "event-4",
+    "event-5",
+    "event-6",
+    "event-7",
+    "event-8",
+    "event-9",
+    "event-10",
+    "event-11",
+    "event-12",
 
-"civil-1",
-"civil-1",
-"civil-2",
-"civil-2",
-"civil-3",
-"digital-1",
-"digital-1",
-"digital-2",
-"digital-2",
-"digital-3",
-"economic-1",
-"economic-2",
-"economic-3",
-"economic-4",
-"economic-5",
-"military-1",
-"military-1",
-"military-2",
-"military-3",
-"military-4",
-"psychological-1",
-"psychological-1",
-"psychological-2",
-"psychological-2",
-"psychological-3",
-"social-1",
-"social-1",
-"social-2",
-"social-2",
-"social-3",
+    "civil-1",
+    "civil-1",
+    "civil-2",
+    "civil-2",
+    "civil-3",
+    "digital-1",
+    "digital-1",
+    "digital-2",
+    "digital-2",
+    "digital-3",
+    "economic-1",
+    "economic-2",
+    "economic-3",
+    "economic-4",
+    "economic-5",
+    "military-1",
+    "military-1",
+    "military-2",
+    "military-3",
+    "military-4",
+    "psychological-1",
+    "psychological-1",
+    "psychological-2",
+    "psychological-2",
+    "psychological-3",
+    "social-1",
+    "social-1",
+    "social-2",
+    "social-2",
+    "social-3",
 ]
 
 # select crisis from here
-crisis_deck : list[str] = [
-"crisis-1",
-"crisis-2",
-"crisis-3",
-"crisis-4",
-"crisis-5",
-"crisis-6",
+crisis_deck: list[str] = [
+    "crisis-1",
+    "crisis-2",
+    "crisis-3",
+    "crisis-4",
+    "crisis-5",
+    "crisis-6",
 ]
 
-
-class User:
-    def __init__(self, name, last_checkin, login_session_key):
-        self.name : str = name
-        self.last_checkin : float = last_checkin
-        self.login_session_key : str = login_session_key
-        self.game: list = []
-        self.deck : list[str] = standard_deck.copy()
-        random.shuffle(self.deck) # upon creation of the user, shuffle the deck
-        self.crisis : str = random.choice(crisis_deck) # server side crisis
-        self.hand : list[str] = [] # server side hand
-        self.discard : list[str] = []
-        self.field : list[str] = []
-
-    def __str__(self):
-        return self.name + " | " + str(self.last_checkin)
+class Player:
+    def __init__(self, name):
+        self.name = name
+        self.deck: list[str] = standard_deck.copy()
+        random.shuffle(self.deck)  # upon creation of the user, shuffle the deck
+        self.crisis: str = random.choice(crisis_deck)  # server side crisis
+        self.hand: list[str] = []  # server side hand
+        self.discard: list[str] = []
+        self.field: list[str] = []
 
     def shuffleDeck(self):
         random.shuffle(self.deck)
@@ -117,8 +111,30 @@ class User:
         return self.hand
 
 
-logged_in : list[User] = []
+class Game:
+    def __init__(self, player1_username, player2_username, internal_id):
+        self.player1 = Player(player1_username)
+        self.player2 = Player(player2_username)
+        self.player1_username = player1_username
+        self.player2_username = player2_username
+
+        self.internal_id = internal_id
+
+
+class User:
+    def __init__(self, name, last_checkin, login_session_key):
+        self.name: str = name
+        self.last_checkin: float = last_checkin
+        self.login_session_key: str = login_session_key
+        self.games: list = []
+
+    def __str__(self):
+        return self.name + " | " + str(self.last_checkin)
+
+
+logged_in: list[User] = []
 queue: list[User] = []
+games: dict = {}
 
 def usersListString():
     ret_string = ""
@@ -140,7 +156,7 @@ def clear_inactive_users_from_login():
         users_to_log_off = []
         curr_time = int(datetime.now().timestamp())
         for i in logged_in:
-            if(curr_time - i.last_checkin > 10*60):  #if not checked in for more than 10*60 secs = 10 mins
+            if (curr_time - i.last_checkin > 10 * 60):  # if not checked in for more than 10*60 secs = 10 mins
                 users_to_log_off.append(i)
         for i in users_to_log_off:
             logged_in.remove(i)
@@ -150,7 +166,7 @@ def clear_inactive_users_from_login():
         writeLog(usersListString())
         writeLog("}")
         socketio.emit('number logged in', {'data': len(logged_in)})
-        time.sleep(2*60) # do the check ever 2 mins
+        time.sleep(2 * 60)  # do the check ever 2 mins
 
 
 log_in_clearer_daemon = threading.Thread(target=clear_inactive_users_from_login, daemon=True)
@@ -162,8 +178,8 @@ def main():  # put application's code here
     return 'Hello World!'
 
 
-@app.route('/calculate',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/calculate', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def calculate():
     if request.method == "POST":
@@ -200,11 +216,11 @@ def get_counter():
     # first check if logged_in
     target_user_logged_in = False
     for i in logged_in:
-        if(i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+        if (i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
             target_user_logged_in = True
             break
-    #if indeed logged in then do the get counter stuff
-    if(target_user_logged_in):
+    # if indeed logged in then do the get counter stuff
+    if (target_user_logged_in):
         with open("data.json", "r") as data_file:
             data = json.load(data_file)
             if username in data:
@@ -214,17 +230,17 @@ def get_counter():
     return "end of function"  # every method should return something
 
 
-@app.route('/sign_in',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/sign_in', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def sign_in():
     proposed_username = request.json['proposed_username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "confirmed_username" : "",
+        "text": "PLACEHOLDER",
+        "confirmed_username": "",
         "login_session_key": "0",
-        "login_success" : False
+        "login_success": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -245,7 +261,7 @@ def sign_in():
                 response["login_session_key"] = new_login_session_key
                 response["login_success"] = True
                 return response
-        #else
+        # else
         login_session_key = secrets.token_hex()
         logged_in.append(User(proposed_username, int(datetime.now().timestamp()), login_session_key))
         response["text"] = "Logged in as " + proposed_username
@@ -257,15 +273,15 @@ def sign_in():
         return response
 
 
-@app.route('/sign_out',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/sign_out', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def sign_out():
     username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "signout_success" : False
+        "text": "PLACEHOLDER",
+        "signout_success": False
     }
 
     if request.method == "POST":
@@ -287,16 +303,17 @@ def sign_out():
             response["signout_success"] = False
         return response
 
-@app.route('/disconnect',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+
+@app.route('/disconnect', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def disconnect():
     # yes this is the same as sign out. might be changed later
     username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "signout_success" : False
+        "text": "PLACEHOLDER",
+        "signout_success": False
     }
 
     if request.method == "POST":
@@ -318,15 +335,16 @@ def disconnect():
             response["signout_success"] = False
         return response
 
-@app.route('/user_activity_ping',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+
+@app.route('/user_activity_ping', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def user_activity_ping():
     pinger_username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "still_active" : False
+        "text": "PLACEHOLDER",
+        "still_active": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -336,20 +354,20 @@ def user_activity_ping():
                 response["text"] = "activity sucessfully registered"
                 response["still_active"] = True
                 return response
-        #else
+        # else
         response["text"] = "You were signed out due to inactivity!"
         response["still_active"] = False
         return response
 
 
-@app.route('/activity_status_request',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/activity_status_request', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def activity_status_request():
     pinger_username = request.json['username']
     response = {
-        "text" : "PLACEHOLDER",
-        "still_active" : False
+        "text": "PLACEHOLDER",
+        "still_active": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -357,7 +375,7 @@ def activity_status_request():
                 response["text"] = "account still logged in"
                 response["still_active"] = True
                 return response
-        #else
+        # else
         response["text"] = "You were signed out due to inactivity!"
         response["still_active"] = False
         return response
@@ -367,10 +385,12 @@ def activity_status_request():
 def get_image():
     return send_file("Oran_Berry_Sprite.png", mimetype='image/png')
 
+
 @app.route('/get_number_logged_in')
 def get_number_logged_in():
     return str(len(logged_in))
 
+'''
 @app.route('/request_match', methods=['POST'])
 @cross_origin()
 def requestmatch():
@@ -382,7 +402,7 @@ def requestmatch():
         if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
             target_user_logged_in = True
             break
-    #if indeed logged in
+    # if indeed logged in
     if request.method == "POST":
         if target_user_logged_in:
             # is the requested person logged in?
@@ -392,6 +412,8 @@ def requestmatch():
                     return "Success"  # todo: notify opponent
             return "User not logged in"
         abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+'''
+
 
 @app.route('/random_opponent', methods=['POST'])
 @cross_origin()
@@ -405,18 +427,26 @@ def randomopponent():
             target_user_logged_in = True
             user = i
             break
-    #if indeed logged in
+    # if indeed logged in
     if request.method == "POST":
         if target_user_logged_in:
             if len(queue) == 0:
                 queue.append(user)
                 return jsonify({"status": "Added to queue"})
             else:
+                # failsafe
+                if user in queue:
+                    return jsonify({"status": "Added to queue"})
                 opponent = random.choice(queue)
                 queue.remove(opponent)
-                socketio.emit("random match request", {"username": opponent.name})
-                return jsonify({"status": "Found opponent", "opponent": opponent.name})
+                random_uuid = str(uuid.uuid4())
+                socketio.emit("random match request", {"username": opponent.name, "id": random_uuid})
+                games[random_uuid] = Game(opponent.name, username, random_uuid)
+                user.games.append(random_uuid)
+                opponent.games.append(random_uuid)
+                return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
         abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
 
 @app.route('/get_card', methods=["GET"])
 def get_card():
@@ -427,35 +457,48 @@ def get_card():
 @app.route('/get_deck', methods=["POST"])
 @cross_origin()
 def get_deck():
-    # return a user's full undrawn deck if username and login session key fits
+    # return a game's full undrawn deck if username and login session key fits
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "deck" : []
+        "deck": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["deck"] =  i.deck
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["deck"] = game.player1.deck
+                elif game.player2_username == request_username:
+                    response["deck"] = game.player2.deck
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
+
 @app.route('/get_cardsleft', methods=["POST"])
 @cross_origin()
 def get_cardsleft():
-    # return a user's full undrawn deck if username and login session key fits
+    # return cards left in a game's deck if username and login session key fits
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "cardsLeft" : 0
+        "cardsLeft": 0
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["cardsLeft"] = len(i.deck)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["cardsLeft"] = len(game.player1.deck)
+                elif game.player2_username == request_username:
+                    response["cardsLeft"] = len(game.player2.deck)
                 return response
         # else
         abort(Response(json.dumps({"Message": "Cards Left Unavailable"}), 404))
@@ -466,59 +509,88 @@ def get_cardsleft():
 def pop_deck():
     # pop the top of a user's undrawn deck if username and login session key fits & return
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "card" : "",
-        "cardsLeft" : 0
+        "card": "",
+        "cardsLeft": 0
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                if len(i.deck) > 0:
-                    poppedCard = i.popDeck()
-                    i.addHandCard(poppedCard) #add the popped card to the hand
-                    response["card"] =  poppedCard
-                    response["cardsLeft"] = len(i.deck)
-                    return response
-                else:
-                    return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if len(game.player1.deck) > 0:
+                        poppedCard = game.player1.popDeck()
+                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                        response["card"] = poppedCard
+                        response["cardsLeft"] = len(game.player1.deck)
+                        return response
+                    else:
+                        return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+                elif game.player2_username == request_username:
+                    if len(game.player2.deck) > 0:
+                        poppedCard = game.player2.popDeck()
+                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                        response["card"] = poppedCard
+                        response["cardsLeft"] = len(game.player2.deck)
+                        return response
+                    else:
+                        return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+                return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
+
 
 @app.route('/new_deck', methods=["POST"])
 @cross_origin()
 def new_deck():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "deck" : []
+        "deck": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                i.newDeck()
-                response["deck"] = i.deck
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    game.player1.newDeck()
+                    response["deck"] = game.player1.deck
+                elif game.player2_username == request_username:
+                    game.player2.newDeck()
+                    response["deck"] = game.player2.deck
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
+
 
 @app.route('/new_crisis', methods=["POST"])
 @cross_origin()
 def new_crisis():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "crisis" : ""
+        "crisis": ""
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["crisis"] = i.newCrisis()
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["crisis"] = game.player1.newCrisis()
+                elif game.player2_username == request_username:
+                    response["crisis"] = game.player2.newCrisis()
                 return response
         # else
         abort(Response(json.dumps({"Message": "New Crisis Unavailable"}), 404))
@@ -535,15 +607,21 @@ def new_deck_size():
 def get_crisis():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "crisis" : ""
+        "crisis": ""
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["crisis"] = i.crisis
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["crisis"] = game.player1.crisis
+                elif game.player2_username == request_username:
+                    response["crisis"] = game.player2.crisis
                 return response
         # else
         abort(Response(json.dumps({"Message": "Crisis Unavailable"}), 404))
@@ -554,46 +632,68 @@ def get_crisis():
 def get_hand():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "hand" : []
+        "hand": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["hand"] = i.hand
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["hand"] = game.player1.hand
+                elif game.player2_username == request_username:
+                    response["hand"] = game.player2.hand
                 return response
         # else
         abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
+
 
 @app.route('/play_hand', methods=["POST"])
 @cross_origin()
 def play_hand():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     hand_index = request.json['card_index']
     response = {
-        "cardPlayed" : "",
-        "hand" : [],
-        "discard" : [],
-        "cardsLeft" : 0,
+        "cardPlayed": "",
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                if (hand_index < 0) or (hand_index >= len(i.hand)):
-                    abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
-                else:
-                    cardPlayed = i.hand.pop(hand_index)
-                    i.discard = [cardPlayed] + i.discard
-                    response["hand"] = i.hand
-                    response["discard"] = i.discard
-                    response["cardsLeft"] = len(i.deck)
-                    response["cardPlayed"] = cardPlayed
-                    return response
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player1.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player1.hand.pop(hand_index)
+                        game.player1.discard = [cardPlayed] + game.player1.discard
+                        response["hand"] = game.player1.hand
+                        response["discard"] = game.player1.discard
+                        response["cardsLeft"] = len(game.player1.deck)
+                        response["cardPlayed"] = cardPlayed
+                        return response
+                elif game.player2_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player2.hand.pop(hand_index)
+                        game.player2.discard = [cardPlayed] + game.player2.discard
+                        response["hand"] = game.player2.hand
+                        response["discard"] = game.player2.discard
+                        response["cardsLeft"] = len(game.player2.deck)
+                        response["cardPlayed"] = cardPlayed
+                        return response
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
@@ -603,18 +703,48 @@ def play_hand():
 def get_discard():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "discard" : []
+        "discard": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["discard"] = ["discard-placeholder"] if (len(i.discard) < 1) else i.discard
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["discard"] = ["discard-placeholder"] if (len(game.player1.discard) < 1) else game.player1.discard
+                elif game.player2_username == request_username:
+                    response["discard"] = ["discard-placeholder"] if (len(game.player2.discard) < 1) else game.player2.discard
                 return response
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
+
+
+@app.route('/game_status', methods=["POST"])
+@cross_origin()
+def game_status():
+    # returns if user is a player of the provided game id for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    game_id = request.json['game_id']
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                try:
+                    game: Game = games[game_id]
+                except KeyError:
+                    return "Not Found"
+                if game.player1_username == your_username or game.player2_username == your_username:
+                    return "Playing"
+                else:
+                    return "Not Playing"
+        # else
+        abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
+
 
 if __name__ == '__main__':
     socketio.run(app, allow_unsafe_werkzeug=True)

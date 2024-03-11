@@ -4,13 +4,28 @@ import CardHolder from "./components/CardHolder.vue";
 import BigCardHolder from "./components/BigCardHolder.vue";
 import PlayerSide from "./components/PlayerSide.vue";
 import OpponentSide from "./components/OpponentSide.vue"
+import {playerCardsStore} from "./components/PlayerCardsStore"
+import {opponentFieldStore} from "./components/OpponentFieldStore";
 
 export default defineComponent({
   name: "GameAreaApp",
   components: {OpponentSide, PlayerSide, BigCardHolder, CardHolder},
   include:{
     CardHolder,
-  }
+  },
+  created() {
+    this.$watch(
+        () => this.$route.params,
+        (_to, _prev) => {
+          playerCardsStore.uuid = this.$route.params.gameid as string
+          opponentFieldStore.uuid = this.$route.params.gameid as string
+          // todo use game_status backend call which returns if you are playing, spectating or the game does not exist
+        }
+    )
+    playerCardsStore.uuid = this.$route.params.gameid as string
+    opponentFieldStore.uuid = this.$route.params.gameid as string
+
+  },
 })
 </script>
 
@@ -22,6 +37,7 @@ export default defineComponent({
 
   <div class="gamearea">
 
+    <!-- todo: display usernames to indicate who is who -->
     <OpponentSide class="opponent-side"/>
     <player-side class="player-side"/>
 

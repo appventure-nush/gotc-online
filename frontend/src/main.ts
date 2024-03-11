@@ -39,14 +39,14 @@ const HelpArea = HelpAreaApp
 const routes = [
     { path: '/', component: FrontPage },
     { path: '/MainPage', component: MainPage },
-    { path: '/GameArea', component: GameArea},
+    { path: '/GameArea/:gameid', component: GameArea},
     { path: '/HelpArea', component: HelpArea}
 ]
 
 // 3. Create the router instance and pass the `routes` option
 // You can pass in additional options here, but let's
 // keep it simple for now.
-const router = createRouter({
+export const router = createRouter({
     // 4. Provide the history implementation to use.
     history: createWebHistory(
         import.meta.env.VITE_BASEPATH
