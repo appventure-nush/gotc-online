@@ -527,6 +527,11 @@ def pop_deck():
                         game.player1.addHandCard(poppedCard)  # add the popped card to the hand
                         response["card"] = poppedCard
                         response["cardsLeft"] = len(game.player1.deck)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "cardsLeft": len(game.player1.deck), "discard": game.player1.discard}
+                        socketio.emit("update opponent state", updater)
+
                         return response
                     else:
                         return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
@@ -536,6 +541,11 @@ def pop_deck():
                         game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                         response["card"] = poppedCard
                         response["cardsLeft"] = len(game.player2.deck)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "cardsLeft": len(game.player2.deck), "discard": game.player2.discard}
+                        socketio.emit("update opponent state", updater)
+
                         return response
                     else:
                         return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
@@ -563,9 +573,17 @@ def new_deck():
                 if game.player1_username == request_username:
                     game.player1.newDeck()
                     response["deck"] = game.player1.deck
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "cardsLeft": len(game.player1.deck)}
+                    socketio.emit("update opponent state", updater)
                 elif game.player2_username == request_username:
                     game.player2.newDeck()
                     response["deck"] = game.player2.deck
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "cardsLeft": len(game.player2.deck)}
+                    socketio.emit("update opponent state", updater)
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
@@ -574,7 +592,7 @@ def new_deck():
 @app.route('/new_crisis', methods=["POST"])
 @cross_origin()
 def new_crisis():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # create a crisis for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     request_username = request.json["request_username"]
@@ -589,8 +607,14 @@ def new_crisis():
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
                     response["crisis"] = game.player1.newCrisis()
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "crisis": response["crisis"]}
+                    socketio.emit("update opponent state", updater)
                 elif game.player2_username == request_username:
                     response["crisis"] = game.player2.newCrisis()
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "crisis": response["crisis"]}
+                    socketio.emit("update opponent state", updater)
                 return response
         # else
         abort(Response(json.dumps({"Message": "New Crisis Unavailable"}), 404))
@@ -605,7 +629,7 @@ def new_deck_size():
 @app.route('/get_crisis', methods=["POST"])
 @cross_origin()
 def get_crisis():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # return crisis for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     request_username = request.json["request_username"]
@@ -630,7 +654,7 @@ def get_crisis():
 @app.route('/get_hand', methods=["POST"])
 @cross_origin()
 def get_hand():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # return hand for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     request_username = request.json["request_username"]
@@ -682,6 +706,12 @@ def play_hand():
                         response["discard"] = game.player1.discard
                         response["cardsLeft"] = len(game.player1.deck)
                         response["cardPlayed"] = cardPlayed
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck)}
+                        socketio.emit("update opponent state", updater)
+
                         return response
                 elif game.player2_username == request_username:
                     if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
@@ -693,6 +723,12 @@ def play_hand():
                         response["discard"] = game.player2.discard
                         response["cardsLeft"] = len(game.player2.deck)
                         response["cardPlayed"] = cardPlayed
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck)}
+                        socketio.emit("update opponent state", updater)
+
                         return response
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
@@ -722,6 +758,36 @@ def get_discard():
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
+@app.route('/get_opponent_state', methods=["POST"])
+@cross_origin()
+def get_opponent_state():
+    # returns opponent's game state of the provided game id for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    game_id = request.json['game_id']
+    response = {}
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player2_username == your_username:
+                    response["hand"] = game.player1.hand
+                    response["cardsLeft"] = len(game.player1.deck)
+                    response["crisis"] = game.player1.crisis
+                    response["discard"] = ["discard-placeholder"] if (len(game.player1.discard) < 1) else game.player1.discard
+                elif game.player1_username == your_username:
+                    response["hand"] = game.player2.hand
+                    response["cardsLeft"] = len(game.player2.deck)
+                    response["crisis"] = game.player2.crisis
+                    response["discard"] = ["discard-placeholder"] if (len(game.player2.discard) < 1) else game.player2.discard
+                response["uuid"] = game_id
+                response["username"] = your_username
+                socketio.emit("update opponent state", response)
+                return response
+
+        # else
+        abort(Response(json.dumps({"Message": "Getting Unavailable"}), 404))
 
 @app.route('/game_status', methods=["POST"])
 @cross_origin()

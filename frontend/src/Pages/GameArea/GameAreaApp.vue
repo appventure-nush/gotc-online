@@ -6,6 +6,9 @@ import PlayerSide from "./components/PlayerSide.vue";
 import OpponentSide from "./components/OpponentSide.vue"
 import {playerCardsStore} from "./components/PlayerCardsStore"
 import {opponentFieldStore} from "./components/OpponentFieldStore";
+import {userSignInStore} from "../../components/UserSignInStore";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export default defineComponent({
   name: "GameAreaApp",
@@ -20,11 +23,40 @@ export default defineComponent({
           playerCardsStore.uuid = this.$route.params.gameid as string
           opponentFieldStore.uuid = this.$route.params.gameid as string
           // todo use game_status backend call which returns if you are playing, spectating or the game does not exist
+
+          fetch(`${BACKEND_URL}/get_opponent_state`, {
+            method: "POST",
+            body: JSON.stringify({
+              username : userSignInStore.username,
+              game_id: this.$route.params.gameid as string,
+              login_session_key : userSignInStore.login_session_key()
+            }),
+            headers: {
+              "Content-type": "application/json; charset=UTF-8"
+            }
+          })
+
+          // crisis isn't showing up so we fix it
+          playerCardsStore.getCrisis()
         }
     )
     playerCardsStore.uuid = this.$route.params.gameid as string
     opponentFieldStore.uuid = this.$route.params.gameid as string
 
+    fetch(`${BACKEND_URL}/get_opponent_state`, {
+      method: "POST",
+      body: JSON.stringify({
+        username : userSignInStore.username,
+        game_id: this.$route.params.gameid as string,
+        login_session_key : userSignInStore.login_session_key()
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+
+    // crisis isn't showing up so we fix it
+    playerCardsStore.getCrisis()
   },
 })
 </script>
