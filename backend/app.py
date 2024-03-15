@@ -116,6 +116,10 @@ class Game:
     def __init__(self, player1_username, player2_username, internal_id):
         self.player1 = Player(player1_username)
         self.player2 = Player(player2_username)
+        while self.player1.crisis == self.player2.crisis:
+            # crises cannot be equal
+            self.player1 = Player(player1_username)
+            self.player2 = Player(player2_username)
         self.player1_username = player1_username
         self.player2_username = player2_username
 
@@ -811,53 +815,19 @@ def get_discard():
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
                     response["discard"] = ["discard-placeholder"] if (
-                                len(game.player1.discard) < 1) else game.player1.discard
+                            len(game.player1.discard) < 1) else game.player1.discard
                 elif game.player2_username == request_username:
                     response["discard"] = ["discard-placeholder"] if (
-                                len(game.player2.discard) < 1) else game.player2.discard
+                            len(game.player2.discard) < 1) else game.player2.discard
                 return response
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
 
-@app.route('/get_opponent_state', methods=["POST"])
+@app.route('/game_init', methods=["POST"])
 @cross_origin()
-def get_opponent_state():
-    # returns opponent's game state of the provided game id for the user whose LSK and username fit
-    sent_login_sesh_key = request.json['login_session_key']
-    your_username = request.json['username']
-    game_id = request.json['game_id']
-    response = {}
-    if request.method == "POST":
-        for i in logged_in:
-            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == your_username) and keys_equal:
-                game: Game = games[game_id]
-                if game.player2_username == your_username:
-                    response["hand"] = game.player1.hand
-                    response["cardsLeft"] = len(game.player1.deck)
-                    response["crisis"] = game.player1.crisis
-                    response["discard"] = ["discard-placeholder"] if (
-                                len(game.player1.discard) < 1) else game.player1.discard
-                elif game.player1_username == your_username:
-                    response["hand"] = game.player2.hand
-                    response["cardsLeft"] = len(game.player2.deck)
-                    response["crisis"] = game.player2.crisis
-                    response["discard"] = ["discard-placeholder"] if (
-                                len(game.player2.discard) < 1) else game.player2.discard
-                response["uuid"] = game_id
-                response["username"] = your_username
-                socketio.emit("update opponent state", response)
-                return response
-
-        # else
-        abort(Response(json.dumps({"Message": "Getting Unavailable"}), 404))
-
-
-@app.route('/game_status', methods=["POST"])
-@cross_origin()
-def game_status():
-    # returns if user is a player of the provided game id for the user whose LSK and username fit
+def game_init():
+    # Initialises the game for the user whose LSK and username fit. 1 person per call, called 2 times.
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     game_id = request.json['game_id']
@@ -870,8 +840,96 @@ def game_status():
                 except KeyError:
                     return "Not Found"
                 if game.player1_username == your_username or game.player2_username == your_username:
-                    return "Playing"
+                    if game.player1.crisis > game.player2.crisis and game.player1_username == your_username:
+                        if len(game.player1.deck) == 46:  # fresh game, should initialise
+                            for q in range(4):
+                                game.player1.addHandCard(game.player1.popDeck())
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player1.hand,
+                                                            "cardsLeft": len(game.player1.deck),
+                                                            "field": game.player1.field,
+                                                            "discard": ["discard-placeholder"] if (
+                                                                    len(game.player1.discard) < 1
+                                                            ) else game.player1.discard,
+                                                            "crisis": game.player1.crisis,
+                                                            "uuid": game.internal_id})
+                        socketio.emit("update opponent state", {"username": game.player2_username,
+                                                                "cardsLeft": len(game.player1.deck),
+                                                                "field": game.player1.field,
+                                                                "discard": ["discard-placeholder"] if (
+                                                                        len(game.player1.discard) < 1
+                                                                ) else game.player1.discard,
+                                                                "crisis": game.player1.crisis,
+                                                                "uuid": game.internal_id})
+                        return "First"
+                    elif game.player1.crisis < game.player2.crisis and game.player1_username == your_username:
+                        if len(game.player1.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player1.addHandCard(game.player1.popDeck())
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player1.hand,
+                                                            "cardsLeft": len(game.player1.deck),
+                                                            "field": game.player1.field,
+                                                            "discard": ["discard-placeholder"] if (
+                                                                    len(game.player1.discard) < 1
+                                                            ) else game.player1.discard,
+                                                            "crisis": game.player1.crisis,
+                                                            "uuid": game.internal_id})
+                        socketio.emit("update opponent state", {"username": game.player2_username,
+                                                                "cardsLeft": len(game.player1.deck),
+                                                                "field": game.player1.field,
+                                                                "discard": ["discard-placeholder"] if (
+                                                                        len(game.player1.discard) < 1
+                                                                ) else game.player1.discard,
+                                                                "crisis": game.player1.crisis,
+                                                                "uuid": game.internal_id})
+                        return "Second"
+                    elif game.player1.crisis > game.player2.crisis and game.player2_username == your_username:
+                        if len(game.player2.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player2.addHandCard(game.player2.popDeck())
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player2.hand,
+                                                            "cardsLeft": len(game.player2.deck),
+                                                            "field": game.player2.field,
+                                                            "discard": ["discard-placeholder"] if (
+                                                                    len(game.player2.discard) < 1
+                                                            ) else game.player2.discard,
+                                                            "crisis": game.player2.crisis,
+                                                            "uuid": game.internal_id})
+                        socketio.emit("update opponent state", {"username": game.player1_username,
+                                                                "cardsLeft": len(game.player2.deck),
+                                                                "field": game.player2.field,
+                                                                "discard": ["discard-placeholder"] if (
+                                                                        len(game.player2.discard) < 1
+                                                                ) else game.player2.discard,
+                                                                "crisis": game.player2.crisis,
+                                                                "uuid": game.internal_id})
+                        return "Second"
+                    else:  # player 2 crisis bigger and you are player 2
+                        if len(game.player2.deck) == 46:  # fresh game, should initialise
+                            for q in range(4):
+                                game.player2.addHandCard(game.player2.popDeck())
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player2.hand,
+                                                            "cardsLeft": len(game.player2.deck),
+                                                            "field": game.player2.field,
+                                                            "discard": ["discard-placeholder"] if (
+                                                                    len(game.player2.discard) < 1
+                                                            ) else game.player2.discard,
+                                                            "crisis": game.player2.crisis,
+                                                            "uuid": game.internal_id})
+                        socketio.emit("update opponent state", {"username": game.player1_username,
+                                                                "cardsLeft": len(game.player2.deck),
+                                                                "field": game.player2.field,
+                                                                "discard": ["discard-placeholder"] if (
+                                                                        len(game.player2.discard) < 1
+                                                                ) else game.player2.discard,
+                                                                "crisis": game.player2.crisis,
+                                                                "uuid": game.internal_id})
+                        return "First"
                 else:
+                    # todo: spectator mode
                     return "Not Playing"
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
