@@ -78,6 +78,7 @@ crisis_deck: list[str] = [
     "crisis-6",
 ]
 
+
 class Player:
     def __init__(self, name):
         self.name = name
@@ -135,6 +136,7 @@ class User:
 logged_in: list[User] = []
 queue: list[User] = []
 games: dict = {}
+
 
 def usersListString():
     ret_string = ""
@@ -390,10 +392,10 @@ def get_image():
 def get_number_logged_in():
     return str(len(logged_in))
 
-'''
+
 @app.route('/request_match', methods=['POST'])
 @cross_origin()
-def requestmatch():
+def request_match():
     username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     # first check if logged_in
@@ -409,15 +411,72 @@ def requestmatch():
             requested = request.json['requested_username']
             for i in logged_in:
                 if i.name == requested:
-                    return "Success"  # todo: notify opponent
-            return "User not logged in"
+                    socketio.emit("challenge", {"username": username, "opponent": requested})
+                    return jsonify({"status": "Challenging opponent", "opponent": requested})
+            return jsonify({"status": "Opponent not logged in"})
         abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
-'''
+
+
+@app.route('/accept_match', methods=['POST'])
+@cross_origin()
+def accept_match():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    opponent = i
+                    random_uuid = str(uuid.uuid4())
+                    # can get away with using the same
+                    socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
+                    games[random_uuid] = Game(opponent.name, username, random_uuid)
+                    user.games.append(random_uuid)
+                    opponent.games.append(random_uuid)
+                    return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
+            return jsonify({"status": "Opponent not logged in"})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+
+@app.route('/deny_match', methods=['POST'])
+@cross_origin()
+def deny_match():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    opponent = i
+                    socketio.emit("deny opponent", {"username": username, "opponent": opponent.name})
+                    return jsonify({"status": "Denied opponent", "opponent": opponent.name})
+            return jsonify({"status": "Opponent not logged in"})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
 
 
 @app.route('/random_opponent', methods=['POST'])
 @cross_origin()
-def randomopponent():
+def random_opponent():
     username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     # first check if logged_in
@@ -440,7 +499,7 @@ def randomopponent():
                 opponent = random.choice(queue)
                 queue.remove(opponent)
                 random_uuid = str(uuid.uuid4())
-                socketio.emit("random match request", {"username": opponent.name, "id": random_uuid})
+                socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
                 games[random_uuid] = Game(opponent.name, username, random_uuid)
                 user.games.append(random_uuid)
                 opponent.games.append(random_uuid)
@@ -751,12 +810,15 @@ def get_discard():
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
-                    response["discard"] = ["discard-placeholder"] if (len(game.player1.discard) < 1) else game.player1.discard
+                    response["discard"] = ["discard-placeholder"] if (
+                                len(game.player1.discard) < 1) else game.player1.discard
                 elif game.player2_username == request_username:
-                    response["discard"] = ["discard-placeholder"] if (len(game.player2.discard) < 1) else game.player2.discard
+                    response["discard"] = ["discard-placeholder"] if (
+                                len(game.player2.discard) < 1) else game.player2.discard
                 return response
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
+
 
 @app.route('/get_opponent_state', methods=["POST"])
 @cross_origin()
@@ -775,12 +837,14 @@ def get_opponent_state():
                     response["hand"] = game.player1.hand
                     response["cardsLeft"] = len(game.player1.deck)
                     response["crisis"] = game.player1.crisis
-                    response["discard"] = ["discard-placeholder"] if (len(game.player1.discard) < 1) else game.player1.discard
+                    response["discard"] = ["discard-placeholder"] if (
+                                len(game.player1.discard) < 1) else game.player1.discard
                 elif game.player1_username == your_username:
                     response["hand"] = game.player2.hand
                     response["cardsLeft"] = len(game.player2.deck)
                     response["crisis"] = game.player2.crisis
-                    response["discard"] = ["discard-placeholder"] if (len(game.player2.discard) < 1) else game.player2.discard
+                    response["discard"] = ["discard-placeholder"] if (
+                                len(game.player2.discard) < 1) else game.player2.discard
                 response["uuid"] = game_id
                 response["username"] = your_username
                 socketio.emit("update opponent state", response)
@@ -788,6 +852,7 @@ def get_opponent_state():
 
         # else
         abort(Response(json.dumps({"Message": "Getting Unavailable"}), 404))
+
 
 @app.route('/game_status', methods=["POST"])
 @cross_origin()

@@ -13,19 +13,35 @@ export default defineComponent( {
   methods: {
     enableshow() {
       if (this.userStore.isSignedIn) { // logged in
-        document.getElementById("playdialog").showModal()
+        (document.getElementById("playdialog") as HTMLDialogElement).showModal()
       } else {
         alert("Sign in first.")
       }
     },
     disableshow() {
-      document.getElementById("playdialog").close()
+      (document.getElementById("playdialog") as HTMLDialogElement).close()
     },
-    requestmatch() {
-      // todo
+    async requestmatch() {
+      let x = await fetch(`${BACKEND_URL}/request_match`, {
+        method: "POST",
+        body: JSON.stringify({
+          username: this.userStore.username,
+          login_session_key: localStorage.getItem("LoginSessionKey"),
+          requested_username: (document.getElementById("input") as HTMLInputElement).value
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+          .then((response) => response.json())
+      if (x["status"] == "Opponent not logged in") {
+        alert("Opponent is not logged in.")
+      } else {
+        (document.getElementById("playdialog") as HTMLDialogElement).close();
+        (document.getElementById("connectingdialog") as HTMLDialogElement).show()
+      }
     },
     async randomopponent() {
-
       let x = await fetch(`${BACKEND_URL}/random_opponent`, {
         method: "POST",
         body: JSON.stringify({
@@ -38,9 +54,8 @@ export default defineComponent( {
       })
           .then((response) => response.json())
       if (x["status"] == "Added to queue") {
-        document.getElementById("playdialog").close()
-        document.getElementById("connectingdialog").show()
-
+        (document.getElementById("playdialog") as HTMLDialogElement).close();
+        (document.getElementById("connectingdialog") as HTMLDialogElement).show()
       } else {
         this.$router.push("/GameArea/"+x["id"])
       }
