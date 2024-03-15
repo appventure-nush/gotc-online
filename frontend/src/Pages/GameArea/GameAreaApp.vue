@@ -22,9 +22,9 @@ export default defineComponent({
         (_to, _prev) => {
           playerCardsStore.uuid = this.$route.params.gameid as string
           opponentFieldStore.uuid = this.$route.params.gameid as string
-          // todo use game_status backend call which returns if you are playing, spectating or the game does not exist
+          // todo use game_init backend call which returns if you are first, second, spectating or the game does not exist
 
-          fetch(`${BACKEND_URL}/get_opponent_state`, {
+          fetch(`${BACKEND_URL}/game_init`, {
             method: "POST",
             body: JSON.stringify({
               username : userSignInStore.username,
@@ -35,15 +35,12 @@ export default defineComponent({
               "Content-type": "application/json; charset=UTF-8"
             }
           })
-
-          // crisis isn't showing up so we fix it
-          playerCardsStore.getCrisis()
         }
     )
     playerCardsStore.uuid = this.$route.params.gameid as string
     opponentFieldStore.uuid = this.$route.params.gameid as string
 
-    fetch(`${BACKEND_URL}/get_opponent_state`, {
+    fetch(`${BACKEND_URL}/game_init`, {
       method: "POST",
       body: JSON.stringify({
         username : userSignInStore.username,
@@ -54,9 +51,6 @@ export default defineComponent({
         "Content-type": "application/json; charset=UTF-8"
       }
     })
-
-    // crisis isn't showing up so we fix it
-    playerCardsStore.getCrisis()
   },
 })
 </script>
