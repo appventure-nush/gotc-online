@@ -57,6 +57,13 @@ socket.on("update your state", (args) => {
         if ("hand" in args) {
             state.yourField.handList = args["hand"]
         }
+        // notifications are specific to the person
+        if ("moveNotifier" in args) {
+            state.yourField.moveNotifier = args["moveNotifier"]
+        }
+        if ("enablePlay" in args) {
+
+        }
     }
 })
 

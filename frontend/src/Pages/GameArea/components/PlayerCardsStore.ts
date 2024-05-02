@@ -25,7 +25,8 @@ export const playerCardsStore  = defineStore({
         // field consists of defences & community supports in play
         field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
-        uuid: ""
+        uuid: "",
+        moveNotifier: "Move Notifier"
     }),
     getters: {
 

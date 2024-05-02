@@ -1,14 +1,19 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import {playerCardsStore} from "./PlayerCardsStore";
 
 export default defineComponent({
-  name: "MoveNotifier"
+  name: "MoveNotifier",
+  setup() {
+    const playerCards = playerCardsStore
+    return { playerCards }
+  }
 })
 </script>
 
 <template>
   <div class="movenotif-component-div">
-    <p>Move Notifier</p>
+    <p>{{ playerCards.moveNotifier }}</p>
   </div>
 </template>
 
