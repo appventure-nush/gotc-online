@@ -61,9 +61,6 @@ socket.on("update your state", (args) => {
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier = args["moveNotifier"]
         }
-        if ("enablePlay" in args) {
-
-        }
     }
 })
 

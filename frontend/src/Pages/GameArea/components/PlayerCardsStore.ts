@@ -13,7 +13,7 @@ export const playerCardsStore  = defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: 'playerCards',
     state: () =>({
-        handList : [] as string[],
+        handList : [] as {}[],
         discardDeck : ["back-black"] as string[],
         cardsLeft : 46 as number,
 
@@ -34,7 +34,7 @@ export const playerCardsStore  = defineStore({
     actions:{
         async resetStore() {
             // reset the store to its default values
-            this.handList = [] as string[]
+            this.handList = [] as {}[]
             this.discardDeck = ["back-black"] as string[]
             this.cardsLeft = await this.getStdDeckSize()
         },
@@ -294,7 +294,7 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as string[]
+                    this.handList = json_response["hand"] as {}[]
 
                     return json_response["hand"] as string[]
 
@@ -361,7 +361,7 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as string[]
+                    this.handList = json_response["hand"] as {}[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
 

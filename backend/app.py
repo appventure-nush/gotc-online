@@ -4,6 +4,8 @@ import time
 import threading
 import uuid
 from datetime import datetime
+from typing import Union
+
 from flask import Flask, request, send_file, abort, Response, jsonify
 from flask_cors import CORS, cross_origin
 import json
@@ -85,7 +87,7 @@ class Player:
         self.deck: list[str] = standard_deck.copy()
         random.shuffle(self.deck)  # upon creation of the user, shuffle the deck
         self.crisis: str = random.choice(crisis_deck)  # server side crisis
-        self.hand: list[str] = []  # server side hand
+        self.hand: list[dict[str, Union[str, bool]]] = []  # server side hand
         self.discard: list[str] = []
         self.field: list[str] = []
 
@@ -105,10 +107,18 @@ class Player:
         self.crisis = random.choice(crisis_deck)
         return self.crisis
 
+    def setHandEnablePlayStatus(self, status: bool):
+        handcopy = self.hand.copy()
+        for i in handcopy:
+            i["enablePlay"] = status
+        self.hand = handcopy
+        return self.hand
+
     def addHandCard(self, cardName):
         if len(self.hand) >= 7:
-            self.discard = [self.hand.pop(0)] + self.discard
-        self.hand += [cardName]
+            # todo not only 0
+            self.discard = [self.hand.pop(0)["name"]] + self.discard
+        self.hand += [{"name": cardName, "enablePlay": True}]
         return self.hand
 
 
@@ -763,7 +773,7 @@ def play_hand():
                     if (hand_index < 0) or (hand_index >= len(game.player1.hand)):
                         abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
                     else:
-                        cardPlayed = game.player1.hand.pop(hand_index)
+                        cardPlayed = game.player1.hand.pop(hand_index)["name"]
                         game.player1.discard = [cardPlayed] + game.player1.discard
                         response["hand"] = game.player1.hand
                         response["discard"] = game.player1.discard
@@ -780,7 +790,7 @@ def play_hand():
                     if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
                         abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
                     else:
-                        cardPlayed = game.player2.hand.pop(hand_index)
+                        cardPlayed = game.player2.hand.pop(hand_index)["name"]
                         game.player2.discard = [cardPlayed] + game.player2.discard
                         response["hand"] = game.player2.hand
                         response["discard"] = game.player2.discard
@@ -844,6 +854,7 @@ def game_init():
                         if len(game.player1.deck) == 46:  # fresh game, should initialise
                             for q in range(4):
                                 game.player1.addHandCard(game.player1.popDeck())
+                            game.player1.setHandEnablePlayStatus(True)
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player1.hand,
                                                             "cardsLeft": len(game.player1.deck),
@@ -852,6 +863,8 @@ def game_init():
                                                                     len(game.player1.discard) < 1
                                                             ) else game.player1.discard,
                                                             "crisis": game.player1.crisis,
+                                                            "moveNotifier": "Your crisis has the higher number. You "
+                                                                            "go first.",
                                                             "uuid": game.internal_id})
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -866,6 +879,7 @@ def game_init():
                         if len(game.player1.deck) == 46:  # fresh game, should initialise
                             for q in range(5):
                                 game.player1.addHandCard(game.player1.popDeck())
+                            game.player1.setHandEnablePlayStatus(False)
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player1.hand,
                                                             "cardsLeft": len(game.player1.deck),
@@ -874,6 +888,8 @@ def game_init():
                                                                     len(game.player1.discard) < 1
                                                             ) else game.player1.discard,
                                                             "crisis": game.player1.crisis,
+                                                            "moveNotifier": "Your crisis has the lower number. You "
+                                                                            "go second.",
                                                             "uuid": game.internal_id})
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -888,6 +904,7 @@ def game_init():
                         if len(game.player2.deck) == 46:  # fresh game, should initialise
                             for q in range(5):
                                 game.player2.addHandCard(game.player2.popDeck())
+                            game.player2.setHandEnablePlayStatus(False)
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player2.hand,
                                                             "cardsLeft": len(game.player2.deck),
@@ -896,6 +913,8 @@ def game_init():
                                                                     len(game.player2.discard) < 1
                                                             ) else game.player2.discard,
                                                             "crisis": game.player2.crisis,
+                                                            "moveNotifier": "Your crisis has the lower number. You "
+                                                                            "go second.",
                                                             "uuid": game.internal_id})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
@@ -910,6 +929,7 @@ def game_init():
                         if len(game.player2.deck) == 46:  # fresh game, should initialise
                             for q in range(4):
                                 game.player2.addHandCard(game.player2.popDeck())
+                            game.player2.setHandEnablePlayStatus(True)
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player2.hand,
                                                             "cardsLeft": len(game.player2.deck),
@@ -918,6 +938,8 @@ def game_init():
                                                                     len(game.player2.discard) < 1
                                                             ) else game.player2.discard,
                                                             "crisis": game.player2.crisis,
+                                                            "moveNotifier": "Your crisis has the higher number. You "
+                                                                            "go first.",
                                                             "uuid": game.internal_id})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),

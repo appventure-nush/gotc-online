@@ -36,9 +36,10 @@ export default defineComponent({
 <template>
   <div class="hand-component-div">
     <CardHolder v-for="(card,index) in playerCards.handList"
-                :card-name="card"
-                :key="card+index"
+                :card-name="card['name']"
+                :key="card['name']+index"
                 :play-button-func="()=>{playerCards.playHand(index)}"
+                :enable-play="card['enablePlay']"
                 class="handcard"
     />
   </div>
