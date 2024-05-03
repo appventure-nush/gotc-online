@@ -84,7 +84,7 @@ export default defineComponent({
     </div>
     <div class="opponent-discard">
       <stacked-card-holder class="opponent-discard-stack"
-                           :cards="opponentStore.discard"
+                           :cards="opponentStore.discard.length > 0 ? opponentStore.discard: ['discard-placeholder']"
                            :enable-play = "false"
       />
     </div>

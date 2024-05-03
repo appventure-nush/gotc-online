@@ -82,7 +82,40 @@ crisis_deck: list[str] = [
 
 # get name from id string
 lookup: dict[str, str] = {
-
+    "communitysupport": "Community Support",
+    "event-1": "Racial and Religious Tension",
+    "event-2": "Complaint Culture",
+    "event-3": "Stolen Personal Data",
+    "event-4": "Desensitised Citizens",
+    "event-5": "Disgruntled NSmen",
+    "event-6": "Criminal Collaboration",
+    "event-7": "Blood Bank Runs Dry",
+    "event-8": "Ransomware Attack",
+    "event-9": "Heightened Terrorist Alert",
+    "event-10": "Self Radicalisation",
+    "event-11": "Lone Wolf Attack",
+    "event-12": "Recruiting Desperate People",
+    "civil-1": "Alert Community",
+    "civil-2": "Prepared for Crisis",
+    "civil-3": "Civil Emergency",
+    "digital-1": "Use of Strong Passwords",
+    "digital-2": "Robust Emergency Protocols",
+    "digital-3": "Responsible Social Media Use",
+    "economic-1": "Career Mobility",
+    "economic-2": "Business Resilience",
+    "economic-3": "Financial Aid Schemes",
+    "economic-4": "Increase Surveillance at Maritime Ports",
+    "economic-5": "Skills Upgrading",
+    "military-1": "NSmen on Guard",
+    "military-2": "Increased Security Checks",
+    "military-3": "Naval Convoys",
+    "military-4": "Conduct of Raids",
+    "psychological-1": "Education",
+    "psychological-2": "Attend National Day Celebrations",
+    "psychological-3": "Strong Resolve",
+    "social-1": "Religious Counselling",
+    "social-2": "Neighbourliness",
+    "social-3": "Show of Solidarity"
 }
 
 
@@ -785,10 +818,18 @@ def play_hand():
                             your_move_notifier = "You played Community Support.\nOpponent's turn."
                             opponent_move_notifier = "Opponent played Community Support."
                             next_turn = True
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2"):  # draw 1 card
+                            game.player1.field.append(cardPlayed)
+
+                            poppedCard = game.player1.popDeck()
+                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
                         else:  # todo every other card
                             game.player1.discard = [cardPlayed] + game.player1.discard
-                            your_move_notifier = f"You discarded {cardPlayed}."
-                            opponent_move_notifier = f"Opponent discarded {cardPlayed}."
+                            your_move_notifier = f"You discarded {lookup[cardPlayed]}."
+                            opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
                         if next_turn:
@@ -803,7 +844,7 @@ def play_hand():
                             updater = {"uuid": game_id, "username": game.player2_username,
                                        "hand": game.player2.hand, "discard": game.player2.discard,
                                        "cardsLeft": len(game.player2.deck), "field": game.player2.field}
-                            opponent_move_notifier += f"\nYour turn. You drew {poppedCard}."
+                            opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
                             socketio.emit("update your state", updater)
 
                         response["hand"] = game.player1.hand
@@ -828,13 +869,21 @@ def play_hand():
 
                         if cardPlayed == "communitysupport":
                             game.player2.field.append("communitysupport")
-                            your_move_notifier = "You played Community Support."
-                            opponent_move_notifier = "Opponent played Community Support.\nYour turn."
+                            your_move_notifier = "You played Community Support.\nOpponent's turn."
+                            opponent_move_notifier = "Opponent played Community Support."
+                            next_turn = True
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2"):  # draw 1 card
+                            game.player2.field.append(cardPlayed)
+
+                            poppedCard = game.player2.popDeck()
+                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         else:  # todo every other card
                             game.player2.discard = [cardPlayed] + game.player2.discard
-                            your_move_notifier = f"You discarded {cardPlayed}."
-                            opponent_move_notifier = f"Opponent discarded {cardPlayed}."
+                            your_move_notifier = f"You discarded {lookup[cardPlayed]}."
+                            opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
                         if next_turn:
@@ -849,7 +898,7 @@ def play_hand():
                             updater = {"uuid": game_id, "username": game.player1_username,
                                        "hand": game.player1.hand, "discard": game.player1.discard,
                                        "cardsLeft": len(game.player1.deck), "field": game.player1.field}
-                            opponent_move_notifier += f"\nYour turn. You drew {poppedCard}."
+                            opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
                             socketio.emit("update your state", updater)
 
                         response["hand"] = game.player2.hand
@@ -887,11 +936,9 @@ def get_discard():
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
-                    response["discard"] = ["discard-placeholder"] if (
-                            len(game.player1.discard) < 1) else game.player1.discard
+                    response["discard"] = game.player1.discard
                 elif game.player2_username == request_username:
-                    response["discard"] = ["discard-placeholder"] if (
-                            len(game.player2.discard) < 1) else game.player2.discard
+                    response["discard"] = game.player2.discard
                 return response
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
@@ -920,14 +967,15 @@ def game_init():
                                 game.player1.addHandCard(game.player1.popDeck())
                             game.player1.setHandEnablePlayStatus(True)
                             notifier = f"Your crisis has the higher number. You are going first. Drew {game.player2.hand[-1]['name']}."
-                        socketio.emit("update your state", {"username": your_username,
-                                                            "hand": game.player1.hand,
-                                                            "cardsLeft": len(game.player1.deck),
-                                                            "field": game.player1.field,
-                                                            "discard": game.player1.discard,
-                                                            "crisis": game.player1.crisis,
-                                                            "moveNotifier": notifier,
-                                                            "uuid": game.internal_id})
+                        returned = {"username": your_username,
+                                    "hand": game.player1.hand,
+                                    "cardsLeft": len(game.player1.deck),
+                                    "field": game.player1.field,
+                                    "discard": game.player1.discard,
+                                    "crisis": game.player1.crisis,
+                                    "moveNotifier": notifier,
+                                    "uuid": game.internal_id}
+                        socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
                                                                 "field": game.player1.field,
@@ -941,14 +989,15 @@ def game_init():
                                 game.player1.addHandCard(game.player1.popDeck())
                             game.player1.setHandEnablePlayStatus(False)
                             notifier = f"Your crisis has the lower number.  You are going second."
-                        socketio.emit("update your state", {"username": your_username,
-                                                            "hand": game.player1.hand,
-                                                            "cardsLeft": len(game.player1.deck),
-                                                            "field": game.player1.field,
-                                                            "discard": game.player1.discard,
-                                                            "crisis": game.player1.crisis,
-                                                            "moveNotifier": notifier,
-                                                            "uuid": game.internal_id})
+                        returned = {"username": your_username,
+                                    "hand": game.player1.hand,
+                                    "cardsLeft": len(game.player1.deck),
+                                    "field": game.player1.field,
+                                    "discard": game.player1.discard,
+                                    "crisis": game.player1.crisis,
+                                    "moveNotifier": notifier,
+                                    "uuid": game.internal_id}
+                        socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
                                                                 "field": game.player1.field,
