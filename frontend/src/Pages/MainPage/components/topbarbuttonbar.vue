@@ -1,16 +1,26 @@
 <script lang="ts">
 import {defineComponent} from "vue";
 import {userSignInStore} from "../../../components/UserSignInStore";
+import {mainPageStore} from "../MainPageStore";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export default defineComponent( {
   data() {
     return {
-      userStore : userSignInStore
+      userStore : userSignInStore,
+      mainPageStore: mainPageStore
+    }
+  },
+  computed:{
+    signInPromptButtonText : function(){
+      return this.userStore.isSignedIn ? this.userStore.username : "Sign In"
     }
   },
   methods: {
+    toggleSignInPrompt(){
+      mainPageStore.showSignInPrompt=!mainPageStore.showSignInPrompt
+    },
     enableshow() {
       if (this.userStore.isSignedIn) { // logged in
         (document.getElementById("playdialog") as HTMLDialogElement).showModal()
@@ -67,31 +77,33 @@ export default defineComponent( {
 
 <template>
   <div class="btn-group">
-    <router-link to="/HelpArea" v-slot="{href, route, navigate}" class="nav help">
+    <router-link to="/HelpArea" class="nav help">
       <div class="navdiv">HELP</div>
     </router-link>
-    <router-link to="/" v-slot="{href, route, navigate}" class="nav replay">
+    <router-link to="/" class="nav replay">
       <div class="navdiv">REPLAY</div>
     </router-link>
-    <router-link to="/" v-slot="{href, route, navigate}" class="nav ladder">
+    <router-link to="/" class="nav ladder">
       <div class="navdiv">LADDER</div>
     </router-link>
     <!-- <router-link to="/GameArea" v-slot="{href, route, navigate}" class="nav play"> -->
-    <a class="nav play" id="play" @click="this.enableshow()"> <!-- since we dont want to use the router immediately -->
+    <a class="nav play" id="play" @click="enableshow()"> <!-- since we dont want to use the router immediately -->
       <div class="navdiv">PLAY</div>
-      <dialog id="playdialog">
+      <dialog id="playdialog" class="playdialog">
         <form>
           <header style="background-color:#000;color:#fff;">
-            <button formmethod="dialog" @click="this.disableshow()" class="close-button topright">&times;</button>
+            <button formmethod="dialog" @click="disableshow()" class="close-button topright">X</button>
           </header>
           <div class="enclosedialog">
             <div class="center">
-              <button class="enclosedialog" @click="this.randomopponent()" type='button'>Random Opponent</button>
+              <button class="enclosedialog" @click="randomopponent()" type='button'>Random Opponent</button>
               <button class="enclosedialog" @click="$router.push('/GameArea/default')">VS Computer</button>
             </div>
+            <br>
             <div class="center dialogtext">OR<br></div>
-            <div class="dialogtext">Send play request to</div> <br>
-            <div class="center"><input id="input"/><button class="enclosedialog" @click="this.requestmatch()" type='button'>Send</button></div>
+            <div class="dialogtext">Send play request to</div>
+            <br>
+            <div class="center"><input id="input"/><button class="enclosedialog" @click="requestmatch()" type='button'>Send</button></div>
           </div>
         </form>
       </dialog>
@@ -102,17 +114,30 @@ export default defineComponent( {
     </dialog>
     <!-- </router-link> -->
 
-
   </div>
+
+  <a @click="toggleSignInPrompt" class="sign-in-option">
+    <div v-if="userStore.isSignedIn"
+         style="position: relative;top: 0;font-size: .8em;padding: .1em 0;overflow: hidden; text-overflow: ellipsis;">
+      Signed In as:<br>
+      {{userStore.username}}
+    </div>
+    <div v-else
+         style="position: relative;top: .5em;height: fit-content;">
+      Sign In
+    </div>
+  </a>
+
 </template>
 
 <style scoped>
 
 .nav{
   display: inline-block;
-  font-size: 20pt;
+  font-size: 21pt;
   border-left: 1px white solid;
   border-right: 1px white solid;
+  color: white;
   height: 1.2em;
   width: 5em;
   text-align: center;
@@ -123,32 +148,36 @@ export default defineComponent( {
   vertical-align: middle;
 }
 
-.help{
-  color: white;
-}
 .help:hover{
-  color: #31c3ff;
+  background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
 }
 
-.replay{
-  color: white;
-}
 .replay:hover{
-  color: #31c3ff;
+  background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
 }
 
-.ladder{
-  color: white;
-}
 .ladder:hover{
-  color: #31c3ff;
+  background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
+}
+
+.playdialog{
+  background-color: #588B8B;
+  color: black;
+}
+
+.playdialog button{
+  background-color: #F28F3B;
+  color: black;
+}
+.playdialog button:hover{
+  border-color: #C8553D;
 }
 
 .play{
-  color: greenyellow;
+  font-weight: 700;
 }
 .play:hover{
-  color: mediumspringgreen;
+  background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
 }
 
 .center{
@@ -160,7 +189,7 @@ export default defineComponent( {
     color: black;
   }
   .dialogtext {
-    color: white;
+    color: black;
   }
 }
 
@@ -168,12 +197,19 @@ export default defineComponent( {
 .enclosedialog {
   font-size: 11pt;
 }
+.enclosedialog button {
+  margin: 0 .5em;
+}
 
 .close-button {
   border: none;
-  width: 25pt;
-  height: 25pt;
-  //background-color: #ff0000;
+  /* width: 25pt; */
+  /* height: 25pt; */
+  padding: 0;
+  font-weight: bold;
+  font-size: .9em;
+  aspect-ratio: 1;
+  height: 1.2em;
 }
 
 .topright {
@@ -185,5 +221,19 @@ export default defineComponent( {
 dialog[open]::backdrop {
   background: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) );
 }
+
+.sign-in-option{
+  display: flex;
+  font-size: 21pt;
+  color: white;
+  height: 2em;
+  width: 12rem;
+  text-align: center;
+  justify-content: center;
+}
+.sign-in-option:hover{
+  background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
+}
+
 
 </style>

@@ -86,8 +86,8 @@ export default defineComponent({
 
 .pile-component-card-wrapper{
   position: relative;
-  width: 40%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 .pile-component-card-wrapper>.discardpile{

@@ -1,9 +1,22 @@
-<script setup lang="ts">
+<script lang="ts">
 
-import topbarbuttonbar from "./components/topbarbuttonbar.vue";
+import {defineComponent} from "vue";
 import userform from "../../components/userform.vue";
+import topbarbuttonbar from "./components/topbarbuttonbar.vue";
+import {mainPageStore} from "./MainPageStore";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+export default defineComponent({
+  components:{
+    userform, topbarbuttonbar
+  },
+  computed:{
+    showSignInDialog(){
+      return mainPageStore.signInPrompDisplay
+    }
+  }
+})
 
 </script>
 
@@ -12,42 +25,33 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
     <div class="topbar">
       <p class="gotc-online-pseudologo">GOTC<br>ONLINE</p>
       <topbarbuttonbar/>
-      <userform/>
+      <div class="userform-div"><userform/></div>
     </div>
   </div>
 </template>
 
 <style scoped>
 
-
+.userform-div{
+  display: v-bind(showSignInDialog);
+  top: 10%;
+  position: absolute;
+  right: 5%;
+  flex-direction: column;
+  background: #80808080;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  row-gap: .5em;
+}
 
 .topbar .gotc-online-pseudologo{
   text-align: center;
-  color: #c1f773ff;
+  color: white;
   font-size: 2.5vh;
   font-weight: 600;
-}
-
-/* :deep() means that this css will also be recursively applied to the components of components used in this vue component */
-:deep(button) {
-  border-radius: 10pt;
-  background-color: #d9c779ff; /* Green background */
-  border: 5px solid #cd931bff; /* Green border */
-  color: black; /* White text */
-  padding: 0.5vh 0.5vw; /* Some padding */
-  cursor: pointer; /* Pointer/hand icon */
-  float: left; /* Float the buttons side by side */
-
-  width: 120pt ;
-  text-align: center;
-
-  font-size: 3vh;
-
-  transition: border-color 0.3s;
-}
-
-:deep(button:hover){
-  border-color: firebrick;
+  font-style: italic;
+  width: 12rem;
 }
 
 
@@ -63,15 +67,15 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 .topbar{
   height: 8vh;
-  background-color: #964e44ff;
+  background-color: #C8553D;
   top: 0;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  padding-left: 5vw;
-  padding-right: 5vw;
+  padding-left: 10vw;
+  padding-right: 10vw;
 }
 
 </style>

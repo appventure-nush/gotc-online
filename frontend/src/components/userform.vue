@@ -254,13 +254,36 @@ export default defineComponent({
 </script>
 
 <template>
-  <p style="border: white; border-width: 5px" id = "userform_status_top">{{ userform_status_top_text }}</p>
-  <input type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">&nbsp;
-  <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button> <br>
+  <p class="userform-status top" id="userform_status_top">{{ userform_status_top_text }}</p>
+  <input class="userform-input" type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">
+  <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button>
   <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
-  <p style="border: white; border-width: 5px" id = "userform_status_bottom">{{ result }}</p>
+  <p class="userform-status bottom" id="userform_status_bottom">{{ result }}</p>
 </template>
 
 <style scoped>
-  @import "../style.css";
+
+  .userform-status{
+    color: white;
+  }
+
+  .top{
+    font-size: 1.3rem;
+    margin: .1em 0;
+  }
+
+  .userform-input{
+    font-size: 1rem;
+  }
+
+  button{
+    font-size: 1.2rem;
+    padding: .25rem .5rem !important;
+  }
+
+  .bottom{
+    font-size: 1.1rem;
+    margin: .1em 0;
+  }
+
 </style>

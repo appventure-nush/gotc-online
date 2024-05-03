@@ -83,7 +83,8 @@ export default defineComponent({
   width: 100%;
   top: 0;
   left: 0;
-  background-color: maroon;
+  background-color: white;
+  max-height: 60vw;
 
   font-family: "Exo 2", serif;
 }
