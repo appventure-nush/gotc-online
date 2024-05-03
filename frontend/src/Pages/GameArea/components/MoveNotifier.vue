@@ -13,7 +13,7 @@ export default defineComponent({
 
 <template>
   <div class="movenotif-component-div">
-    <p>{{ playerCards.moveNotifier }}</p>
+    <p class="allowlinebreaks-p">{{ playerCards.moveNotifier }}</p>
   </div>
 </template>
 
@@ -23,6 +23,10 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
   justify-content: space-evenly;
+}
+
+.allowlinebreaks-p {
+  white-space: pre-line;
 }
 
 </style>

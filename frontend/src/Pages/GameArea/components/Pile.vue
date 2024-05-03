@@ -68,7 +68,7 @@ export default defineComponent({
     </div>
 
     <div class="pile-component-card-wrapper" v-on:mouseover="discHover=true" v-on:mouseout="discHover=false">
-      <StackedCardHolder class="pile-component-card discardpile" :cards="playerCards.discardDeck" :enable-play="false"/>
+      <StackedCardHolder class="pile-component-card discardpile" :cards="playerCards.discardDeck.length > 0 ? playerCards.discardDeck : ['discard-placeholder']" :enable-play="false"/>
     </div>
 
 

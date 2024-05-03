@@ -79,6 +79,10 @@ socket.on("update opponent state", (args) => {
         if ("field" in args) {
             state.oppField.field = args["field"]
         }
+        // notifications are specific to the person
+        if ("moveNotifier" in args) {
+            state.yourField.moveNotifier = args["moveNotifier"]
+        }
     }
 })
 

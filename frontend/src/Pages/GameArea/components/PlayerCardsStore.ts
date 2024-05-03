@@ -364,6 +364,8 @@ export const playerCardsStore  = defineStore({
                     this.handList = json_response["hand"] as {}[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
+                    this.field = json_response["field"] as string[]
+                    this.moveNotifier = json_response["moveNotifier"] as string
 
                     return json_response["cardPlayed"] as string
 

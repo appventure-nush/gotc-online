@@ -77,7 +77,7 @@ export default defineComponent({
     </div>
     <div class="opponent-comunity-support">
       <stacked-card-holder class="community-support-stack"
-                           :cards="communitySupportList > 0 ? communitySupportList : ['communitysupport-placeholder']"
+                           :cards="communitySupportList.length > 0 ? communitySupportList : ['communitysupport-placeholder']"
                            rename-play="Discard"
                            :block-play="communitySupportList.length < 1"
       />
