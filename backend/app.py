@@ -154,9 +154,14 @@ class Player:
 
     def addHandCard(self, cardName):
         if len(self.hand) >= 7:
-            # todo not only 0
+            # todo not only 0 (only discard at end of turn)
             self.discard = [self.hand.pop(0)["name"]] + self.discard
-        self.hand += [{"name": cardName, "enablePlay": True}]
+        self.hand.append({"name": cardName, "enablePlay": True,  # "blockPlay": False, # can play card without effect
+                          # these will be set later
+                          # everywhere that could affect this (eg draw card) will be accompanied by a recompute call
+                          # we just cannot call it here because this is Player not Game
+                          "requiresDialogNormal": False, "requiresDialogDefence": False,
+                          "requiresDialogField": False, "requiresDialogHand": False})
         return self.hand
 
 
@@ -170,8 +175,79 @@ class Game:
             self.player2 = Player(player2_username)
         self.player1_username = player1_username
         self.player2_username = player2_username
+        self.gofirst = self.player1_username if self.player1.crisis > self.player2.crisis else self.player2_username
 
         self.internal_id = internal_id
+
+    def recomputeBlockAndDialogStatus(self):
+        handcopy = self.player1.hand.copy()
+        for i in handcopy:
+            # [1 CSC:] Draw 2 additional cards OR Take any card from your discard pile and place it back into your hand
+            if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
+                if len(self.player1.discard) == 0:
+                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                else:
+                    i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
+                    # for example to win the game
+            # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
+            if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+                i["requiresDialogDefence"] = self.player2.field.count("communitysupport") <= 1
+                if i["requiresDialogDefence"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+            # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
+            if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
+                i["requiresDialogField"] = self.player2.field.count("communitysupport") <= 2
+                if i["requiresDialogField"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+            # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
+            if i["name"] in ("event-1", "event-3", "event-4"):
+                i["requiresDialogHand"] = len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0
+                if i["requiresDialogHand"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+
+        self.player1.hand = handcopy
+
+        handcopy = self.player2.hand.copy()
+        for i in handcopy:
+            # [1 CSC:] Draw 2 additional cards OR Take any card from your discard pile and place it back into your hand
+            if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                i["requiresDialogNormal"] = self.player2.field.count("communitysupport") >= 1
+                if len(self.player2.discard) == 0:
+                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                else:
+                    i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
+                    # for example to win the game
+            # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
+            if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+                i["requiresDialogDefence"] = self.player1.field.count("communitysupport") <= 1
+                if i["requiresDialogDefence"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+            # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
+            if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
+                i["requiresDialogField"] = self.player1.field.count("communitysupport") <= 2
+                if i["requiresDialogField"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+            # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
+            if i["name"] in ("event-1", "event-3", "event-4"):
+                i["requiresDialogHand"] = len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0
+                if i["requiresDialogHand"]:
+                    i["warn"] = ""
+                else:
+                    i["warn"] = "This card will have no effect!"
+
+        self.player2.hand = handcopy
+        return self.player1.hand, self.player2.hand
 
 
 class User:
@@ -179,7 +255,7 @@ class User:
         self.name: str = name
         self.last_checkin: float = last_checkin
         self.login_session_key: str = login_session_key
-        self.games: list = []
+        self.games: list[str] = []
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
@@ -187,7 +263,7 @@ class User:
 
 logged_in: list[User] = []
 queue: list[User] = []
-games: dict = {}
+games: dict[str, Game] = {}
 
 
 def usersListString():
@@ -521,6 +597,7 @@ def deny_match():
                 if i.name == requested:
                     opponent = i
                     socketio.emit("deny opponent", {"username": username, "opponent": opponent.name})
+                    # todo block opponent if too many deny requests?
                     return jsonify({"status": "Denied opponent", "opponent": opponent.name})
             return jsonify({"status": "Opponent not logged in"})
         abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
@@ -636,6 +713,7 @@ def pop_deck():
                     if len(game.player1.deck) > 0:
                         poppedCard = game.player1.popDeck()
                         game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                        game.recomputeBlockAndDialogStatus()
                         response["card"] = poppedCard
                         response["cardsLeft"] = len(game.player1.deck)
 
@@ -650,6 +728,7 @@ def pop_deck():
                     if len(game.player2.deck) > 0:
                         poppedCard = game.player2.popDeck()
                         game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                        game.recomputeBlockAndDialogStatus()
                         response["card"] = poppedCard
                         response["cardsLeft"] = len(game.player2.deck)
 
@@ -818,13 +897,32 @@ def play_hand():
                             your_move_notifier = "You played Community Support.\nOpponent's turn."
                             opponent_move_notifier = "Opponent played Community Support."
                             next_turn = True
-                        elif cardPlayed in ("military-1", "economic-1", "economic-2"):  # draw 1 card
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
+                            game.player1.field.append(cardPlayed)
+
+                            poppedCard = game.player1.popDeck()  # todo zero cards check
+                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            next_turn = True
+                        elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player1.field.append(cardPlayed)
 
                             poppedCard = game.player1.popDeck()
                             game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+
+                            if game.player1.field.count("communitysupport") >= 1:
+                                if len(game.player1.deck) > 0:
+                                    poppedCard2 = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                             next_turn = True
                         else:  # todo every other card
                             game.player1.discard = [cardPlayed] + game.player1.discard
@@ -833,13 +931,14 @@ def play_hand():
                             next_turn = False
 
                         if next_turn:
-                            # todo do winning checks
+                            # todo do winning checks (out of cards, defence fulfilled)
 
                             poppedCard = game.player2.popDeck()
                             game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
                             game.player2.setHandEnablePlayStatus(True)
                             game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
 
                             updater = {"uuid": game_id, "username": game.player2_username,
                                        "hand": game.player2.hand, "discard": game.player2.discard,
@@ -872,13 +971,32 @@ def play_hand():
                             your_move_notifier = "You played Community Support.\nOpponent's turn."
                             opponent_move_notifier = "Opponent played Community Support."
                             next_turn = True
-                        elif cardPlayed in ("military-1", "economic-1", "economic-2"):  # draw 1 card
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
                             game.player2.field.append(cardPlayed)
 
                             poppedCard = game.player2.popDeck()
                             game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                             your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            next_turn = True
+                        elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
+                            game.player2.field.append(cardPlayed)
+
+                            poppedCard = game.player2.popDeck()
+                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                            if game.player2.field.count("communitysupport") >= 1:
+                                if len(game.player2.deck) > 0:
+                                    poppedCard2 = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                             next_turn = True
                         else:  # todo every other card
                             game.player2.discard = [cardPlayed] + game.player2.discard
@@ -894,6 +1012,7 @@ def play_hand():
 
                             game.player1.setHandEnablePlayStatus(True)
                             game.player2.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
 
                             updater = {"uuid": game_id, "username": game.player1_username,
                                        "hand": game.player1.hand, "discard": game.player1.discard,
@@ -966,7 +1085,8 @@ def game_init():
                             for q in range(5):
                                 game.player1.addHandCard(game.player1.popDeck())
                             game.player1.setHandEnablePlayStatus(True)
-                            notifier = f"Your crisis has the higher number. You are going first. Drew {game.player2.hand[-1]['name']}."
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the higher number. You are going first. Drew {lookup[game.player1.hand[-1]['name']]}."
                         returned = {"username": your_username,
                                     "hand": game.player1.hand,
                                     "cardsLeft": len(game.player1.deck),
@@ -975,6 +1095,7 @@ def game_init():
                                     "crisis": game.player1.crisis,
                                     "moveNotifier": notifier,
                                     "uuid": game.internal_id}
+                        # todo keep track of turn phase (eg playing time/discard cards at end of hand time etc)
                         socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -988,6 +1109,7 @@ def game_init():
                             for q in range(5):
                                 game.player1.addHandCard(game.player1.popDeck())
                             game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
                             notifier = f"Your crisis has the lower number.  You are going second."
                         returned = {"username": your_username,
                                     "hand": game.player1.hand,
@@ -1010,6 +1132,7 @@ def game_init():
                             for q in range(5):
                                 game.player2.addHandCard(game.player2.popDeck())
                             game.player2.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
                             notifier = f"Your crisis has the lower number.  You are going second."
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player2.hand,
@@ -1031,23 +1154,20 @@ def game_init():
                             for q in range(5):
                                 game.player2.addHandCard(game.player2.popDeck())
                             game.player2.setHandEnablePlayStatus(True)
-                            notifier = f"Your crisis has the higher number. You are going first. Drew {game.player2.hand[-1]['name']}."
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the higher number. You are going first. Drew {lookup[game.player2.hand[-1]['name']]}."
                         socketio.emit("update your state", {"username": your_username,
                                                             "hand": game.player2.hand,
                                                             "cardsLeft": len(game.player2.deck),
                                                             "field": game.player2.field,
-                                                            "discard": ["discard-placeholder"] if (
-                                                                    len(game.player2.discard) < 1
-                                                            ) else game.player2.discard,
+                                                            "discard": game.player2.discard,
                                                             "crisis": game.player2.crisis,
                                                             "moveNotifier": notifier,
                                                             "uuid": game.internal_id})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
                                                                 "field": game.player2.field,
-                                                                "discard": ["discard-placeholder"] if (
-                                                                        len(game.player2.discard) < 1
-                                                                ) else game.player2.discard,
+                                                                "discard": game.player2.discard,
                                                                 "crisis": game.player2.crisis,
                                                                 "uuid": game.internal_id})
                         return "First"

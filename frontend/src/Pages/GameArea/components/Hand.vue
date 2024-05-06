@@ -38,7 +38,17 @@ export default defineComponent({
     <CardHolder v-for="(card,index) in playerCards.handList"
                 :card-name="card['name']"
                 :key="card['name']+index"
-                :play-button-func="()=>{playerCards.playHand(index)}"
+                :play-button-func="()=>{
+                  if (card['requiresDialogNormal']) {
+                    playerCards.showDialogNormal = true // dont forget to reset all dialogs
+                    playerCards.index = index
+                    playerCards.moveNotifier = 'Pick an option.'+card['warn']
+                  } else {
+                    playerCards.showDialogNormal = false // no stray dialogs
+                    playerCards.playHand(index)
+                  }
+                  playerCards.showDiscardPlay = false
+                }"
                 :enable-play="card['enablePlay']"
                 class="handcard"
     />
