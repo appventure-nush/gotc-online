@@ -41,9 +41,6 @@ export default defineComponent({
     drawDeck(){
       // draw a card from the deck if signed in
       if(userSignInStore.username !== "") playerCardsStore.drawDeck()
-    },
-    name() {
-      return "Restore"
     }
   }
 })
@@ -67,6 +64,7 @@ export default defineComponent({
     <div class="pile-component-card-wrapper" v-on:mouseover="drawHover=true" v-on:mouseout="drawHover=false">
       <CardHolder card-name="back-black" class="pile-component-card" rename-play="Draw" :enable-details="false"
                   :play-button-func="drawDeck"/>
+      <!-- todo disable drawdeck -->
       <p v-if="userStore.isSignedIn" class="draw-remainder">{{ playerCards.cardsLeft }} Left</p>
       <p v-else class="draw-remainder sign-in-reminder">Not Signed In</p>
     </div>
@@ -79,7 +77,7 @@ export default defineComponent({
                            playerCards.showDiscardPlay = false
                            playerCards.playHand(playerCards.index, key)
                          }}"
-                         :rename-play="name()"/> <!-- it didnt work as just a string -->
+                         :rename-play="'Restore'"/>
     </div>
 
 
