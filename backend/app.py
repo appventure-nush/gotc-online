@@ -899,11 +899,14 @@ def play_hand():
                             next_turn = True
                         elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
                             game.player1.field.append(cardPlayed)
-
-                            poppedCard = game.player1.popDeck()  # todo zero cards check
-                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            if len(game.player1.deck) > 0:
+                                poppedCard = game.player1.popDeck()
+                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                             game.player1.field.append(cardPlayed)
@@ -937,22 +940,31 @@ def play_hand():
                             next_turn = True
                         elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player1.field.append(cardPlayed)
-
-                            poppedCard = game.player1.popDeck()
-                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-
                             if game.player1.field.count("communitysupport") >= 1:
-                                if len(game.player1.deck) > 0:
+                                if len(game.player1.deck) > 1:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
                                     poppedCard2 = game.player1.popDeck()
                                     game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
                                     your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
-                                else:
+                                elif len(game.player1.deck) == 1:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
                                     your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                if len(game.player1.deck) > 0:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         else:  # todo every other card
                             game.player1.discard = [cardPlayed] + game.player1.discard
@@ -1003,11 +1015,14 @@ def play_hand():
                             next_turn = True
                         elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
                             game.player2.field.append(cardPlayed)
-
-                            poppedCard = game.player2.popDeck()
-                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-                            your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            if len(game.player2.deck) > 0:
+                                poppedCard = game.player2.popDeck()
+                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                             game.player2.field.append(cardPlayed)
@@ -1041,22 +1056,31 @@ def play_hand():
                             next_turn = True
                         elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player2.field.append(cardPlayed)
-
-                            poppedCard = game.player2.popDeck()
-                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-
                             if game.player2.field.count("communitysupport") >= 1:
-                                if len(game.player2.deck) > 0:
+                                if len(game.player2.deck) > 1:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                                     poppedCard2 = game.player2.popDeck()
                                     game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
                                     your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
-                                else:
+                                elif len(game.player2.deck) == 1:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                                     your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
-                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                if len(game.player2.deck) > 0:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         else:  # todo every other card
                             game.player2.discard = [cardPlayed] + game.player2.discard
