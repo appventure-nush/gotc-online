@@ -67,11 +67,11 @@ export default defineComponent({
                     playerCards.showDialogDefence = false
                     playerCards.index = index
                     if (card['warn'] == '') {
-                      playerCards.showDialogField = true
-                      playerCards.showOptionField = false
-                    } else {
-                      playerCards.showOptionField = true
                       playerCards.showDialogField = false
+                      playerCards.showOptionField = true
+                    } else {
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = true
                     }
                     playerCards.moveNotifier = 'Pick 1 field card.'+card['warn']
                   } else {

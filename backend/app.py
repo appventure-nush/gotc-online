@@ -996,14 +996,14 @@ def play_hand():
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
                                 card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[extra[1]]
-                                game.player2.discard.append = [card1] + game.player2.discard
+                                game.player2.discard = [card1] + game.player2.discard
                                 if "extra2" in request.json:
                                     extra2 = request.json["extra2"]
                                     card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player2.field))[extra2[1]]
                                     # todo (low priority) preserve order
                                     game.player2.field.remove(card1)
                                     game.player2.field.remove(card2)
-                                    game.player2.discard.append = [card2] + game.player2.discard
+                                    game.player2.discard = [card2] + game.player2.discard
                                     your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
                                 else:
@@ -1020,7 +1020,7 @@ def play_hand():
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
                                 card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[extra[1]]
-                                game.player2.discard.append = [card1] + game.player2.discard
+                                game.player2.discard = [card1] + game.player2.discard
                                 game.player2.field.remove(card1)
                                 your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
@@ -1180,7 +1180,7 @@ def play_hand():
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
                                 card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[extra[1]]
-                                game.player1.discard.append = [card1] + game.player1.discard
+                                game.player1.discard = [card1] + game.player1.discard
                                 game.player1.field.remove(card1)
                                 your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
