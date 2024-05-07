@@ -213,7 +213,7 @@ class Game:
                 if self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) >= 1:
                     i["warn"] = ""
                 elif self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) == 0:
-                    i["warn"] = "\nWarning: Opponent has no field cards to select."
+                    i["warn"] = "\nWarning: Opponent has no field cards to select. This card will have no effect."
                 else:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
@@ -259,7 +259,7 @@ class Game:
                 if self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) >= 1:
                     i["warn"] = ""
                 elif self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) == 0:
-                    i["warn"] = "\nWarning: Opponent has no field cards to select."
+                    i["warn"] = "\nWarning: Opponent has no field cards to select. This card will have no effect."
                 else:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there

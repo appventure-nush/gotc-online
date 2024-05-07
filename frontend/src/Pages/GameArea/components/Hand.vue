@@ -43,26 +43,45 @@ export default defineComponent({
                     playerCards.showDialogNormal = true // dont forget to reset all dialogs
                     playerCards.showOptionDefence = false
                     playerCards.showDialogDefence = false
+                    playerCards.showOptionField = false
+                    playerCards.showDialogField = false
                     playerCards.index = index
                     playerCards.moveNotifier = 'Pick an option.'+card['warn']
                   } else if (card['requiresOptionDefence']) {
                     playerCards.showDialogNormal = false // dont forget to reset all dialogs
+                    playerCards.showOptionField = false
+                    playerCards.showDialogField = false
                     playerCards.index = index
                     if ((card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.')
                       || card['warn'] == '\nWarning: Opponent has no defence cards to select. This card will have no effect.') {
-                      playerCards.moveNotifier = card['warn']
                       playerCards.showDialogDefence = true
                       playerCards.showOptionDefence = false
                     } else {
                       playerCards.showDialogDefence = false
                       playerCards.showOptionDefence = true
-                      playerCards.moveNotifier = 'Pick 2 options.'+card['warn']
                     }
+                    playerCards.moveNotifier = 'Pick 2 defence cards.'+card['warn']
+                  } else if (card['requiresOptionField']) {
+                    playerCards.showDialogNormal = false
+                    playerCards.showOptionDefence = false
+                    playerCards.showDialogDefence = false
+                    playerCards.index = index
+                    if (card['warn'] == '') {
+                      playerCards.showDialogField = true
+                      playerCards.showOptionField = false
+                    } else {
+                      playerCards.showOptionField = true
+                      playerCards.showDialogField = false
+                    }
+                    playerCards.moveNotifier = 'Pick 1 field card.'+card['warn']
                   } else {
                     playerCards.showDialogNormal = false // no stray dialogs
                     playerCards.showOptionDefence = false
                     playerCards.showDialogDefence = false
+                    playerCards.showOptionField = false
+                    playerCards.showDialogField = false
                     playerCards.playHand(index)
+                    playerCards.index = -1 // just in case
                   }
                   playerCards.showDiscardPlay = false
                   playerCards.showOptionDefence2 = false
