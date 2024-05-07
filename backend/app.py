@@ -161,7 +161,7 @@ class Player:
                           # everywhere that could affect this (e.g. draw card) will be accompanied by a recompute call
                           # we just cannot call it here because this is Player not Game
                           "requiresDialogNormal": False, "requiresOptionDefence": False,
-                          "requiresDialogField": False, "requiresDialogHand": False})
+                          "requiresOptionField": False, "requiresDialogHand": False})
         return self.hand
 
 
@@ -194,22 +194,28 @@ class Game:
             if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
                 i["requiresOptionDefence"] = True
                 if self.player2.field.count("communitysupport") <= 1 and (
-                    len(self.player2.field) - self.player2.field.count("communitysupport") >= 2
+                        len(self.player2.field) - self.player2.field.count("communitysupport") >= 2
                 ):
                     i["warn"] = ""
-                elif self.player2.field.count("communitysupport") <= 1 and (
-                    len(self.player2.field) - self.player2.field.count("communitysupport") == 1
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player2.field) - self.player2.field.count("communitysupport") == 1
                 ):
-                    i["warn"] = "\nWarning: Opponent only has 1 defence card to select."
+                    i["warn"] = "\nWarning: Opponent has only 1 defence card to select."
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player2.field) - self.player2.field.count("communitysupport") == 0
+                ):
+                    i["warn"] = "\nWarning: Opponent has no defence cards to select. This card will have no effect."
                 else:
                     i["warn"] = "\nWarning: Opponent has >1 community support. This card will have no effect."
             # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
             if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
-                i["requiresDialogField"] = self.player2.field.count("communitysupport") <= 2
-                if i["requiresDialogField"]:
+                i["requiresOptionField"] = True
+                if self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) >= 1:
                     i["warn"] = ""
+                elif self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) == 0:
+                    i["warn"] = "\nWarning: Opponent has no field cards to select."
                 else:
-                    i["warn"] = "This card will have no effect!"
+                    i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
             if i["name"] in ("event-1", "event-3", "event-4"):
                 i["requiresDialogHand"] = len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0
@@ -232,18 +238,30 @@ class Game:
                     # for example to win the game
             # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
             if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
-                i["requiresOptionDefence"] = self.player1.field.count("communitysupport") <= 1
-                if i["requiresOptionDefence"]:
+                i["requiresOptionDefence"] = True
+                if self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") >= 2
+                ):
                     i["warn"] = ""
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") == 1
+                ):
+                    i["warn"] = "\nWarning: Opponent has only 1 defence card to select."
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") == 0
+                ):
+                    i["warn"] = "\nWarning: Opponent has no defence cards to select. This card will have no effect."
                 else:
-                    i["warn"] = "This card will have no effect!"
+                    i["warn"] = "\nWarning: Opponent has >1 community support. This card will have no effect."
             # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
             if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
-                i["requiresDialogField"] = self.player1.field.count("communitysupport") <= 2
-                if i["requiresDialogField"]:
+                i["requiresOptionField"] = True
+                if self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) >= 1:
                     i["warn"] = ""
+                elif self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) == 0:
+                    i["warn"] = "\nWarning: Opponent has no field cards to select."
                 else:
-                    i["warn"] = "This card will have no effect!"
+                    i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
             if i["name"] in ("event-1", "event-3", "event-4"):
                 i["requiresDialogHand"] = len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0

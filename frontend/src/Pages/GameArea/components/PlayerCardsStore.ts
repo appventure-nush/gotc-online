@@ -33,10 +33,12 @@ export const playerCardsStore  = defineStore({
         showDialogNormal : false,
         showDialogDefence : false,
         showOptionDefence : false,
-        selectionDefence: [] as (number|string)[],
+        selectionDefence : [] as (number|string)[],
         showOptionDefence2 : false,
+        showOptionField : false,
+        showDialogField : false,
         showDiscardPlay : false,
-        index: -1
+        index : -1
     }),
     getters: {
         dialogNormalDisplay : (state) => state.showDialogNormal ? "flex" : "none",

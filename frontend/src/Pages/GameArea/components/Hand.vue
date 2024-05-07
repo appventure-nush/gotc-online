@@ -48,7 +48,8 @@ export default defineComponent({
                   } else if (card['requiresOptionDefence']) {
                     playerCards.showDialogNormal = false // dont forget to reset all dialogs
                     playerCards.index = index
-                    if (card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.') {
+                    if ((card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.')
+                      || card['warn'] == '\nWarning: Opponent has no defence cards to select. This card will have no effect.') {
                       playerCards.moveNotifier = card['warn']
                       playerCards.showDialogDefence = true
                       playerCards.showOptionDefence = false
