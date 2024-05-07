@@ -41,13 +41,31 @@ export default defineComponent({
                 :play-button-func="()=>{
                   if (card['requiresDialogNormal']) {
                     playerCards.showDialogNormal = true // dont forget to reset all dialogs
+                    playerCards.showOptionDefence = false
+                    playerCards.showDialogDefence = false
                     playerCards.index = index
                     playerCards.moveNotifier = 'Pick an option.'+card['warn']
+                  } else if (card['requiresOptionDefence']) {
+                    playerCards.showDialogNormal = false // dont forget to reset all dialogs
+                    playerCards.index = index
+                    if (card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.') {
+                      playerCards.moveNotifier = card['warn']
+                      playerCards.showDialogDefence = true
+                      playerCards.showOptionDefence = false
+                    } else {
+                      playerCards.showDialogDefence = false
+                      playerCards.showOptionDefence = true
+                      playerCards.moveNotifier = 'Pick 2 options.'+card['warn']
+                    }
                   } else {
                     playerCards.showDialogNormal = false // no stray dialogs
+                    playerCards.showOptionDefence = false
+                    playerCards.showDialogDefence = false
                     playerCards.playHand(index)
                   }
                   playerCards.showDiscardPlay = false
+                  playerCards.showOptionDefence2 = false
+                  playerCards.selectionDefence = []
                 }"
                 :enable-play="card['enablePlay']"
                 class="handcard"

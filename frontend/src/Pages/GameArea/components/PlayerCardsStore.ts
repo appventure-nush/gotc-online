@@ -26,9 +26,15 @@ export const playerCardsStore  = defineStore({
         field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
         uuid: "",
+
+        // todo restore these variables in game_init
         moveNotifier: "Move Notifier",
 
         showDialogNormal : false,
+        showDialogDefence : false,
+        showOptionDefence : false,
+        selectionDefence: [] as (number|string)[],
+        showOptionDefence2 : false,
         showDiscardPlay : false,
         index: -1
     }),
@@ -342,7 +348,7 @@ export const playerCardsStore  = defineStore({
                 });
         },
 
-        playHand(hand_card_index : number, extra? : number) : Promise<string> {
+        playHand(hand_card_index : number, extra? : any, extra2? : any) : Promise<string> {
             // post get hand  request to the backend with username and sessionkey
             // the hand will be sent over
             return fetch(`${BACKEND_URL}/play_hand`, {
@@ -353,7 +359,8 @@ export const playerCardsStore  = defineStore({
                     game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key(),
                     card_index : hand_card_index,
-                    extra: extra
+                    extra: extra,
+                    extra2: extra2
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"

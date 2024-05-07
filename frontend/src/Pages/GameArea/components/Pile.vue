@@ -73,7 +73,7 @@ export default defineComponent({
       <StackedCardHolder class="pile-component-card discardpile"
                          :cards="playerCards.discardDeck.length > 0 ? playerCards.discardDeck : ['discard-placeholder']"
                          :enable-play="playerCards.showDiscardPlay"
-                         :play-button-func="(key) => {return () =>{
+                         :play-button-func="(key) => {return () => {
                            playerCards.showDiscardPlay = false
                            playerCards.playHand(playerCards.index, key)
                          }}"

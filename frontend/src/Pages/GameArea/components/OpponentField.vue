@@ -2,14 +2,16 @@
 import {defineComponent} from 'vue'
 import CardHolder from "./CardHolder.vue";
 import {opponentFieldStore} from "./OpponentFieldStore";
+import { playerCardsStore } from './PlayerCardsStore';
 import StackedCardHolder from "./StackedCardHolder.vue";
 
 export default defineComponent({
   name: "OpponentField",
   components: {StackedCardHolder, CardHolder},
   setup(){
+    let playerCards = playerCardsStore
     let opponentStore = opponentFieldStore
-    return { opponentStore }
+    return { playerCards, opponentStore }
   },
   computed:{
     civilDefenceList: function() {
@@ -32,6 +34,30 @@ export default defineComponent({
     },
     communitySupportList: function () {
       return this.opponentStore.field.filter((card) => card.substring(0, 16) === "communitysupport")
+    },
+    clickfunction : function () { // yes, this is a triple nested function
+      return (which: string) => {return (key: number) => {return () => {
+        if (this.playerCards.showOptionDefence) {
+          // if only 1 card
+          if (this.opponentStore.field.length - this.communitySupportList.length == 1) {
+            this.playerCards.playHand(this.playerCards.index, [which, key])
+            this.playerCards.showOptionDefence = false
+          } else {
+            this.playerCards.selectionDefence = [which, key]
+            this.playerCards.showOptionDefence = false
+            this.playerCards.showOptionDefence2 = true
+          }
+        } else if (this.playerCards.showOptionDefence2) {
+          // make sure no duplicates first
+          if (which == this.playerCards.selectionDefence[0] && key == this.playerCards.selectionDefence[1]) {
+            this.playerCards.moveNotifier = "Do not select the same card again."
+          } else {
+            this.playerCards.showOptionDefence2 = false
+            this.playerCards.playHand(this.playerCards.index, this.playerCards.selectionDefence, [which, key])
+            this.playerCards.selectionDefence = []
+          }
+        } // else effect3
+      }}}
     }
   }
 })
@@ -47,32 +73,44 @@ export default defineComponent({
       <stacked-card-holder class="sch"
                            :cards="civilDefenceList.length > 0 ? civilDefenceList : ['civil-placeholder']"
                            rename-play="Discard"
-                           :block-play="civilDefenceList.length < 1"
+                           :enable-play="civilDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('civil')"
       />
       <stacked-card-holder class="sch"
                            :cards="digitalDefenceList.length > 0 ? digitalDefenceList : ['digital-placeholder']"
                            rename-play="Discard"
-                           :block-play="digitalDefenceList.length < 1"
+                           :enable-play="digitalDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('digital')"
       />
       <stacked-card-holder class="sch"
                            :cards="economicDefenceList.length > 0 ? economicDefenceList : ['economic-placeholder']"
                            rename-play="Discard"
-                           :block-play="economicDefenceList.length < 1"
+                           :enable-play="economicDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('economic')"
       />
       <stacked-card-holder class="sch"
                            :cards="militaryDefenceList.length > 0 ? militaryDefenceList : ['military-placeholder']"
                            rename-play="Discard"
-                           :block-play="militaryDefenceList.length < 1"
+                           :enable-play="militaryDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('military')"
       />
       <stacked-card-holder class="sch"
                            :cards="psychologicalDefenceList.length > 0 ? psychologicalDefenceList : ['psychological-placeholder']"
                            rename-play="Discard"
-                           :block-play="psychologicalDefenceList.length < 1"
+                           :enable-play="psychologicalDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('psychological')"
       />
       <stacked-card-holder class="sch"
                            :cards="socialDefenceList.length > 0 ? socialDefenceList : ['social-placeholder']"
                            rename-play="Discard"
-                           :block-play="socialDefenceList.length < 1"
+                           :enable-play="socialDefenceList.length > 0 &&
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                           :play-button-func="clickfunction('social')"
       />
     </div>
     <div class="opponent-comunity-support">
