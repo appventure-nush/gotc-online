@@ -991,6 +991,11 @@ def play_hand():
                                     your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
+                        elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
+                            game.player1.field.append(cardPlayed)
+                            your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
+                            next_turn = False
                         elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
                             game.player1.discard = [cardPlayed] + game.player1.discard
                             if "extra" in request.json:
@@ -1151,6 +1156,11 @@ def play_hand():
                                     your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
+                        elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
+                            game.player2.field.append(cardPlayed)
+                            your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
+                            next_turn = False
                         elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
                             game.player2.discard = [cardPlayed] + game.player2.discard
                             if "extra" in request.json:
