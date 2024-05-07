@@ -14,6 +14,9 @@ export default defineComponent({
     },
     dialogDefence() {
       return playerCardsStore.showDialogDefence ? "flex": "none"
+    },
+    dialogField() {
+      return playerCardsStore.showDialogField ? "flex": "none"
     }
   }
 })
@@ -40,6 +43,11 @@ export default defineComponent({
       <button @click="() => {playerCards.showDialogDefence = false
       playerCards.playHand(playerCards.index)}">Confirm</button>
       <button @click="playerCards.showDialogDefence = false">Cancel</button>
+    </div>
+    <div class="dial dialogfield">
+      <button @click="() => {playerCards.showDialogField = false
+      playerCards.playHand(playerCards.index)}">Confirm</button>
+      <button @click="playerCards.showDialogField = false">Cancel</button>
     </div>
   </div>
 </template>
@@ -72,8 +80,12 @@ export default defineComponent({
   display: v-bind(dialogNormal);
 }
 
-.dialogdefence{
+.dialogdefence {
   display: v-bind(dialogDefence);
+}
+
+.dialogfield {
+  display: v-bind(dialogField);
 }
 
 </style>

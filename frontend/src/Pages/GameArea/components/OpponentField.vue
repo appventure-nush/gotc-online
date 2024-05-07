@@ -56,7 +56,10 @@ export default defineComponent({
             this.playerCards.playHand(this.playerCards.index, this.playerCards.selectionDefence, [which, key])
             this.playerCards.selectionDefence = []
           }
-        } // else effect3
+        } else if (this.playerCards.showOptionField) {
+          this.playerCards.showOptionField = false
+          this.playerCards.playHand(this.playerCards.index, [which, key])
+        }
       }}}
     }
   }
@@ -74,42 +77,42 @@ export default defineComponent({
                            :cards="civilDefenceList.length > 0 ? civilDefenceList : ['civil-placeholder']"
                            rename-play="Discard"
                            :enable-play="civilDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('civil')"
       />
       <stacked-card-holder class="sch"
                            :cards="digitalDefenceList.length > 0 ? digitalDefenceList : ['digital-placeholder']"
                            rename-play="Discard"
                            :enable-play="digitalDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('digital')"
       />
       <stacked-card-holder class="sch"
                            :cards="economicDefenceList.length > 0 ? economicDefenceList : ['economic-placeholder']"
                            rename-play="Discard"
                            :enable-play="economicDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('economic')"
       />
       <stacked-card-holder class="sch"
                            :cards="militaryDefenceList.length > 0 ? militaryDefenceList : ['military-placeholder']"
                            rename-play="Discard"
                            :enable-play="militaryDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('military')"
       />
       <stacked-card-holder class="sch"
                            :cards="psychologicalDefenceList.length > 0 ? psychologicalDefenceList : ['psychological-placeholder']"
                            rename-play="Discard"
                            :enable-play="psychologicalDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('psychological')"
       />
       <stacked-card-holder class="sch"
                            :cards="socialDefenceList.length > 0 ? socialDefenceList : ['social-placeholder']"
                            rename-play="Discard"
                            :enable-play="socialDefenceList.length > 0 &&
-                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence)"
+                             (playerCards.showOptionDefence2 || playerCards.showOptionDefence || playerCards.showOptionField)"
                            :play-button-func="clickfunction('social')"
       />
     </div>
@@ -117,7 +120,8 @@ export default defineComponent({
       <stacked-card-holder class="community-support-stack"
                            :cards="communitySupportList.length > 0 ? communitySupportList : ['communitysupport-placeholder']"
                            rename-play="Discard"
-                           :block-play="communitySupportList.length < 1"
+                           :enable-play="communitySupportList.length > 0 && playerCards.showOptionField"
+                           :play-button-func="clickfunction('communitysupport')"
       />
     </div>
     <div class="opponent-discard">
