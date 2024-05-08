@@ -48,90 +48,95 @@ export default defineComponent({
                 :card-name="card['name']"
                 :key="card['name']+index"
                 :play-button-func="()=>{
-                  if (card['requiresDialogNormal']) {
-                    playerCards.showDialogNormal = true // dont forget to reset all dialogs
-                    playerCards.showOptionDefence = false
-                    playerCards.showDialogDefence = false
-                    playerCards.showOptionField = false
-                    playerCards.showDialogField = false
-                    playerCards.showDialogHand = false
-                    playerCards.showOptionHand = false
-                    playerCards.index = index
-                    playerCards.moveNotifier = 'Pick an option.'+card['warn']
-                  } else if (card['requiresOptionDefence']) {
-                    playerCards.showDialogNormal = false // dont forget to reset all dialogs
-                    playerCards.showOptionField = false
-                    playerCards.showDialogField = false
-                    playerCards.showDialogHand = false
-                    playerCards.showOptionHand = false
-                    playerCards.index = index
-                    if ((card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.')
-                      || card['warn'] == '\nWarning: Opponent has no defence cards to select. This card will have no effect.') {
-                      playerCards.showDialogDefence = true
-                      playerCards.showOptionDefence = false
-                    } else {
-                      playerCards.showDialogDefence = false
-                      playerCards.showOptionDefence = true
-                    }
-                    playerCards.moveNotifier = 'Pick 2 defence cards.'+card['warn']
-                  } else if (card['requiresOptionField']) {
-                    playerCards.showDialogNormal = false
-                    playerCards.showOptionDefence = false
-                    playerCards.showDialogDefence = false
-                    playerCards.showDialogHand = false
-                    playerCards.showOptionHand = false
-                    playerCards.index = index
-                    if (card['warn'] == '') {
-                      playerCards.showDialogField = false
-                      playerCards.showOptionField = true
-                    } else {
-                      playerCards.showOptionField = false
-                      playerCards.showDialogField = true
-                    }
-                    playerCards.moveNotifier = 'Pick 1 field card.'+card['warn']
-                  } else if (card['requiresDialogHand']) {
-                    playerCards.getOpponentHand()
-                    playerCards.showDialogNormal = false
-                    playerCards.showOptionDefence = false
-                    playerCards.showDialogDefence = false
-                    playerCards.showOptionField = false
-                    playerCards.showDialogField = false
-                    playerCards.showDialogHand = true
-                    playerCards.showOptionHand = false
-                    playerCards.index = index
-                    playerCards.moveNotifier = 'Click Confirm when done viewing opponent\'s hand.'
-                  } else if (card['requiresOptionHand']) {
-                    playerCards.getOpponentHand()
-                    playerCards.showDialogNormal = false
-                    playerCards.showOptionDefence = false
-                    playerCards.showDialogDefence = false
-                    playerCards.showOptionField = false
-                    playerCards.showDialogField = false
-                    playerCards.index = index
-                    if (card['warn'] == '') {
-                      playerCards.showDialogHand = false
-                      playerCards.showOptionHand = true
-                    } else {
-                      playerCards.showOptionHand = false
-                      playerCards.showDialogHand = true
-                    }
-                    playerCards.moveNotifier = 'Pick a card from opponent\'s hand.'+card['warn']
+                  if (playerCards.discardHand) {
+                    playerCards.discardCardFromHand(index)
                   } else {
-                    playerCards.showDialogNormal = false // no stray dialogs
-                    playerCards.showOptionDefence = false
-                    playerCards.showDialogDefence = false
-                    playerCards.showOptionField = false
-                    playerCards.showDialogField = false
-                    playerCards.showDialogHand = false
-                    playerCards.showOptionHand = false
-                    playerCards.playHand(index)
-                    playerCards.index = -1 // just in case
+                    if (card['requiresDialogNormal']) {
+                      playerCards.showDialogNormal = true // dont forget to reset all dialogs
+                      playerCards.showOptionDefence = false
+                      playerCards.showDialogDefence = false
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = false
+                      playerCards.showDialogHand = false
+                      playerCards.showOptionHand = false
+                      playerCards.index = index
+                      playerCards.moveNotifier = 'Pick an option.'+card['warn']
+                    } else if (card['requiresOptionDefence']) {
+                      playerCards.showDialogNormal = false // dont forget to reset all dialogs
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = false
+                      playerCards.showDialogHand = false
+                      playerCards.showOptionHand = false
+                      playerCards.index = index
+                      if ((card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.')
+                        || card['warn'] == '\nWarning: Opponent has no defence cards to select. This card will have no effect.') {
+                        playerCards.showDialogDefence = true
+                        playerCards.showOptionDefence = false
+                      } else {
+                        playerCards.showDialogDefence = false
+                        playerCards.showOptionDefence = true
+                      }
+                      playerCards.moveNotifier = 'Pick 2 defence cards.'+card['warn']
+                    } else if (card['requiresOptionField']) {
+                      playerCards.showDialogNormal = false
+                      playerCards.showOptionDefence = false
+                      playerCards.showDialogDefence = false
+                      playerCards.showDialogHand = false
+                      playerCards.showOptionHand = false
+                      playerCards.index = index
+                      if (card['warn'] == '') {
+                        playerCards.showDialogField = false
+                        playerCards.showOptionField = true
+                      } else {
+                        playerCards.showOptionField = false
+                        playerCards.showDialogField = true
+                      }
+                      playerCards.moveNotifier = 'Pick 1 field card.'+card['warn']
+                    } else if (card['requiresDialogHand']) {
+                      playerCards.getOpponentHand()
+                      playerCards.showDialogNormal = false
+                      playerCards.showOptionDefence = false
+                      playerCards.showDialogDefence = false
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = false
+                      playerCards.showDialogHand = true
+                      playerCards.showOptionHand = false
+                      playerCards.index = index
+                      playerCards.moveNotifier = 'Click Confirm when done viewing opponent\'s hand.'
+                    } else if (card['requiresOptionHand']) {
+                      playerCards.getOpponentHand()
+                      playerCards.showDialogNormal = false
+                      playerCards.showOptionDefence = false
+                      playerCards.showDialogDefence = false
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = false
+                      playerCards.index = index
+                      if (card['warn'] == '') {
+                        playerCards.showDialogHand = false
+                        playerCards.showOptionHand = true
+                      } else {
+                        playerCards.showOptionHand = false
+                        playerCards.showDialogHand = true
+                      }
+                      playerCards.moveNotifier = 'Pick a card from opponent\'s hand.'+card['warn']
+                    } else {
+                      playerCards.showDialogNormal = false // no stray dialogs
+                      playerCards.showOptionDefence = false
+                      playerCards.showDialogDefence = false
+                      playerCards.showOptionField = false
+                      playerCards.showDialogField = false
+                      playerCards.showDialogHand = false
+                      playerCards.showOptionHand = false
+                      playerCards.playHand(index)
+                      playerCards.index = -1 // just in case
+                    }
+                    playerCards.showDiscardPlay = false
+                    playerCards.showOptionDefence2 = false
+                    playerCards.selectionDefence = []
                   }
-                  playerCards.showDiscardPlay = false
-                  playerCards.showOptionDefence2 = false
-                  playerCards.selectionDefence = []
                 }"
-                :enable-play="card['enablePlay']"
+                :enable-play="card['enablePlay'] || playerCards.discardHand"
+                :rename-play="playerCards.discardHand ? 'Discard' : 'Play'"
                 class="handcard"
     />
     <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"

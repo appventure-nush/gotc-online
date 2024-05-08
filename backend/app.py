@@ -153,9 +153,6 @@ class Player:
         return self.hand
 
     def addHandCard(self, cardName):
-        if len(self.hand) >= 7:
-            # todo not only 0 (only discard at end of turn)
-            self.discard = [self.hand.pop(0)["name"]] + self.discard
         self.hand.append({"name": cardName, "enablePlay": True,  # "blockPlay": False, # can play card without effect
                           # these will be set later
                           # everywhere that could affect this (e.g. draw card) will be accompanied by a recompute call
@@ -930,7 +927,7 @@ def get_opponent_hand():
 @app.route('/play_hand', methods=["POST"])
 @cross_origin()
 def play_hand():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # play a card from hand for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     request_username = request.json["request_username"]
@@ -941,6 +938,7 @@ def play_hand():
         "hand": [],
         "discard": [],
         "cardsLeft": 0,
+        "needDiscard": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -955,7 +953,7 @@ def play_hand():
 
                         if cardPlayed == "communitysupport":
                             game.player1.field.append("communitysupport")
-                            your_move_notifier = "You played Community Support.\nOpponent's turn."
+                            your_move_notifier = "You played Community Support."
                             opponent_move_notifier = "Opponent played Community Support."
                             next_turn = True
                         elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
@@ -963,10 +961,10 @@ def play_hand():
                             if len(game.player1.deck) > 0:
                                 poppedCard = game.player1.popDeck()
                                 game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
@@ -979,20 +977,20 @@ def play_hand():
                                         game.player1.addHandCard(poppedCard)  # add the popped card to the hand
                                         poppedCard2 = game.player1.popDeck()
                                         game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
                                     elif len(game.player1.deck) == 1:
                                         poppedCard = game.player1.popDeck()
                                         game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
                                     else:
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                                 else:
                                     restore = game.player1.discard.pop(extra)
                                     game.player1.addHandCard(restore)
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and restored {lookup[restore]}."
                             else:
                                 # no additional effect
@@ -1007,24 +1005,24 @@ def play_hand():
                                     game.player1.addHandCard(poppedCard)  # add the popped card to the hand
                                     poppedCard2 = game.player1.popDeck()
                                     game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
                                 elif len(game.player1.deck) == 1:
                                     poppedCard = game.player1.popDeck()
                                     game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             else:
                                 if len(game.player1.deck) > 0:
                                     poppedCard = game.player1.popDeck()
                                     game.player1.addHandCard(poppedCard)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
@@ -1042,11 +1040,11 @@ def play_hand():
                                     your_move_notifier = f"You played {lookup[cardPlayed]}, viewed your opponent's hand and drew {lookup[poppedCard]}. It is still your turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, viewed your hand and drew 1 card. It is still their turn."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
-                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck. It is still their turn."
                                 next_turn = False
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and viewed your hand."
                                 next_turn = True
                         elif cardPlayed in ("event-1", "event-3", "event-4"):
@@ -1055,11 +1053,11 @@ def play_hand():
                                 extra = request.json["extra"]
                                 card1 = game.player2.hand.pop(extra)["name"]
                                 game.player2.discard = [card1] + game.player2.discard
-                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
@@ -1075,11 +1073,11 @@ def play_hand():
                                     game.player2.field.remove(card1)
                                     game.player2.field.remove(card2)
                                     game.player2.discard = [card2] + game.player2.discard
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
                                 else:
                                     game.player2.field.remove(card1)
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
@@ -1093,30 +1091,38 @@ def play_hand():
                                 card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[extra[1]]
                                 game.player2.discard = [card1] + game.player2.discard
                                 game.player2.field.remove(card1)
-                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
-                        else:  # todo every other card
+                        else:  # UNUSED
                             game.player1.discard = [cardPlayed] + game.player1.discard
                             your_move_notifier = f"You discarded {lookup[cardPlayed]}."
                             opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
                         if next_turn:
-                            # todo do winning checks (out of cards, defence fulfilled)
+                            if len(game.player1.hand) > 7:
+                                # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
+                                your_move_notifier += f"\nPlease discard cards until you have 7 cards."
+                                opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
 
-                            poppedCard = game.player2.popDeck()
-                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                response["needDiscard"] = True
+                            else:
+                                # todo do winning checks (out of cards, defence fulfilled)
 
-                            game.player2.setHandEnablePlayStatus(True)
-                            game.player1.setHandEnablePlayStatus(False)
-                            game.recomputeBlockAndDialogStatus()
+                                poppedCard = game.player2.popDeck()
+                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
-                            opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+                                game.player2.setHandEnablePlayStatus(True)
+                                game.player1.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+
+                                your_move_notifier += "\nOpponent's turn."
+                                opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
 
                         response["hand"] = game.player1.hand
                         response["discard"] = game.player1.discard
@@ -1150,7 +1156,7 @@ def play_hand():
 
                         if cardPlayed == "communitysupport":
                             game.player2.field.append("communitysupport")
-                            your_move_notifier = "You played Community Support.\nOpponent's turn."
+                            your_move_notifier = "You played Community Support."
                             opponent_move_notifier = "Opponent played Community Support."
                             next_turn = True
                         elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
@@ -1158,10 +1164,10 @@ def play_hand():
                             if len(game.player2.deck) > 0:
                                 poppedCard = game.player2.popDeck()
                                 game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
@@ -1174,24 +1180,24 @@ def play_hand():
                                         game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                                         poppedCard2 = game.player2.popDeck()
                                         game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
                                     elif len(game.player2.deck) == 1:
                                         poppedCard = game.player2.popDeck()
                                         game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
                                     else:
-                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                         opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                                 else:
                                     restore = game.player2.discard.pop(extra)
                                     game.player2.addHandCard(restore)
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and restored {lookup[restore]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
@@ -1202,24 +1208,24 @@ def play_hand():
                                     game.player2.addHandCard(poppedCard)  # add the popped card to the hand
                                     poppedCard2 = game.player2.popDeck()
                                     game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
                                 elif len(game.player2.deck) == 1:
                                     poppedCard = game.player2.popDeck()
                                     game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             else:
                                 if len(game.player2.deck) > 0:
                                     poppedCard = game.player2.popDeck()
                                     game.player2.addHandCard(poppedCard)  # add the popped card to the hand
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
                             next_turn = True
                         elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
@@ -1237,11 +1243,11 @@ def play_hand():
                                     your_move_notifier = f"You played {lookup[cardPlayed]}, viewed your opponent's hand and drew {lookup[poppedCard]}. It is still your turn."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, viewed your hand and drew 1 card. It is still their turn."
                                 else:
-                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck.\nOpponent's turn."
-                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck. It is still their turn."
                                 next_turn = False
                             else:
-                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and viewed your hand."
                                 next_turn = True
                         elif cardPlayed in ("event-1", "event-3", "event-4"):
@@ -1250,11 +1256,11 @@ def play_hand():
                                 extra = request.json["extra"]
                                 card1 = game.player1.hand.pop(extra)["name"]
                                 game.player1.discard = [card1] + game.player1.discard
-                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
@@ -1270,15 +1276,15 @@ def play_hand():
                                     game.player1.field.remove(card1)
                                     game.player1.field.remove(card2)
                                     game.player1.discard = [card2] + game.player1.discard
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}.\n"
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
                                 else:
                                     game.player1.field.remove(card1)
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\n"
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("event-9", "event-10", "event-11", "event-12"):
@@ -1288,21 +1294,152 @@ def play_hand():
                                 card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[extra[1]]
                                 game.player1.discard = [card1] + game.player1.discard
                                 game.player1.field.remove(card1)
-                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
                                 your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
-                        else:  # todo every other card
+                        else:  # UNUSED
                             game.player2.discard = [cardPlayed] + game.player2.discard
                             your_move_notifier = f"You discarded {lookup[cardPlayed]}."
                             opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
                         if next_turn:
-                            # todo do winning checks
+                            if len(game.player2.hand) > 7:
+                                # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
+                                your_move_notifier += f"\nPlease discard cards until you have 7 cards."
+                                opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
+                                response["needDiscard"] = True
+                            else:
+                                # todo do winning checks
+
+                                poppedCard = game.player1.popDeck()
+                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+
+                                game.player1.setHandEnablePlayStatus(True)
+                                game.player2.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+
+                                your_move_notifier += "\nOpponent's turn."
+                                opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+
+                        response["hand"] = game.player2.hand
+                        response["discard"] = game.player2.discard
+                        response["cardsLeft"] = len(game.player2.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player2.field
+                        response["moveNotifier"] = your_move_notifier
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+
+
+@app.route('/discard_hand', methods=["POST"])
+@cross_origin()
+def discard_hand():
+    # discard a card from hand for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    hand_index = request.json['card_index']
+    response = {
+        "cardPlayed": "",
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
+        "nextTurn": False
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player1.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player1.hand.pop(hand_index)["name"]
+                        game.player1.discard = [cardPlayed] + game.player1.discard
+
+                        next_turn = len(game.player1.hand) > 7
+
+                        if next_turn:
+                            your_move_notifier = "Please discard cards until you have 7 cards."
+                            opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                        else:
+                            # todo do winning checks (out of cards, defence fulfilled)
+
+                            poppedCard = game.player2.popDeck()
+                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                            game.player2.setHandEnablePlayStatus(True)
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                            response["nextTurn"] = True
+
+                        response["hand"] = game.player1.hand
+                        response["discard"] = game.player1.discard
+                        response["cardsLeft"] = len(game.player1.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player1.field
+                        response["moveNotifier"] = your_move_notifier
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+                elif game.player2_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player2.hand.pop(hand_index)["name"]
+                        game.player2.discard = [cardPlayed] + game.player2.discard
+
+                        next_turn = len(game.player2.hand) > 7
+
+                        if next_turn:
+                            your_move_notifier = "Please discard cards until you have 7 cards."
+                            opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                        else:
+                            # todo do winning checks (out of cards, defence fulfilled)
 
                             poppedCard = game.player1.popDeck()
                             game.player1.addHandCard(poppedCard)  # add the popped card to the hand
@@ -1311,7 +1448,10 @@ def play_hand():
                             game.player2.setHandEnablePlayStatus(False)
                             game.recomputeBlockAndDialogStatus()
 
-                            opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                            response["nextTurn"] = True
 
                         response["hand"] = game.player2.hand
                         response["discard"] = game.player2.discard
