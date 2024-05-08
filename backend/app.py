@@ -994,7 +994,7 @@ def play_hand():
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and restored {lookup[restore]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
@@ -1081,7 +1081,7 @@ def play_hand():
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in ("event-9", "event-10", "event-11", "event-12"):
@@ -1298,7 +1298,7 @@ def play_hand():
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
-                                your_move_notifier = f"You played {lookup[cardPlayed]}.\nOpponent's turn."
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         else:  # UNUSED
