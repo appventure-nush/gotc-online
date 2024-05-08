@@ -461,6 +461,42 @@ export const playerCardsStore  = defineStore({
                     console.log(error.toString())
                     return "Could not play hand"
                 });
+        },
+        passTurn() : Promise<string> {
+            return fetch(`${BACKEND_URL}/pass_turn`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username: userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key: userSignInStore.login_session_key(),
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.handList = json_response["hand"] as {}[]
+                    this.discardDeck = json_response["discard"] as string[]
+                    this.cardsLeft = json_response["cardsLeft"] as number
+                    this.field = json_response["field"] as string[]
+                    this.moveNotifier = json_response["moveNotifier"] as string
+
+                    this.discardHand = !json_response["nextTurn"]
+
+                    return "Success"
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not play hand"
+                });
         }
     },
 })(globalPiniaInstance)

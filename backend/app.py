@@ -184,7 +184,8 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
                 if len(self.player1.discard) == 0:
-                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -235,7 +236,8 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player2.field.count("communitysupport") >= 1
                 if len(self.player2.discard) == 0:
-                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -898,6 +900,7 @@ def get_hand():
         # else
         abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
 
+
 @app.route('/get_opponent_hand', methods=["POST"])
 @cross_origin()
 def get_opponent_hand():
@@ -997,7 +1000,8 @@ def play_hand():
                                 your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
-                        elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
+                        elif cardPlayed in (
+                        "psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player1.field.append(cardPlayed)
                             if game.player1.field.count("communitysupport") >= 1:
                                 if len(game.player1.deck) > 1:
@@ -1030,7 +1034,8 @@ def play_hand():
                             your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
                             opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
                             next_turn = False
-                        elif cardPlayed in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                        elif cardPlayed in (
+                        "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
                             game.player1.field.append(cardPlayed)
                             if game.player1.field.count("communitysupport") >= 2:
                                 # draw 1, extra turn
@@ -1064,11 +1069,13 @@ def play_hand():
                             game.player1.discard = [cardPlayed] + game.player1.discard
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
-                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[extra[1]]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[
+                                    extra[1]]
                                 game.player2.discard = [card1] + game.player2.discard
                                 if "extra2" in request.json:
                                     extra2 = request.json["extra2"]
-                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player2.field))[extra2[1]]
+                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player2.field))[
+                                        extra2[1]]
                                     # todo (low priority) preserve order
                                     game.player2.field.remove(card1)
                                     game.player2.field.remove(card2)
@@ -1088,7 +1095,8 @@ def play_hand():
                             game.player1.discard = [cardPlayed] + game.player1.discard
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
-                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[extra[1]]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[
+                                    extra[1]]
                                 game.player2.discard = [card1] + game.player2.discard
                                 game.player2.field.remove(card1)
                                 your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
@@ -1200,7 +1208,8 @@ def play_hand():
                                 your_move_notifier = f"You played {lookup[cardPlayed]}."
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
-                        elif cardPlayed in ("psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
+                        elif cardPlayed in (
+                        "psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player2.field.append(cardPlayed)
                             if game.player2.field.count("communitysupport") >= 1:
                                 if len(game.player2.deck) > 1:
@@ -1233,7 +1242,8 @@ def play_hand():
                             your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
                             opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
                             next_turn = False
-                        elif cardPlayed in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                        elif cardPlayed in (
+                        "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
                             game.player2.field.append(cardPlayed)
                             if game.player2.field.count("communitysupport") >= 2:
                                 # draw 1, extra turn
@@ -1267,11 +1277,13 @@ def play_hand():
                             game.player2.discard = [cardPlayed] + game.player2.discard
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
-                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[extra[1]]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[
+                                    extra[1]]
                                 game.player1.discard = [card1] + game.player1.discard
                                 if "extra2" in request.json:
                                     extra2 = request.json["extra2"]
-                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player1.field))[extra2[1]]
+                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player1.field))[
+                                        extra2[1]]
                                     # todo (low priority) preserve order
                                     game.player1.field.remove(card1)
                                     game.player1.field.remove(card2)
@@ -1291,7 +1303,8 @@ def play_hand():
                             game.player2.discard = [cardPlayed] + game.player2.discard
                             if "extra" in request.json:
                                 extra = request.json["extra"]  # [which, key]
-                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[extra[1]]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[
+                                    extra[1]]
                                 game.player1.discard = [card1] + game.player1.discard
                                 game.player1.field.remove(card1)
                                 your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
@@ -1481,6 +1494,119 @@ def discard_hand():
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
 
+@app.route('/pass_turn', methods=["POST"])
+@cross_origin()
+def pass_turn():
+    # pass turn for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    response = {
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
+        "nextTurn": False
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    next_turn = len(game.player1.hand) > 7
+
+                    if next_turn:
+                        your_move_notifier = "Please discard cards until you have 7 cards."
+                        opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                    else:
+                        # todo do winning checks (out of cards, defence fulfilled)
+
+                        poppedCard = game.player2.popDeck()
+                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                        game.player2.setHandEnablePlayStatus(True)
+                        game.player1.setHandEnablePlayStatus(False)
+                        game.recomputeBlockAndDialogStatus()
+
+                        your_move_notifier = "Opponent's turn."
+                        opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                        response["nextTurn"] = True
+
+                    response["hand"] = game.player1.hand
+                    response["discard"] = game.player1.discard
+                    response["cardsLeft"] = len(game.player1.deck)
+                    response["field"] = game.player1.field
+                    response["moveNotifier"] = your_move_notifier
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                               "moveNotifier": opponent_move_notifier}
+                    socketio.emit("update opponent state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                    socketio.emit("update your state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                    socketio.emit("update opponent state", updater)
+
+                    return response
+
+                elif game.player2_username == request_username:
+
+                    next_turn = len(game.player2.hand) > 7
+
+                    if next_turn:
+                        your_move_notifier = "Please discard cards until you have 7 cards."
+                        opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                    else:
+                        # todo do winning checks (out of cards, defence fulfilled)
+
+                        poppedCard = game.player1.popDeck()
+                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+
+                        game.player1.setHandEnablePlayStatus(True)
+                        game.player2.setHandEnablePlayStatus(False)
+                        game.recomputeBlockAndDialogStatus()
+
+                        your_move_notifier = "Opponent's turn."
+                        opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                        response["nextTurn"] = True
+
+                    response["hand"] = game.player2.hand
+                    response["discard"] = game.player2.discard
+                    response["cardsLeft"] = len(game.player2.deck)
+                    response["field"] = game.player2.field
+                    response["moveNotifier"] = your_move_notifier
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                               "moveNotifier": opponent_move_notifier}
+                    socketio.emit("update opponent state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                    socketio.emit("update your state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                    socketio.emit("update opponent state", updater)
+
+                    return response
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+
+
 @app.route('/get_discard', methods=["POST"])
 @cross_origin()
 def get_discard():
@@ -1620,8 +1746,6 @@ def game_init():
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
 
-
-# todo add pass turn/end turn
 
 if __name__ == '__main__':
     socketio.run(app, allow_unsafe_werkzeug=True)
