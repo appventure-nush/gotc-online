@@ -21,6 +21,14 @@ export default defineComponent({
     this.userStore.$subscribe(() => {
       if(this.userStore.isSignedIn) this.playerCards.getHand()
     })
+  },
+  computed:{
+    showMyHand() {
+      return !(playerCardsStore.showOptionHand || playerCardsStore.showDialogHand)
+    },
+    showOpponentHand() {
+      return (playerCardsStore.showOptionHand || playerCardsStore.showDialogHand)
+    }
   }
 })
 </script>
@@ -36,6 +44,7 @@ export default defineComponent({
 <template>
   <div class="hand-component-div">
     <CardHolder v-for="(card,index) in playerCards.handList"
+                v-if="showMyHand"
                 :card-name="card['name']"
                 :key="card['name']+index"
                 :play-button-func="()=>{
@@ -45,12 +54,16 @@ export default defineComponent({
                     playerCards.showDialogDefence = false
                     playerCards.showOptionField = false
                     playerCards.showDialogField = false
+                    playerCards.showDialogHand = false
+                    playerCards.showOptionHand = false
                     playerCards.index = index
                     playerCards.moveNotifier = 'Pick an option.'+card['warn']
                   } else if (card['requiresOptionDefence']) {
                     playerCards.showDialogNormal = false // dont forget to reset all dialogs
                     playerCards.showOptionField = false
                     playerCards.showDialogField = false
+                    playerCards.showDialogHand = false
+                    playerCards.showOptionHand = false
                     playerCards.index = index
                     if ((card['warn'] == '\nWarning: Opponent has >1 community support. This card will have no effect.')
                       || card['warn'] == '\nWarning: Opponent has no defence cards to select. This card will have no effect.') {
@@ -65,6 +78,8 @@ export default defineComponent({
                     playerCards.showDialogNormal = false
                     playerCards.showOptionDefence = false
                     playerCards.showDialogDefence = false
+                    playerCards.showDialogHand = false
+                    playerCards.showOptionHand = false
                     playerCards.index = index
                     if (card['warn'] == '') {
                       playerCards.showDialogField = false
@@ -74,12 +89,41 @@ export default defineComponent({
                       playerCards.showDialogField = true
                     }
                     playerCards.moveNotifier = 'Pick 1 field card.'+card['warn']
+                  } else if (card['requiresDialogHand']) {
+                    playerCards.getOpponentHand()
+                    playerCards.showDialogNormal = false
+                    playerCards.showOptionDefence = false
+                    playerCards.showDialogDefence = false
+                    playerCards.showOptionField = false
+                    playerCards.showDialogField = false
+                    playerCards.showDialogHand = true
+                    playerCards.showOptionHand = false
+                    playerCards.index = index
+                    playerCards.moveNotifier = 'Click Confirm when done viewing opponent\'s hand.'
+                  } else if (card['requiresOptionHand']) {
+                    playerCards.getOpponentHand()
+                    playerCards.showDialogNormal = false
+                    playerCards.showOptionDefence = false
+                    playerCards.showDialogDefence = false
+                    playerCards.showOptionField = false
+                    playerCards.showDialogField = false
+                    playerCards.index = index
+                    if (card['warn'] == '') {
+                      playerCards.showDialogHand = false
+                      playerCards.showOptionHand = true
+                    } else {
+                      playerCards.showOptionHand = false
+                      playerCards.showDialogHand = true
+                    }
+                    playerCards.moveNotifier = 'Pick a card from opponent\'s hand.'+card['warn']
                   } else {
                     playerCards.showDialogNormal = false // no stray dialogs
                     playerCards.showOptionDefence = false
                     playerCards.showDialogDefence = false
                     playerCards.showOptionField = false
                     playerCards.showDialogField = false
+                    playerCards.showDialogHand = false
+                    playerCards.showOptionHand = false
                     playerCards.playHand(index)
                     playerCards.index = -1 // just in case
                   }
@@ -90,13 +134,25 @@ export default defineComponent({
                 :enable-play="card['enablePlay']"
                 class="handcard"
     />
+    <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"
+                v-if="showOpponentHand"
+                :card-name="card['name']"
+                :key="card['name']+index"
+                :play-button-func="()=>{
+                  playerCards.playHand(playerCards.index, index)
+                  playerCards.showOptionHand = false
+                }"
+                :enable-play="playerCards.showOptionHand"
+                :rename-play="'Discard'"
+                class="handcard"
+    />
   </div>
 
 </template>
 
 <style scoped>
 
-.hand-component-div{
+.hand-component-div {
   display: inline-flex;
   align-items: center;
   justify-content: space-evenly;

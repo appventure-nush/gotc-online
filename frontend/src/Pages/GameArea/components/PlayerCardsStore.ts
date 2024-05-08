@@ -38,11 +38,11 @@ export const playerCardsStore  = defineStore({
         showOptionField : false,
         showDialogField : false,
         showDiscardPlay : false,
+        showOptionHand : false,
+        showDialogHand : false,
+        opponentHandTemp : [] as any[],
         index : -1
     }),
-    getters: {
-        dialogNormalDisplay : (state) => state.showDialogNormal ? "flex" : "none",
-    },
     actions:{
         async resetStore() {
             // reset the store to its default values
@@ -309,6 +309,37 @@ export const playerCardsStore  = defineStore({
                     this.handList = json_response["hand"] as {}[]
 
                     return json_response["hand"] as string[]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not get hand"
+                });
+        },
+
+        getOpponentHand() : Promise<string|string[]|any[]> {
+            // post get opponent hand request to the backend with username and sessionkey
+            // the hand will be sent over
+            return fetch(`${BACKEND_URL}/get_opponent_hand`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+                    this.opponentHandTemp = json_response["hand"] as any[]
+                    return json_response["hand"] as any[]
 
                 })
                 .catch(error => {

@@ -161,7 +161,8 @@ class Player:
                           # everywhere that could affect this (e.g. draw card) will be accompanied by a recompute call
                           # we just cannot call it here because this is Player not Game
                           "requiresDialogNormal": False, "requiresOptionDefence": False,
-                          "requiresOptionField": False, "requiresDialogHand": False})
+                          "requiresOptionField": False, "requiresDialogHand": False,
+                          "requiresOptionHand": False})
         return self.hand
 
 
@@ -218,11 +219,16 @@ class Game:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
             if i["name"] in ("event-1", "event-3", "event-4"):
-                i["requiresDialogHand"] = len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0
-                if i["requiresDialogHand"]:
+                i["requiresOptionHand"] = True
+                if len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0:
                     i["warn"] = ""
+                elif len(self.player2.hand) == 0 and self.player2.field.count("communitysupport") == 0:
+                    i["warn"] = "\nWarning: Opponent has no hand cards to select. This card will have no effect."
                 else:
-                    i["warn"] = "This card will have no effect!"
+                    i["warn"] = "\nWarning: Opponent has >0 community support. This card will have no effect!"
+            # Look at the cards in your opponent's hand. [2 CSC:] Draw 1 additional card AND play 1 additional card this turn
+            if i["name"] in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                i["requiresDialogHand"] = True
 
         self.player1.hand = handcopy
 
@@ -264,11 +270,16 @@ class Game:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
             if i["name"] in ("event-1", "event-3", "event-4"):
-                i["requiresDialogHand"] = len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0
-                if i["requiresDialogHand"]:
+                i["requiresOptionHand"] = True
+                if len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0:
                     i["warn"] = ""
+                elif len(self.player1.hand) == 0 and self.player1.field.count("communitysupport") == 0:
+                    i["warn"] = "\nWarning: Opponent has no hand cards to select. This card will have no effect."
                 else:
-                    i["warn"] = "This card will have no effect!"
+                    i["warn"] = "\nWarning: Opponent has >0 community support. This card will have no effect!"
+            # Look at the cards in your opponent's hand. [2 CSC:] Draw 1 additional card AND play 1 additional card this turn
+            if i["name"] in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                i["requiresDialogHand"] = True
 
         self.player2.hand = handcopy
         return self.player1.hand, self.player2.hand
@@ -886,6 +897,31 @@ def get_hand():
                     response["hand"] = game.player1.hand
                 elif game.player2_username == request_username:
                     response["hand"] = game.player2.hand
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
+
+@app.route('/get_opponent_hand', methods=["POST"])
+@cross_origin()
+def get_opponent_hand():
+    # return opponent's hand for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    response = {
+        "hand": []
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                game.recomputeBlockAndDialogStatus()
+                if game.player1_username == request_username:
+                    response["hand"] = game.player2.hand
+                elif game.player2_username == request_username:
+                    response["hand"] = game.player1.hand
                 return response
         # else
         abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
