@@ -63,7 +63,8 @@ export default defineComponent({
 
     <div class="pile-component-card-wrapper" v-on:mouseover="drawHover=true" v-on:mouseout="drawHover=false">
       <CardHolder card-name="back-black" class="pile-component-card" rename-play="End Turn" :enable-details="false"
-                  :play-button-func="playerCards.passTurn"/>
+                  :play-button-func="playerCards.passTurn"
+                  :enable-play="playerCards.canClickEndTurn && !playerCards.discardHand && !playerCards.showOptionHand && !playerCards.showDialogHand"/>
       <!-- todo make end turn more visible -->
       <p v-if="userStore.isSignedIn" class="draw-remainder">{{ playerCards.cardsLeft }} Left</p>
       <p v-else class="draw-remainder sign-in-reminder">Not Signed In</p>

@@ -61,6 +61,9 @@ socket.on("update your state", (args) => {
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier = args["moveNotifier"]
         }
+        if ("canClickEndTurn" in args) {
+            state.yourField.canClickEndTurn = args["canClickEndTurn"]
+        }
     }
 })
 

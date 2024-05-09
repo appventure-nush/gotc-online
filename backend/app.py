@@ -162,6 +162,22 @@ class Player:
                           "requiresOptionHand": False})
         return self.hand
 
+    def defenceCheck(self):
+        # check defences
+        # will return a string like "CDEMPS" where a letter appears if it is in the field
+        # and does not appear if it is not
+        # ignores community support
+        return "".join(list(sorted(set([i[0].upper() for i in self.field if i != "communitysupport"]))))
+
+    def gameWon(self):
+        return self.defenceCheck() == "CDEMPS" \
+            or (self.crisis == "crisis-1" and self.defenceCheck() == "CDEPS") \
+            or (self.crisis == "crisis-2" and self.defenceCheck() == "DEMPS") \
+            or (self.crisis == "crisis-3" and self.defenceCheck() == "CDMPS") \
+            or (self.crisis == "crisis-4" and self.defenceCheck() == "CDEMP") \
+            or (self.crisis == "crisis-5" and self.defenceCheck() == "CDEMS") \
+            or (self.crisis == "crisis-6" and self.defenceCheck() == "CEMPS")
+
 
 class Game:
     def __init__(self, player1_username, player2_username, internal_id):
@@ -174,6 +190,7 @@ class Game:
         self.player1_username = player1_username
         self.player2_username = player2_username
         self.gofirst = self.player1_username if self.player1.crisis > self.player2.crisis else self.player2_username
+        self.turn = self.gofirst
 
         self.internal_id = internal_id
 
@@ -941,7 +958,8 @@ def play_hand():
         "hand": [],
         "discard": [],
         "cardsLeft": 0,
-        "needDiscard": False
+        "needDiscard": False,
+        "winThisTurn": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -1001,7 +1019,8 @@ def play_hand():
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in (
-                        "psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
+                                "psychological-2", "social-2",
+                                "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player1.field.append(cardPlayed)
                             if game.player1.field.count("communitysupport") >= 1:
                                 if len(game.player1.deck) > 1:
@@ -1035,7 +1054,7 @@ def play_hand():
                             opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
                             next_turn = False
                         elif cardPlayed in (
-                        "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                                "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
                             game.player1.field.append(cardPlayed)
                             if game.player1.field.count("communitysupport") >= 2:
                                 # draw 1, extra turn
@@ -1112,6 +1131,14 @@ def play_hand():
                             opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
+                        if game.player1.gameWon():
+                            your_move_notifier += "\nYou win!"
+                            opponent_move_notifier += "\nYou lose!"
+                            next_turn = False
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.player2.setHandEnablePlayStatus(False)
+                            response["winThisTurn"] = True
+
                         if next_turn:
                             if len(game.player1.hand) > 7:
                                 # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
@@ -1120,7 +1147,7 @@ def play_hand():
 
                                 response["needDiscard"] = True
                             else:
-                                # todo do winning checks (out of cards, defence fulfilled)
+                                # todo do winning checks (out of cards)
 
                                 poppedCard = game.player2.popDeck()
                                 game.player2.addHandCard(poppedCard)  # add the popped card to the hand
@@ -1128,6 +1155,7 @@ def play_hand():
                                 game.player2.setHandEnablePlayStatus(True)
                                 game.player1.setHandEnablePlayStatus(False)
                                 game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player2_username
 
                                 your_move_notifier += "\nOpponent's turn."
                                 opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
@@ -1138,6 +1166,7 @@ def play_hand():
                         response["cardPlayed"] = cardPlayed
                         response["field"] = game.player1.field
                         response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player1_username == game.turn
 
                         updater = {"uuid": game_id, "username": game.player2_username,
                                    "hand": game.player1.hand, "discard": game.player1.discard,
@@ -1147,7 +1176,8 @@ def play_hand():
 
                         updater = {"uuid": game_id, "username": game.player2_username,
                                    "hand": game.player2.hand, "discard": game.player2.discard,
-                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "canClickEndTurn": game.turn == game.player2_username}
                         socketio.emit("update your state", updater)
 
                         updater = {"uuid": game_id, "username": game.player1_username,
@@ -1209,7 +1239,8 @@ def play_hand():
                                 opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
                             next_turn = True
                         elif cardPlayed in (
-                        "psychological-2", "social-2", "digital-2"):  # draw 1 card, 1 extra if have community support
+                                "psychological-2", "social-2",
+                                "digital-2"):  # draw 1 card, 1 extra if have community support
                             game.player2.field.append(cardPlayed)
                             if game.player2.field.count("communitysupport") >= 1:
                                 if len(game.player2.deck) > 1:
@@ -1243,7 +1274,7 @@ def play_hand():
                             opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
                             next_turn = False
                         elif cardPlayed in (
-                        "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                                "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
                             game.player2.field.append(cardPlayed)
                             if game.player2.field.count("communitysupport") >= 2:
                                 # draw 1, extra turn
@@ -1320,6 +1351,14 @@ def play_hand():
                             opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
                             next_turn = False
 
+                        if game.player2.gameWon():
+                            your_move_notifier += "\nYou win!"
+                            opponent_move_notifier += "\nYou lose!"
+                            next_turn = False
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.player2.setHandEnablePlayStatus(False)
+                            response["winThisTurn"] = True
+
                         if next_turn:
                             if len(game.player2.hand) > 7:
                                 # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
@@ -1327,7 +1366,7 @@ def play_hand():
                                 opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
                                 response["needDiscard"] = True
                             else:
-                                # todo do winning checks
+                                # todo do winning checks (out of cards)
 
                                 poppedCard = game.player1.popDeck()
                                 game.player1.addHandCard(poppedCard)  # add the popped card to the hand
@@ -1335,6 +1374,7 @@ def play_hand():
                                 game.player1.setHandEnablePlayStatus(True)
                                 game.player2.setHandEnablePlayStatus(False)
                                 game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player1_username
 
                                 your_move_notifier += "\nOpponent's turn."
                                 opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
@@ -1345,6 +1385,7 @@ def play_hand():
                         response["cardPlayed"] = cardPlayed
                         response["field"] = game.player2.field
                         response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player2_username == game.turn
 
                         updater = {"uuid": game_id, "username": game.player1_username,
                                    "hand": game.player2.hand, "discard": game.player2.discard,
@@ -1354,7 +1395,8 @@ def play_hand():
 
                         updater = {"uuid": game_id, "username": game.player1_username,
                                    "hand": game.player1.hand, "discard": game.player1.discard,
-                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "canClickEndTurn": game.turn == game.player1_username}
                         socketio.emit("update your state", updater)
 
                         updater = {"uuid": game_id, "username": game.player2_username,
@@ -1401,14 +1443,13 @@ def discard_hand():
                             your_move_notifier = "Please discard cards until you have 7 cards."
                             opponent_move_notifier = "Waiting for opponent to discard hand cards."
                         else:
-                            # todo do winning checks (out of cards, defence fulfilled)
-
                             poppedCard = game.player2.popDeck()
                             game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
                             game.player2.setHandEnablePlayStatus(True)
                             game.player1.setHandEnablePlayStatus(False)
                             game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player2_username
 
                             your_move_notifier = "Opponent's turn."
                             opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
@@ -1421,6 +1462,7 @@ def discard_hand():
                         response["cardPlayed"] = cardPlayed
                         response["field"] = game.player1.field
                         response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player1_username == game.turn
 
                         updater = {"uuid": game_id, "username": game.player2_username,
                                    "hand": game.player1.hand, "discard": game.player1.discard,
@@ -1430,7 +1472,8 @@ def discard_hand():
 
                         updater = {"uuid": game_id, "username": game.player2_username,
                                    "hand": game.player2.hand, "discard": game.player2.discard,
-                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "canClickEndTurn": game.turn == game.player2_username}
                         socketio.emit("update your state", updater)
 
                         updater = {"uuid": game_id, "username": game.player1_username,
@@ -1452,14 +1495,13 @@ def discard_hand():
                             your_move_notifier = "Please discard cards until you have 7 cards."
                             opponent_move_notifier = "Waiting for opponent to discard hand cards."
                         else:
-                            # todo do winning checks (out of cards, defence fulfilled)
-
                             poppedCard = game.player1.popDeck()
                             game.player1.addHandCard(poppedCard)  # add the popped card to the hand
 
                             game.player1.setHandEnablePlayStatus(True)
                             game.player2.setHandEnablePlayStatus(False)
                             game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player1_username
 
                             your_move_notifier = "Opponent's turn."
                             opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
@@ -1472,6 +1514,7 @@ def discard_hand():
                         response["cardPlayed"] = cardPlayed
                         response["field"] = game.player2.field
                         response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player2_username == game.turn
 
                         updater = {"uuid": game_id, "username": game.player1_username,
                                    "hand": game.player2.hand, "discard": game.player2.discard,
@@ -1481,7 +1524,8 @@ def discard_hand():
 
                         updater = {"uuid": game_id, "username": game.player1_username,
                                    "hand": game.player1.hand, "discard": game.player1.discard,
-                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "canClickEndTurn": game.player2_username == game.turn}
                         socketio.emit("update your state", updater)
 
                         updater = {"uuid": game_id, "username": game.player2_username,
@@ -1506,7 +1550,8 @@ def pass_turn():
         "hand": [],
         "discard": [],
         "cardsLeft": 0,
-        "nextTurn": False
+        "nextTurn": False,
+        "winThisTurn": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -1520,7 +1565,7 @@ def pass_turn():
                         your_move_notifier = "Please discard cards until you have 7 cards."
                         opponent_move_notifier = "Waiting for opponent to discard hand cards."
                     else:
-                        # todo do winning checks (out of cards, defence fulfilled)
+                        # todo do winning checks (out of cards)
 
                         poppedCard = game.player2.popDeck()
                         game.player2.addHandCard(poppedCard)  # add the popped card to the hand
@@ -1528,6 +1573,7 @@ def pass_turn():
                         game.player2.setHandEnablePlayStatus(True)
                         game.player1.setHandEnablePlayStatus(False)
                         game.recomputeBlockAndDialogStatus()
+                        game.turn = game.player2_username
 
                         your_move_notifier = "Opponent's turn."
                         opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
@@ -1539,6 +1585,7 @@ def pass_turn():
                     response["cardsLeft"] = len(game.player1.deck)
                     response["field"] = game.player1.field
                     response["moveNotifier"] = your_move_notifier
+                    response["canClickEndTurn"] = game.player1_username == game.turn
 
                     updater = {"uuid": game_id, "username": game.player2_username,
                                "hand": game.player1.hand, "discard": game.player1.discard,
@@ -1548,7 +1595,8 @@ def pass_turn():
 
                     updater = {"uuid": game_id, "username": game.player2_username,
                                "hand": game.player2.hand, "discard": game.player2.discard,
-                               "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                               "canClickEndTurn": game.player2_username == game.turn}
                     socketio.emit("update your state", updater)
 
                     updater = {"uuid": game_id, "username": game.player1_username,
@@ -1559,14 +1607,13 @@ def pass_turn():
                     return response
 
                 elif game.player2_username == request_username:
-
                     next_turn = len(game.player2.hand) > 7
 
                     if next_turn:
                         your_move_notifier = "Please discard cards until you have 7 cards."
                         opponent_move_notifier = "Waiting for opponent to discard hand cards."
                     else:
-                        # todo do winning checks (out of cards, defence fulfilled)
+                        # todo do winning checks (out of cards)
 
                         poppedCard = game.player1.popDeck()
                         game.player1.addHandCard(poppedCard)  # add the popped card to the hand
@@ -1574,6 +1621,7 @@ def pass_turn():
                         game.player1.setHandEnablePlayStatus(True)
                         game.player2.setHandEnablePlayStatus(False)
                         game.recomputeBlockAndDialogStatus()
+                        game.turn = game.player1_username
 
                         your_move_notifier = "Opponent's turn."
                         opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
@@ -1585,6 +1633,7 @@ def pass_turn():
                     response["cardsLeft"] = len(game.player2.deck)
                     response["field"] = game.player2.field
                     response["moveNotifier"] = your_move_notifier
+                    response["canClickEndTurn"] = game.player2_username == game.turn
 
                     updater = {"uuid": game_id, "username": game.player1_username,
                                "hand": game.player2.hand, "discard": game.player2.discard,
@@ -1594,7 +1643,8 @@ def pass_turn():
 
                     updater = {"uuid": game_id, "username": game.player1_username,
                                "hand": game.player1.hand, "discard": game.player1.discard,
-                               "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                               "canClickEndTurn": game.player1_username == game.turn}
                     socketio.emit("update your state", updater)
 
                     updater = {"uuid": game_id, "username": game.player2_username,
@@ -1663,7 +1713,8 @@ def game_init():
                                     "discard": game.player1.discard,
                                     "crisis": game.player1.crisis,
                                     "moveNotifier": notifier,
-                                    "uuid": game.internal_id}
+                                    "uuid": game.internal_id,
+                                    "canClickEndTurn": game.turn == game.player1_username}
                         # todo keep track of turn phase (eg playing time/discard cards at end of hand time etc)
                         socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
@@ -1687,7 +1738,8 @@ def game_init():
                                     "discard": game.player1.discard,
                                     "crisis": game.player1.crisis,
                                     "moveNotifier": notifier,
-                                    "uuid": game.internal_id}
+                                    "uuid": game.internal_id,
+                                    "canClickEndTurn": game.turn == game.player1_username}
                         socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -1710,7 +1762,8 @@ def game_init():
                                                             "discard": game.player2.discard,
                                                             "crisis": game.player2.crisis,
                                                             "moveNotifier": notifier,
-                                                            "uuid": game.internal_id})
+                                                            "uuid": game.internal_id,
+                                                            "canClickEndTurn": game.turn == game.player2_username})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
                                                                 "field": game.player2.field,
@@ -1732,7 +1785,8 @@ def game_init():
                                                             "discard": game.player2.discard,
                                                             "crisis": game.player2.crisis,
                                                             "moveNotifier": notifier,
-                                                            "uuid": game.internal_id})
+                                                            "uuid": game.internal_id,
+                                                            "canClickEndTurn": game.turn == game.player2_username})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
                                                                 "field": game.player2.field,

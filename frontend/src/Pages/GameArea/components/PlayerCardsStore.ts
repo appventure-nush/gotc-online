@@ -42,6 +42,7 @@ export const playerCardsStore  = defineStore({
         showDialogHand : false,
         opponentHandTemp : [] as any[],
         discardHand : false,
+        canClickEndTurn: false,
         index : -1
     }),
     actions:{
@@ -412,9 +413,14 @@ export const playerCardsStore  = defineStore({
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]
                     this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
 
                     if (json_response["needDiscard"]) {
                         this.discardHand = true
+                    }
+
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
                     }
 
                     return json_response["cardPlayed"] as string
@@ -451,6 +457,7 @@ export const playerCardsStore  = defineStore({
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]
                     this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
 
                     this.discardHand = !json_response["nextTurn"]
 
@@ -487,6 +494,11 @@ export const playerCardsStore  = defineStore({
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]
                     this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
+                    }
 
                     this.discardHand = !json_response["nextTurn"]
 
