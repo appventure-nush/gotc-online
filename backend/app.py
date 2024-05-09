@@ -169,14 +169,24 @@ class Player:
         # ignores community support
         return "".join(list(sorted(set([i[0].upper() for i in self.field if i != "communitysupport"]))))
 
+    def gameDefenceFulfilled(self):
+        if self.defenceCheck() == "CDEMPS":
+            return 5
+        elif self.crisis == "crisis-1":
+            return len(self.defenceCheck().replace("M", ""))
+        elif self.crisis == "crisis-2":
+            return len(self.defenceCheck().replace("C", ""))
+        elif self.crisis == "crisis-3":
+            return len(self.defenceCheck().replace("E", ""))
+        elif self.crisis == "crisis-4":
+            return len(self.defenceCheck().replace("S", ""))
+        elif self.crisis == "crisis-5":
+            return len(self.defenceCheck().replace("P", ""))
+        elif self.crisis == "crisis-6":
+            return len(self.defenceCheck().replace("D", ""))
+
     def gameWon(self):
-        return self.defenceCheck() == "CDEMPS" \
-            or (self.crisis == "crisis-1" and self.defenceCheck() == "CDEPS") \
-            or (self.crisis == "crisis-2" and self.defenceCheck() == "DEMPS") \
-            or (self.crisis == "crisis-3" and self.defenceCheck() == "CDMPS") \
-            or (self.crisis == "crisis-4" and self.defenceCheck() == "CDEMP") \
-            or (self.crisis == "crisis-5" and self.defenceCheck() == "CDEMS") \
-            or (self.crisis == "crisis-6" and self.defenceCheck() == "CEMPS")
+        return self.gameDefenceFulfilled() == 5
 
 
 class Game:
@@ -191,6 +201,7 @@ class Game:
         self.player2_username = player2_username
         self.gofirst = self.player1_username if self.player1.crisis > self.player2.crisis else self.player2_username
         self.turn = self.gofirst
+        self.nextturnislast = False
 
         self.internal_id = internal_id
 
@@ -1147,18 +1158,46 @@ def play_hand():
 
                                 response["needDiscard"] = True
                             else:
-                                # todo do winning checks (out of cards)
+                                if game.nextturnislast:
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier += "\nYOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                                elif len(game.player1.deck) == 0:
+                                    if game.gofirst == game.player1_username:
+                                        # award extra turn
+                                        game.nextturnislast = True
+                                        your_move_notifier += "\nWarning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                        opponent_move_notifier += "\nWarning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                    else:
+                                        # end game and compute winner
+                                        if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. You win due to having more defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        else:  # player 2 more than player 1
+                                            your_move_notifier += "\nYour deck ran out of cards. You lose due to having less defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                        response["winThisTurn"] = True
+                                else:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
-                                poppedCard = game.player2.popDeck()
-                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    game.player2.setHandEnablePlayStatus(True)
+                                    game.player1.setHandEnablePlayStatus(False)
+                                    game.recomputeBlockAndDialogStatus()
+                                    game.turn = game.player2_username
 
-                                game.player2.setHandEnablePlayStatus(True)
-                                game.player1.setHandEnablePlayStatus(False)
-                                game.recomputeBlockAndDialogStatus()
-                                game.turn = game.player2_username
-
-                                your_move_notifier += "\nOpponent's turn."
-                                opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+                                    your_move_notifier += "\nOpponent's turn."
+                                    opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
 
                         response["hand"] = game.player1.hand
                         response["discard"] = game.player1.discard
@@ -1319,11 +1358,11 @@ def play_hand():
                                     game.player1.field.remove(card1)
                                     game.player1.field.remove(card2)
                                     game.player1.discard = [card2] + game.player1.discard
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}.\n"
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
                                 else:
                                     game.player1.field.remove(card1)
-                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}.\n"
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
                                     opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
                             else:
                                 # no additional effect
@@ -1366,18 +1405,46 @@ def play_hand():
                                 opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
                                 response["needDiscard"] = True
                             else:
-                                # todo do winning checks (out of cards)
+                                if game.nextturnislast:
+                                    if game.player1.gameDefenceFulfilled() < game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier += "\nYOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                                elif len(game.player2.deck) == 0:
+                                    if game.gofirst == game.player2_username:
+                                        # award extra turn
+                                        game.nextturnislast = True
+                                        your_move_notifier += "\nWarning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                        opponent_move_notifier += "\nWarning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                    else:
+                                        # end game and compute winner
+                                        if game.player1.gameDefenceFulfilled() < game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. You win due to having more defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        else:  # player 2 more than player 1
+                                            your_move_notifier += "\nYour deck ran out of cards. You lose due to having less defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                        response["winThisTurn"] = True
+                                else:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
 
-                                poppedCard = game.player1.popDeck()
-                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    game.player1.setHandEnablePlayStatus(True)
+                                    game.player2.setHandEnablePlayStatus(False)
+                                    game.recomputeBlockAndDialogStatus()
+                                    game.turn = game.player1_username
 
-                                game.player1.setHandEnablePlayStatus(True)
-                                game.player2.setHandEnablePlayStatus(False)
-                                game.recomputeBlockAndDialogStatus()
-                                game.turn = game.player1_username
-
-                                your_move_notifier += "\nOpponent's turn."
-                                opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+                                    your_move_notifier += "\nOpponent's turn."
+                                    opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
 
                         response["hand"] = game.player2.hand
                         response["discard"] = game.player2.discard
@@ -1423,7 +1490,8 @@ def discard_hand():
         "hand": [],
         "discard": [],
         "cardsLeft": 0,
-        "nextTurn": False
+        "nextTurn": False,
+        "winThisTurn": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -1443,18 +1511,48 @@ def discard_hand():
                             your_move_notifier = "Please discard cards until you have 7 cards."
                             opponent_move_notifier = "Waiting for opponent to discard hand cards."
                         else:
-                            poppedCard = game.player2.popDeck()
-                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                            if game.nextturnislast:
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                            elif len(game.player1.deck) == 0:
+                                if game.gofirst == game.player1_username:
+                                    # award extra turn
+                                    game.nextturnislast = True
+                                    your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                    opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                else:
+                                    # end game and compute winner
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                            else:
+                                poppedCard = game.player2.popDeck()
+                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
-                            game.player2.setHandEnablePlayStatus(True)
-                            game.player1.setHandEnablePlayStatus(False)
-                            game.recomputeBlockAndDialogStatus()
-                            game.turn = game.player2_username
+                                game.player2.setHandEnablePlayStatus(True)
+                                game.player1.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player2_username
 
-                            your_move_notifier = "Opponent's turn."
-                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+                                your_move_notifier = "Opponent's turn."
+                                opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
 
-                            response["nextTurn"] = True
+                                response["nextTurn"] = True
 
                         response["hand"] = game.player1.hand
                         response["discard"] = game.player1.discard
@@ -1495,16 +1593,46 @@ def discard_hand():
                             your_move_notifier = "Please discard cards until you have 7 cards."
                             opponent_move_notifier = "Waiting for opponent to discard hand cards."
                         else:
-                            poppedCard = game.player1.popDeck()
-                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                            if game.nextturnislast:
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                            elif len(game.player1.deck) == 0:
+                                if game.gofirst == game.player1_username:
+                                    # award extra turn
+                                    game.nextturnislast = True
+                                    your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                    opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                else:
+                                    # end game and compute winner
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                            else:
+                                poppedCard = game.player1.popDeck()
+                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
 
-                            game.player1.setHandEnablePlayStatus(True)
-                            game.player2.setHandEnablePlayStatus(False)
-                            game.recomputeBlockAndDialogStatus()
-                            game.turn = game.player1_username
+                                game.player1.setHandEnablePlayStatus(True)
+                                game.player2.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player1_username
 
-                            your_move_notifier = "Opponent's turn."
-                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+                                your_move_notifier = "Opponent's turn."
+                                opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
 
                             response["nextTurn"] = True
 
@@ -1525,7 +1653,7 @@ def discard_hand():
                         updater = {"uuid": game_id, "username": game.player1_username,
                                    "hand": game.player1.hand, "discard": game.player1.discard,
                                    "cardsLeft": len(game.player1.deck), "field": game.player1.field,
-                                   "canClickEndTurn": game.player2_username == game.turn}
+                                   "canClickEndTurn": game.player1_username == game.turn}
                         socketio.emit("update your state", updater)
 
                         updater = {"uuid": game_id, "username": game.player2_username,
@@ -1565,18 +1693,46 @@ def pass_turn():
                         your_move_notifier = "Please discard cards until you have 7 cards."
                         opponent_move_notifier = "Waiting for opponent to discard hand cards."
                     else:
-                        # todo do winning checks (out of cards)
+                        if game.nextturnislast:
+                            if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                            elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                            else:  # player 2 more than player 1
+                                your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                            response["winThisTurn"] = True
+                        elif len(game.player1.deck) == 0:
+                            if game.gofirst == game.player1_username:
+                                # award extra turn
+                                game.nextturnislast = True
+                                your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                            else:
+                                # end game and compute winner
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                        else:
+                            poppedCard = game.player2.popDeck()
+                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
 
-                        poppedCard = game.player2.popDeck()
-                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                            game.player2.setHandEnablePlayStatus(True)
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player2_username
 
-                        game.player2.setHandEnablePlayStatus(True)
-                        game.player1.setHandEnablePlayStatus(False)
-                        game.recomputeBlockAndDialogStatus()
-                        game.turn = game.player2_username
-
-                        your_move_notifier = "Opponent's turn."
-                        opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
 
                         response["nextTurn"] = True
 
@@ -1613,18 +1769,46 @@ def pass_turn():
                         your_move_notifier = "Please discard cards until you have 7 cards."
                         opponent_move_notifier = "Waiting for opponent to discard hand cards."
                     else:
-                        # todo do winning checks (out of cards)
+                        if game.nextturnislast:
+                            if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                            elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                            else:  # player 2 more than player 1
+                                your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                            response["winThisTurn"] = True
+                        elif len(game.player1.deck) == 0:
+                            if game.gofirst == game.player1_username:
+                                # award extra turn
+                                game.nextturnislast = True
+                                your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                            else:
+                                # end game and compute winner
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                        else:
+                            poppedCard = game.player1.popDeck()
+                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
 
-                        poppedCard = game.player1.popDeck()
-                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                            game.player1.setHandEnablePlayStatus(True)
+                            game.player2.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player1_username
 
-                        game.player1.setHandEnablePlayStatus(True)
-                        game.player2.setHandEnablePlayStatus(False)
-                        game.recomputeBlockAndDialogStatus()
-                        game.turn = game.player1_username
-
-                        your_move_notifier = "Opponent's turn."
-                        opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
 
                         response["nextTurn"] = True
 

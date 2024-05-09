@@ -135,7 +135,7 @@ export default defineComponent({
                     playerCards.selectionDefence = []
                   }
                 }"
-                :enable-play="card['enablePlay'] || playerCards.discardHand"
+                :enable-play="(card['enablePlay'] || playerCards.discardHand) && playerCards.canClickEndTurn"
                 :rename-play="playerCards.discardHand ? 'Discard' : 'Play'"
                 class="handcard"
     />

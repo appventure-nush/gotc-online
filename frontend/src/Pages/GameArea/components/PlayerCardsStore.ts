@@ -459,6 +459,10 @@ export const playerCardsStore  = defineStore({
                     this.moveNotifier = json_response["moveNotifier"] as string
                     this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
 
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
+                    }
+
                     this.discardHand = !json_response["nextTurn"]
 
                     return json_response["cardPlayed"] as string
@@ -470,6 +474,17 @@ export const playerCardsStore  = defineStore({
                 });
         },
         passTurn() : Promise<string> {
+            this.showDialogNormal = false // no stray dialogs
+            this.showOptionDefence = false
+            this.showDialogDefence = false
+            this.showOptionField = false
+            this.showDialogField = false
+            this.showDialogHand = false
+            this.showOptionHand = false
+            this.showDiscardPlay = false
+            this.showOptionDefence2 = false
+            this.selectionDefence = []
+
             return fetch(`${BACKEND_URL}/pass_turn`, {
                 method: "POST",
                 body: JSON.stringify({

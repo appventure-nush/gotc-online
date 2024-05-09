@@ -73,7 +73,7 @@ export default defineComponent({
     <div class="pile-component-card-wrapper" v-on:mouseover="discHover=true" v-on:mouseout="discHover=false">
       <StackedCardHolder class="pile-component-card discardpile"
                          :cards="playerCards.discardDeck.length > 0 ? playerCards.discardDeck : ['discard-placeholder']"
-                         :enable-play="playerCards.showDiscardPlay"
+                         :enable-play="playerCards.showDiscardPlay && playerCards.canClickEndTurn"
                          :play-button-func="(key) => {return () => {
                            playerCards.showDiscardPlay = false
                            playerCards.playHand(playerCards.index, key)
