@@ -160,15 +160,14 @@ export default defineComponent({
 }
 .opponent-crisis>.crisiscard{
   position: absolute;
-  width: 80%;
-  height: 65%;
+  height: 60%;
+  aspect-ratio: 2/3;
   bottom: 10%;
   display: block;
 }
 .opponent-crisis>.cards-left{
   position: absolute;
   width: 80%;
-  height: 12.5%;
   margin: 0 0 2.5%;
   top: 10%;
   display: block;
@@ -177,7 +176,8 @@ export default defineComponent({
   background: linear-gradient(to bottom, dimgrey, darkslategrey);
   color: white;
   font-weight: 600;
-  font-size: 100%;
+  font-size: 1.25em;
+  padding: .25em 0;
 }
 
 .opponent-defence{
@@ -193,15 +193,15 @@ export default defineComponent({
 }
 .opponent-defence>.sch{
   position: relative;
-  width: 12.5%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 
 .opponent-comunity-support{
   position: absolute;
   top: 0;
-  right: 10%;
+  right: 11%;
   height: 100%;
   width: 10%;
   background-color: transparent;
@@ -211,8 +211,8 @@ export default defineComponent({
 }
 .opponent-comunity-support>.community-support-stack{
   position: relative;
-  width: 80%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 
@@ -229,8 +229,8 @@ export default defineComponent({
 }
 .opponent-discard>.opponent-discard-stack{
   position: relative;
-  width: 80%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 

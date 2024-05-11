@@ -66,8 +66,8 @@ export default defineComponent({
 
 .sch{
   position: relative;
-  width: 12.5%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 
