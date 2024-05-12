@@ -64,6 +64,26 @@ socket.on("update your state", (args) => {
         if ("canClickEndTurn" in args) {
             state.yourField.canClickEndTurn = args["canClickEndTurn"]
         }
+        if ("storage" in args && args["storage"].length != 0) {
+            // update all the other game logic variables
+            state.yourField.showDialogNormal = args["storage"]["showDialogNormal"]
+            state.yourField.showDialogDefence = args["storage"]["showDialogDefence"]
+            state.yourField.showOptionDefence = args["storage"]["showOptionDefence"]
+            state.yourField.selectionDefence = args["storage"]["selectionDefence"]
+            state.yourField.showOptionDefence2 = args["storage"]["showOptionDefence2"]
+            state.yourField.showOptionField = args["storage"]["showOptionField"]
+            state.yourField.showDialogField = args["storage"]["showDialogField"]
+            state.yourField.showDiscardPlay = args["storage"]["showDiscardPlay"]
+            state.yourField.showOptionHand = args["storage"]["showOptionHand"]
+            state.yourField.showDialogHand = args["storage"]["showDialogHand"]
+            state.yourField.opponentHandTemp = args["storage"]["opponentHandTemp"]
+            state.yourField.discardHand = args["storage"]["discardHand"]
+            state.yourField.canClickEndTurn = args["storage"]["canClickEndTurn"]
+            state.yourField.index = args["storage"]["index"]
+            if (args["storage"]["moveNotifier"] != undefined) {
+                state.yourField.moveNotifier = args["storage"]["moveNotifier"]
+            }
+        }
     }
 })
 

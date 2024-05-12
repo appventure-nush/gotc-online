@@ -16,6 +16,43 @@ export default defineComponent({
   include:{
     CardHolder,
   },
+  beforeMount() {
+    // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
+    // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
+    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    playerCardsStore.$subscribe( (mutation, state) => {
+      console.log(state)
+      // update the variables when they are written to
+      fetch(`${BACKEND_URL}/write_storage`, {
+        method: "POST",
+        body: JSON.stringify({
+          username : userSignInStore.username,
+          game_id: this.$route.params.gameid as string,
+          login_session_key : userSignInStore.login_session_key(),
+          storage: {
+            showDialogNormal : state.showDialogNormal,
+            showDialogDefence : state.showDialogDefence,
+            showOptionDefence : state.showOptionDefence,
+            selectionDefence : state.selectionDefence,
+            showOptionDefence2 : state.showOptionDefence,
+            showOptionField : state.showOptionField,
+            showDialogField : state.showDialogField,
+            showDiscardPlay : state.showDiscardPlay,
+            showOptionHand : state.showOptionHand,
+            showDialogHand : state.showDialogHand,
+            opponentHandTemp : state.opponentHandTemp,
+            discardHand : state.discardHand,
+            canClickEndTurn: state.canClickEndTurn,
+            index : state.index,
+            moveNotifier: state.moveNotifier
+          }
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+    }, {deep:true})
+  },
   created() {
     this.$watch(
         () => this.$route.params,
@@ -23,6 +60,7 @@ export default defineComponent({
           playerCardsStore.uuid = this.$route.params.gameid as string
           opponentFieldStore.uuid = this.$route.params.gameid as string
           // todo use game_init backend call which returns if you are first, second, spectating or the game does not exist
+          // also call game init on login or logout
 
           fetch(`${BACKEND_URL}/game_init`, {
             method: "POST",

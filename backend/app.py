@@ -128,6 +128,22 @@ class Player:
         self.hand: list[dict[str, Union[str, bool]]] = []  # server side hand
         self.discard: list[str] = []
         self.field: list[str] = []
+        self.storage = {
+            "showDialogNormal": False,
+            "showDialogDefence": False,
+            "showOptionDefence": False,
+            "selectionDefence": [],
+            "showOptionDefence2": False,
+            "showOptionField": False,
+            "showDialogField": False,
+            "showDiscardPlay": False,
+            "showOptionHand": False,
+            "showDialogHand": False,
+            "opponentHandTemp": [],
+            "discardHand": False,
+            "canClickEndTurn": True,
+            "index": -1
+        }
 
     def shuffleDeck(self):
         random.shuffle(self.deck)
@@ -1866,6 +1882,28 @@ def get_discard():
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
 
+@app.route('/write_storage', methods=["POST"])
+@cross_origin()
+def write_storage():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    game_id = request.json['game_id']
+    response = {}
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == your_username:
+                    game.player1.storage |= request.json["storage"]
+                elif game.player2_username == your_username:
+                    game.player2.storage |= request.json["storage"]
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Updating Storage Unavailable"}), 404))
+
+
 @app.route('/game_init', methods=["POST"])
 @cross_origin()
 def game_init():
@@ -1898,8 +1936,8 @@ def game_init():
                                     "crisis": game.player1.crisis,
                                     "moveNotifier": notifier,
                                     "uuid": game.internal_id,
-                                    "canClickEndTurn": game.turn == game.player1_username}
-                        # todo keep track of turn phase (eg playing time/discard cards at end of hand time etc)
+                                    "canClickEndTurn": game.turn == game.player1_username,
+                                    "storage": game.player1.storage}
                         socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -1923,7 +1961,8 @@ def game_init():
                                     "crisis": game.player1.crisis,
                                     "moveNotifier": notifier,
                                     "uuid": game.internal_id,
-                                    "canClickEndTurn": game.turn == game.player1_username}
+                                    "canClickEndTurn": game.turn == game.player1_username,
+                                    "storage": game.player1.storage}
                         socketio.emit("update your state", returned)
                         socketio.emit("update opponent state", {"username": game.player2_username,
                                                                 "cardsLeft": len(game.player1.deck),
@@ -1947,7 +1986,8 @@ def game_init():
                                                             "crisis": game.player2.crisis,
                                                             "moveNotifier": notifier,
                                                             "uuid": game.internal_id,
-                                                            "canClickEndTurn": game.turn == game.player2_username})
+                                                            "canClickEndTurn": game.turn == game.player2_username,
+                                                            "storage": game.player2.storage})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
                                                                 "field": game.player2.field,
@@ -1970,7 +2010,8 @@ def game_init():
                                                             "crisis": game.player2.crisis,
                                                             "moveNotifier": notifier,
                                                             "uuid": game.internal_id,
-                                                            "canClickEndTurn": game.turn == game.player2_username})
+                                                            "canClickEndTurn": game.turn == game.player2_username,
+                                                            "storage": game.player2.storage})
                         socketio.emit("update opponent state", {"username": game.player1_username,
                                                                 "cardsLeft": len(game.player2.deck),
                                                                 "field": game.player2.field,

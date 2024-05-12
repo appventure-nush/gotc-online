@@ -27,7 +27,6 @@ export const playerCardsStore  = defineStore({
 
         uuid: "",
 
-        // todo restore these variables in game_init
         moveNotifier: "Move Notifier",
 
         showDialogNormal : false,
@@ -42,7 +41,7 @@ export const playerCardsStore  = defineStore({
         showDialogHand : false,
         opponentHandTemp : [] as any[],
         discardHand : false,
-        canClickEndTurn: false,
+        canClickEndTurn: true,
         index : -1
     }),
     actions:{
