@@ -6,10 +6,16 @@ import Crisis from "./Crisis.vue";
 import UtilBar from "./UtilBar.vue";
 import Defences from "./Defences.vue";
 import CommunitySupports from "./CommunitySupports.vue";
+import {playerCardsStore} from "./PlayerCardsStore";
 
 export default defineComponent({
   name: "PlayerSide",
-  components: {CommunitySupports, Defences, UtilBar, Crisis, Hand, Pile}
+  components: {CommunitySupports, Defences, UtilBar, Crisis, Hand, Pile},
+  computed:{
+    handBGColor() {
+      return ((playerCardsStore.showOptionHand || playerCardsStore.showDialogHand) && !playerCardsStore.vetoShowOpponentHand) ? "#588B8B" : "#F28F3B"
+    }
+  }
 })
 </script>
 
@@ -59,7 +65,7 @@ export default defineComponent({
   left: 0;
   height: 45%;
   width: 80%;
-  background-color: #F28F3B;
+  background-color: v-bind(handBGColor);
 }
 
 .pile{

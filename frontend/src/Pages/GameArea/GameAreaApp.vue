@@ -44,7 +44,8 @@ export default defineComponent({
             discardHand : state.discardHand,
             canClickEndTurn: state.canClickEndTurn,
             index : state.index,
-            moveNotifier: state.moveNotifier
+            moveNotifier: state.moveNotifier,
+            vetoShowOpponentHand: state.vetoShowOpponentHand,
           }
         }),
         headers: {

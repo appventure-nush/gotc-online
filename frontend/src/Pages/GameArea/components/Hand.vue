@@ -22,12 +22,14 @@ export default defineComponent({
       if(this.userStore.isSignedIn) this.playerCards.getHand()
     })
   },
+  data(){
+    return{
+
+    }
+  },
   computed:{
-    showMyHand() {
-      return !(playerCardsStore.showOptionHand || playerCardsStore.showDialogHand)
-    },
     showOpponentHand() {
-      return (playerCardsStore.showOptionHand || playerCardsStore.showDialogHand)
+      return (playerCardsStore.showOptionHand || playerCardsStore.showDialogHand) && !playerCardsStore.vetoShowOpponentHand
     }
   }
 })
@@ -43,14 +45,27 @@ export default defineComponent({
 
 <template>
   <div class="hand-component-div">
+    <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"
+                v-if="showOpponentHand"
+                :card-name="card['name']"
+                :key="card['name']+index"
+                :play-button-func="()=>{
+                  playerCards.playHand(playerCards.index, index)
+                  playerCards.showOptionHand = false
+                }"
+                :enable-play="playerCards.showOptionHand"
+                :rename-play="'Discard'"
+                class="handcard"
+    />
     <CardHolder v-for="(card,index) in playerCards.handList"
-                v-if="showMyHand"
+                v-else
                 :card-name="card['name']"
                 :key="card['name']+index"
                 :play-button-func="()=>{
                   if (playerCards.discardHand) {
                     playerCards.discardCardFromHand(index)
                   } else {
+                    playerCards.vetoShowOpponentHand = false
                     if (card['requiresDialogNormal']) {
                       playerCards.showDialogNormal = true // dont forget to reset all dialogs
                       playerCards.showOptionDefence = false
@@ -115,6 +130,7 @@ export default defineComponent({
                         playerCards.showDialogHand = false
                         playerCards.showOptionHand = true
                       } else {
+                        playerCards.vetoShowOpponentHand = true
                         playerCards.showOptionHand = false
                         playerCards.showDialogHand = true
                       }
@@ -139,18 +155,6 @@ export default defineComponent({
                 :rename-play="playerCards.discardHand ? 'Discard' : 'Play'"
                 class="handcard"
     />
-    <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"
-                v-if="showOpponentHand"
-                :card-name="card['name']"
-                :key="card['name']+index"
-                :play-button-func="()=>{
-                  playerCards.playHand(playerCards.index, index)
-                  playerCards.showOptionHand = false
-                }"
-                :enable-play="playerCards.showOptionHand"
-                :rename-play="'Discard'"
-                class="handcard"
-    />
   </div>
 
 </template>
@@ -171,5 +175,6 @@ export default defineComponent({
   aspect-ratio: 2/3;
   display: inline-block;
 }
+
 
 </style>

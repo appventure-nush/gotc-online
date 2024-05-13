@@ -234,7 +234,7 @@ class Game:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
             # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
-            if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+            if i["name"] in ("event-5", "event-6", "event-7", "event-8"):
                 i["requiresOptionDefence"] = True
                 if self.player2.field.count("communitysupport") <= 1 and (
                         len(self.player2.field) - self.player2.field.count("communitysupport") >= 2
@@ -260,7 +260,7 @@ class Game:
                 else:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
-            if i["name"] in ("event-1", "event-3", "event-4"):
+            if i["name"] in ("event-1", "event-3", "event-2", "event-4"):
                 i["requiresOptionHand"] = True
                 if len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0:
                     i["warn"] = ""
@@ -286,7 +286,7 @@ class Game:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
             # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
-            if i["name"] in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+            if i["name"] in ( "event-5", "event-6", "event-7", "event-8"):
                 i["requiresOptionDefence"] = True
                 if self.player1.field.count("communitysupport") <= 1 and (
                         len(self.player1.field) - self.player1.field.count("communitysupport") >= 2
@@ -312,7 +312,7 @@ class Game:
                 else:
                     i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
             # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
-            if i["name"] in ("event-1", "event-3", "event-4"):
+            if i["name"] in ("event-1", "event-3", "event-2", "event-4"):
                 i["requiresOptionHand"] = True
                 if len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0:
                     i["warn"] = ""
@@ -688,11 +688,18 @@ def random_opponent():
     sent_login_sesh_key = request.json['login_session_key']
     # first check if logged_in
     target_user_logged_in = False
+    print(logged_in)
     for i in logged_in:
+        print(username)
+        print(i.name)
+        print(sent_login_sesh_key)
+        print(i.login_session_key)
+        print(secrets.compare_digest(sent_login_sesh_key, i.login_session_key))
         if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
             target_user_logged_in = True
             user = i
             break
+    print(target_user_logged_in)
     # if indeed logged in
     if request.method == "POST":
         if target_user_logged_in:

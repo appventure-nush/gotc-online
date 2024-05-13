@@ -42,7 +42,11 @@ export const playerCardsStore  = defineStore({
         opponentHandTemp : [] as any[],
         discardHand : false,
         canClickEndTurn: true,
-        index : -1
+        index : -1,
+
+        vetoShowOpponentHand : false
+
+        // variables here need to be added to beforeMount storage writer in GameAppArea.vue
     }),
     actions:{
         async resetStore() {
