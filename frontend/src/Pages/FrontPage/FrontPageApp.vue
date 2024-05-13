@@ -61,7 +61,7 @@ socket.disconnect()
     <div class="backend-calculation"><backendmathform/></div>
     <div class="userform"><userform/></div>
 
-    <router-link to="/MainPage"><button style="margin: 10pt">Go to MainPage</button></router-link>
+    <router-link to="/"><button style="margin: 10pt">Go to MainPage</button></router-link>
   </div>
 </template>
 

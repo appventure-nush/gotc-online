@@ -37,8 +37,8 @@ const HelpArea = HelpAreaApp
 // Each route should map to a component.
 // We'll talk about nested routes later. (I haven't gotten to that part of the vue-router tutorial)
 const routes = [
-    { path: '/', component: FrontPage },
-    { path: '/MainPage', component: MainPage },
+    { path: '/', component: MainPage },
+    { path: '/FrontPage', component: FrontPage },
     { path: '/GameArea/:gameid', component: GameArea},
     { path: '/HelpArea', component: HelpArea}
 ]
