@@ -8,14 +8,25 @@ import {mainPageStore} from "./MainPageStore";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default defineComponent({
-  components:{
+  components: {
     userform, topbarbuttonbar
   },
-  computed:{
-    showSignInDialog(){
-      return mainPageStore.signInPrompDisplay
+  data(){
+    return{
+      isLandscape : screen.height<=screen.width
     }
-  }
+  },
+  computed: {
+    showSignInDialog() {
+      return mainPageStore.signInPrompDisplay
+    },
+    isMobile() {
+      return Math.min(screen.width, screen.height) <= 500
+    },
+    showWarningBox(){
+      return this.isMobile || !this.isLandscape
+    }
+  },
 })
 
 </script>
@@ -26,6 +37,10 @@ export default defineComponent({
       <p class="gotc-online-pseudologo">GOTC<br>ONLINE</p>
       <topbarbuttonbar/>
       <div class="userform-div"><userform/></div>
+    </div>
+    <div v-if="showWarningBox" class="bottom-reminders">
+      <p v-if="!isLandscape">Please rotate your device such that it is in landscape mode.</p><br v-if="!isLandscape">
+      <p v-if="isMobile">You seem to be playing on a mobile device. You may need to zoom out on your browser for text to be properly sized.</p>
     </div>
   </div>
 </template>
@@ -76,6 +91,28 @@ export default defineComponent({
 
   padding-left: 10vw;
   padding-right: 10vw;
+}
+
+.bottom-reminders{
+  position: absolute;
+  bottom: 5%;
+  right: 5%;
+  left: 5%;
+  background: #FFD5C2;
+  color: black;
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: .5em;
+  gap: 1vh;
+}
+.bottom-reminders > p{
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  font-size: 3.5vh;
+  line-height: .9;
 }
 
 </style>
