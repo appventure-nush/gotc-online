@@ -189,7 +189,7 @@ export default defineComponent( {
     color: black;
   }
   .dialogtext {
-    color: black;
+    color: white;
   }
 }
 

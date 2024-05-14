@@ -100,9 +100,15 @@ export default defineComponent({
     }
   },
   computed:{
+    // for mobile devices, use lower res card images
+    isMobile : function() {
+      return screen.height <= 500
+    },
+
     cardImgSrc : function (){
       // constructs the src url for te card, served by backend function
-      return this.BACKEND_URL+'/get_card?cardname='+this.cardName
+      let q = this.isMobile ? "jpeg" : "png"
+      return this.BACKEND_URL+'/get_card?cardname='+this.cardName+'&quality='+q
     },
 
     overlayOpacity : function () {

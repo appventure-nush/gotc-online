@@ -688,18 +688,11 @@ def random_opponent():
     sent_login_sesh_key = request.json['login_session_key']
     # first check if logged_in
     target_user_logged_in = False
-    print(logged_in)
     for i in logged_in:
-        print(username)
-        print(i.name)
-        print(sent_login_sesh_key)
-        print(i.login_session_key)
-        print(secrets.compare_digest(sent_login_sesh_key, i.login_session_key))
         if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
             target_user_logged_in = True
             user = i
             break
-    print(target_user_logged_in)
     # if indeed logged in
     if request.method == "POST":
         if target_user_logged_in:
@@ -724,7 +717,11 @@ def random_opponent():
 @app.route('/get_card', methods=["GET"])
 def get_card():
     cardname = request.args.get('cardname')
-    return send_file(f"card_art/{cardname}.png", mimetype='image/png')
+    quality = request.args.get('quality')
+    if quality == "png":
+        return send_file(f"card_art/png/{cardname}.png", mimetype='image/png')
+    else:
+        return send_file(f"card_art/jpeg/{cardname}.jpg", mimetype='image/jpeg')
 
 
 @app.route('/get_deck', methods=["POST"])
