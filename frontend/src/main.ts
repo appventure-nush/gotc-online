@@ -37,16 +37,16 @@ const HelpArea = HelpAreaApp
 // Each route should map to a component.
 // We'll talk about nested routes later. (I haven't gotten to that part of the vue-router tutorial)
 const routes = [
-    { path: '/', component: FrontPage },
-    { path: '/MainPage', component: MainPage },
-    { path: '/GameArea', component: GameArea},
+    { path: '/', component: MainPage },
+    { path: '/FrontPage', component: FrontPage },
+    { path: '/GameArea/:gameid', component: GameArea},
     { path: '/HelpArea', component: HelpArea}
 ]
 
 // 3. Create the router instance and pass the `routes` option
 // You can pass in additional options here, but let's
 // keep it simple for now.
-const router = createRouter({
+export const router = createRouter({
     // 4. Provide the history implementation to use.
     history: createWebHistory(
         import.meta.env.VITE_BASEPATH

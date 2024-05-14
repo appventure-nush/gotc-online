@@ -4,7 +4,7 @@ import {globalPiniaInstance} from "../../../global";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
-// this store is used to store the cards currently in handm the number of cards left, and the discard deck
+// this store is used to store the cards currently in hand the number of cards left, and the discard deck
 // this store also has action functions that pop cards from the deck in server
 // cardsLeft is manually updated in the deck functions whenever a card is popped. For the most, part don't worry about it
 
@@ -13,7 +13,7 @@ export const playerCardsStore  = defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: 'playerCards',
     state: () =>({
-        handList : [] as string[],
+        handList : [] as {}[],
         discardDeck : ["back-black"] as string[],
         cardsLeft : 46 as number,
 
@@ -25,15 +25,33 @@ export const playerCardsStore  = defineStore({
         // field consists of defences & community supports in play
         field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
+        uuid: "",
 
+        moveNotifier: "Move Notifier",
+
+        showDialogNormal : false,
+        showDialogDefence : false,
+        showOptionDefence : false,
+        selectionDefence : [] as (number|string)[],
+        showOptionDefence2 : false,
+        showOptionField : false,
+        showDialogField : false,
+        showDiscardPlay : false,
+        showOptionHand : false,
+        showDialogHand : false,
+        opponentHandTemp : [] as any[],
+        discardHand : false,
+        canClickEndTurn: true,
+        index : -1,
+
+        vetoShowOpponentHand : false
+
+        // variables here need to be added to beforeMount storage writer in GameAppArea.vue
     }),
-    getters: {
-
-    },
     actions:{
         async resetStore() {
             // reset the store to its default values
-            this.handList = [] as string[]
+            this.handList = [] as {}[]
             this.discardDeck = ["back-black"] as string[]
             this.cardsLeft = await this.getStdDeckSize()
         },
@@ -68,12 +86,14 @@ export const playerCardsStore  = defineStore({
         },
 
         drawDeck() : Promise<string> {
-            // post draw deck request to the packend with username and sessionkey
+            // post draw deck request to the backend with username and sessionkey
             // the drawn card will be sent over and the hand will be updated
             return fetch(`${BACKEND_URL}/pop_deck`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -113,6 +133,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -142,6 +164,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -171,6 +195,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -204,6 +230,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -234,6 +262,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -266,6 +296,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -279,9 +311,40 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as string[]
+                    this.handList = json_response["hand"] as {}[]
 
                     return json_response["hand"] as string[]
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not get hand"
+                });
+        },
+
+        getOpponentHand() : Promise<string|string[]|any[]> {
+            // post get opponent hand request to the backend with username and sessionkey
+            // the hand will be sent over
+            return fetch(`${BACKEND_URL}/get_opponent_hand`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key : userSignInStore.login_session_key()
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+                    this.opponentHandTemp = json_response["hand"] as any[]
+                    return json_response["hand"] as any[]
 
                 })
                 .catch(error => {
@@ -297,6 +360,8 @@ export const playerCardsStore  = defineStore({
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key()
                 }),
                 headers: {
@@ -321,15 +386,19 @@ export const playerCardsStore  = defineStore({
                 });
         },
 
-        playHand(hand_card_index : number) : Promise<string> {
+        playHand(hand_card_index : number, extra? : any, extra2? : any) : Promise<string> {
             // post get hand  request to the backend with username and sessionkey
             // the hand will be sent over
             return fetch(`${BACKEND_URL}/play_hand`, {
                 method: "POST",
                 body: JSON.stringify({
                     username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key(),
-                    card_index : hand_card_index
+                    card_index : hand_card_index,
+                    extra: extra,
+                    extra2: extra2
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
@@ -342,11 +411,116 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as string[]
+                    this.handList = json_response["hand"] as {}[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
+                    this.field = json_response["field"] as string[]
+                    this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                    if (json_response["needDiscard"]) {
+                        this.discardHand = true
+                    }
+
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
+                    }
 
                     return json_response["cardPlayed"] as string
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not play hand"
+                });
+        },
+        discardCardFromHand(hand_card_index : number) : Promise<string> {
+            return fetch(`${BACKEND_URL}/discard_hand`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username : userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key : userSignInStore.login_session_key(),
+                    card_index : hand_card_index,
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.handList = json_response["hand"] as {}[]
+                    this.discardDeck = json_response["discard"] as string[]
+                    this.cardsLeft = json_response["cardsLeft"] as number
+                    this.field = json_response["field"] as string[]
+                    this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
+                    }
+
+                    this.discardHand = !json_response["nextTurn"]
+
+                    return json_response["cardPlayed"] as string
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not play hand"
+                });
+        },
+        passTurn() : Promise<string> {
+            this.showDialogNormal = false // no stray dialogs
+            this.showOptionDefence = false
+            this.showDialogDefence = false
+            this.showOptionField = false
+            this.showDialogField = false
+            this.showDialogHand = false
+            this.showOptionHand = false
+            this.showDiscardPlay = false
+            this.showOptionDefence2 = false
+            this.selectionDefence = []
+
+            return fetch(`${BACKEND_URL}/pass_turn`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username: userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key: userSignInStore.login_session_key(),
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.handList = json_response["hand"] as {}[]
+                    this.discardDeck = json_response["discard"] as string[]
+                    this.cardsLeft = json_response["cardsLeft"] as number
+                    this.field = json_response["field"] as string[]
+                    this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                    if (json_response["winThisTurn"]) {
+                        this.canClickEndTurn = false
+                    }
+
+                    this.discardHand = !json_response["nextTurn"]
+
+                    return "Success"
 
                 })
                 .catch(error => {

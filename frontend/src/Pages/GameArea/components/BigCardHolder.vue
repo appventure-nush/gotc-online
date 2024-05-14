@@ -41,7 +41,7 @@ export default defineComponent({
 .bigcardholder>img{
   position: absolute;
   height: 100%;
-  width: 90%;
+  aspect-ratio: 6/8.5;
   top: 0;
   left: 0;
   object-fit: fill;
@@ -49,21 +49,27 @@ export default defineComponent({
 }
 .bigcardholder>button{
   position: absolute;
-  height: 3em;
-  width: 10%;
+  height: 2em;
+  aspect-ratio: 1;
   top: 0;
   right: 0;
   display: block;
+  border: white solid 3px;
+  background-color: black;
+  font-weight: bold;
+  font-size: 1.5em;
+  padding: 0;
 }
 
 .bigcardholder{
   position: absolute;
   height: 80vh;
-  width: 40vw;
+  width: 62vh;
+  max-width: 53vw;
+  max-height: 60vw;
   top: 10vh;
-  left: 30vw;
+  left: 35vw;
   display: inline-block;
-  align-items: center;
   background-color: transparent;
 }
 

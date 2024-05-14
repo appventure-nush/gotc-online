@@ -61,7 +61,7 @@ export default defineComponent({
                  :enable-play="this.enablePlay"
                  :block-play="this.blockPlay"
                  :rename-play="this.renamePlay"
-                 :play-button-func="this.playButtonFunc"
+                 :play-button-func="this.playButtonFunc(key)"
                  :enable-overlay="this.enableOverlay"
     />
   </div>

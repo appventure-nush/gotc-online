@@ -12,7 +12,7 @@ export default defineComponent({
   <div class="utilbar-component-div" >
     <div class="userform-temp">
       <userform />
-      <router-link to="/MainPage" v-slot="{href, route, navigate}" class="back-temp">
+      <router-link to="/" v-slot="{href, route, navigate}" class="back-temp">
         Back to MainPage
       </router-link>
     </div>

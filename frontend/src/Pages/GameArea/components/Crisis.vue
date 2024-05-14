@@ -46,13 +46,13 @@ export default defineComponent({
   align-items: center;
   justify-content: space-evenly;
 }
-.crisiscard{
+
+.crisiscard {
   position: relative;
-  margin-left: .5%;
-  margin-right: .5%;
-  width: 70%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
+  margin: auto;
 }
 
 </style>

@@ -62,13 +62,23 @@ export default defineComponent({
   <div class="pile-component-div">
 
     <div class="pile-component-card-wrapper" v-on:mouseover="drawHover=true" v-on:mouseout="drawHover=false">
-      <CardHolder card-name="back-black" class="pile-component-card" rename-play="Draw" :enable-details="false" :play-button-func="drawDeck"/>
+      <CardHolder card-name="back-black" class="pile-component-card" rename-play="End Turn" :enable-details="false"
+                  :play-button-func="playerCards.passTurn"
+                  :enable-play="playerCards.canClickEndTurn && !playerCards.discardHand && !playerCards.showOptionHand && !playerCards.showDialogHand"/>
+      <!-- todo make end turn more visible -->
       <p v-if="userStore.isSignedIn" class="draw-remainder">{{ playerCards.cardsLeft }} Left</p>
       <p v-else class="draw-remainder sign-in-reminder">Not Signed In</p>
     </div>
 
     <div class="pile-component-card-wrapper" v-on:mouseover="discHover=true" v-on:mouseout="discHover=false">
-      <StackedCardHolder class="pile-component-card discardpile" :cards="playerCards.discardDeck" :enable-play="false"/>
+      <StackedCardHolder class="pile-component-card discardpile"
+                         :cards="playerCards.discardDeck.length > 0 ? playerCards.discardDeck : ['discard-placeholder']"
+                         :enable-play="playerCards.showDiscardPlay && playerCards.canClickEndTurn"
+                         :play-button-func="(key) => {return () => {
+                           playerCards.showDiscardPlay = false
+                           playerCards.playHand(playerCards.index, key)
+                         }}"
+                         :rename-play="'Restore'"/>
     </div>
 
 
@@ -86,8 +96,8 @@ export default defineComponent({
 
 .pile-component-card-wrapper{
   position: relative;
-  width: 40%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 .pile-component-card-wrapper>.discardpile{

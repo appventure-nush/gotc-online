@@ -3,13 +3,93 @@ import {defineComponent} from 'vue'
 import CardHolder from "./components/CardHolder.vue";
 import BigCardHolder from "./components/BigCardHolder.vue";
 import PlayerSide from "./components/PlayerSide.vue";
-import OpponentSide from "./components/OpponentSide.vue";
+import OpponentSide from "./components/OpponentSide.vue"
+import {playerCardsStore} from "./components/PlayerCardsStore"
+import {opponentFieldStore} from "./components/OpponentFieldStore";
+import {userSignInStore} from "../../components/UserSignInStore";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 export default defineComponent({
   name: "GameAreaApp",
   components: {OpponentSide, PlayerSide, BigCardHolder, CardHolder},
   include:{
     CardHolder,
+  },
+  beforeMount() {
+    // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
+    // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
+    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    playerCardsStore.$subscribe( (mutation, state) => {
+      console.log(state)
+      // update the variables when they are written to
+      fetch(`${BACKEND_URL}/write_storage`, {
+        method: "POST",
+        body: JSON.stringify({
+          username : userSignInStore.username,
+          game_id: this.$route.params.gameid as string,
+          login_session_key : userSignInStore.login_session_key(),
+          storage: {
+            showDialogNormal : state.showDialogNormal,
+            showDialogDefence : state.showDialogDefence,
+            showOptionDefence : state.showOptionDefence,
+            selectionDefence : state.selectionDefence,
+            showOptionDefence2 : state.showOptionDefence,
+            showOptionField : state.showOptionField,
+            showDialogField : state.showDialogField,
+            showDiscardPlay : state.showDiscardPlay,
+            showOptionHand : state.showOptionHand,
+            showDialogHand : state.showDialogHand,
+            opponentHandTemp : state.opponentHandTemp,
+            discardHand : state.discardHand,
+            canClickEndTurn: state.canClickEndTurn,
+            index : state.index,
+            moveNotifier: state.moveNotifier,
+            vetoShowOpponentHand: state.vetoShowOpponentHand,
+          }
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+    }, {deep:true})
+  },
+  created() {
+    this.$watch(
+        () => this.$route.params,
+        (_to, _prev) => {
+          playerCardsStore.uuid = this.$route.params.gameid as string
+          opponentFieldStore.uuid = this.$route.params.gameid as string
+          // todo use game_init backend call which returns if you are first, second, spectating or the game does not exist
+          // also call game init on login or logout
+
+          fetch(`${BACKEND_URL}/game_init`, {
+            method: "POST",
+            body: JSON.stringify({
+              username : userSignInStore.username,
+              game_id: this.$route.params.gameid as string,
+              login_session_key : userSignInStore.login_session_key()
+            }),
+            headers: {
+              "Content-type": "application/json; charset=UTF-8"
+            }
+          })
+        }
+    )
+    playerCardsStore.uuid = this.$route.params.gameid as string
+    opponentFieldStore.uuid = this.$route.params.gameid as string
+
+    fetch(`${BACKEND_URL}/game_init`, {
+      method: "POST",
+      body: JSON.stringify({
+        username : userSignInStore.username,
+        game_id: this.$route.params.gameid as string,
+        login_session_key : userSignInStore.login_session_key()
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
   },
 })
 </script>
@@ -22,6 +102,7 @@ export default defineComponent({
 
   <div class="gamearea">
 
+    <!-- todo: display usernames to indicate who is who -->
     <OpponentSide class="opponent-side"/>
     <player-side class="player-side"/>
 
@@ -41,7 +122,8 @@ export default defineComponent({
   width: 100%;
   top: 0;
   left: 0;
-  background-color: maroon;
+  background-color: white;
+  max-height: 60vw;
 
   font-family: "Exo 2", serif;
 }

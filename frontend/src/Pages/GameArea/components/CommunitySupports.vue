@@ -36,8 +36,8 @@ export default defineComponent({
   position: relative;
   margin-left: .5%;
   margin-right: .5%;
-  width: 70%;
   height: 80%;
+  aspect-ratio: 2/3;
   display: inline-block;
 }
 

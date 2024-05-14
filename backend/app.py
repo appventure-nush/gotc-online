@@ -2,95 +2,148 @@ import random
 import secrets
 import time
 import threading
+import uuid
 from datetime import datetime
-from flask import Flask, request, send_file, abort, Response
+from typing import Union
+
+from flask import Flask, request, send_file, abort, Response, jsonify
 from flask_cors import CORS, cross_origin
 import json
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 LOG_FILE = "runtime.log"
 
-
 # standard deck is a list of the name strings of cards
-standard_deck : list[str] = [
-"communitysupport",
-"communitysupport",
-"communitysupport",
-"communitysupport",
+standard_deck: list[str] = [
+    "communitysupport",
+    "communitysupport",
+    "communitysupport",
+    "communitysupport",
 
-"event-1",
-"event-2",
-"event-3",
-"event-4",
-"event-5",
-"event-6",
-"event-7",
-"event-8",
-"event-9",
-"event-10",
-"event-11",
-"event-12",
+    "event-1",
+    "event-2",
+    "event-3",
+    "event-4",
+    "event-5",
+    "event-6",
+    "event-7",
+    "event-8",
+    "event-9",
+    "event-10",
+    "event-11",
+    "event-12",
 
-"civil-1",
-"civil-1",
-"civil-2",
-"civil-2",
-"civil-3",
-"digital-1",
-"digital-1",
-"digital-2",
-"digital-2",
-"digital-3",
-"economic-1",
-"economic-2",
-"economic-3",
-"economic-4",
-"economic-5",
-"military-1",
-"military-1",
-"military-2",
-"military-3",
-"military-4",
-"psychological-1",
-"psychological-1",
-"psychological-2",
-"psychological-2",
-"psychological-3",
-"social-1",
-"social-1",
-"social-2",
-"social-2",
-"social-3",
+    "civil-1",
+    "civil-1",
+    "civil-2",
+    "civil-2",
+    "civil-3",
+    "digital-1",
+    "digital-1",
+    "digital-2",
+    "digital-2",
+    "digital-3",
+    "economic-1",
+    "economic-2",
+    "economic-3",
+    "economic-4",
+    "economic-5",
+    "military-1",
+    "military-1",
+    "military-2",
+    "military-3",
+    "military-4",
+    "psychological-1",
+    "psychological-1",
+    "psychological-2",
+    "psychological-2",
+    "psychological-3",
+    "social-1",
+    "social-1",
+    "social-2",
+    "social-2",
+    "social-3",
 ]
 
 # select crisis from here
-crisis_deck : list[str] = [
-"crisis-1",
-"crisis-2",
-"crisis-3",
-"crisis-4",
-"crisis-5",
-"crisis-6",
+crisis_deck: list[str] = [
+    "crisis-1",
+    "crisis-2",
+    "crisis-3",
+    "crisis-4",
+    "crisis-5",
+    "crisis-6",
 ]
 
+# get name from id string
+lookup: dict[str, str] = {
+    "communitysupport": "Community Support",
+    "event-1": "Racial and Religious Tension",
+    "event-2": "Complaint Culture",
+    "event-3": "Stolen Personal Data",
+    "event-4": "Desensitised Citizens",
+    "event-5": "Disgruntled NSmen",
+    "event-6": "Criminal Collaboration",
+    "event-7": "Blood Bank Runs Dry",
+    "event-8": "Ransomware Attack",
+    "event-9": "Heightened Terrorist Alert",
+    "event-10": "Self Radicalisation",
+    "event-11": "Lone Wolf Attack",
+    "event-12": "Recruiting Desperate People",
+    "civil-1": "Alert Community",
+    "civil-2": "Prepared for Crisis",
+    "civil-3": "Civil Emergency",
+    "digital-1": "Use of Strong Passwords",
+    "digital-2": "Robust Emergency Protocols",
+    "digital-3": "Responsible Social Media Use",
+    "economic-1": "Career Mobility",
+    "economic-2": "Business Resilience",
+    "economic-3": "Financial Aid Schemes",
+    "economic-4": "Increase Surveillance at Maritime Ports",
+    "economic-5": "Skills Upgrading",
+    "military-1": "NSmen on Guard",
+    "military-2": "Increased Security Checks",
+    "military-3": "Naval Convoys",
+    "military-4": "Conduct of Raids",
+    "psychological-1": "Education",
+    "psychological-2": "Attend National Day Celebrations",
+    "psychological-3": "Strong Resolve",
+    "social-1": "Religious Counselling",
+    "social-2": "Neighbourliness",
+    "social-3": "Show of Solidarity"
+}
 
-class User:
-    def __init__(self, name, last_checkin, login_session_key):
-        self.name : str = name
-        self.last_checkin : float = last_checkin
-        self.login_session_key : str = login_session_key
-        self.deck : list[str] = standard_deck.copy()
-        random.shuffle(self.deck) # upon creation of the user, shuffle the deck
-        self.crisis : str = random.choice(crisis_deck) # server side crisis
-        self.hand : list[str] = [] # server side hand
-        self.discard : list[str] = []
-        self.field : list[str] = []
 
-    def __str__(self):
-        return self.name + " | " + str(self.last_checkin)
+class Player:
+    def __init__(self, name):
+        self.name = name
+        self.deck: list[str] = standard_deck.copy()
+        random.shuffle(self.deck)  # upon creation of the user, shuffle the deck
+        self.crisis: str = random.choice(crisis_deck)  # server side crisis
+        self.hand: list[dict[str, Union[str, bool]]] = []  # server side hand
+        self.discard: list[str] = []
+        self.field: list[str] = []
+        self.storage = {
+            "showDialogNormal": False,
+            "showDialogDefence": False,
+            "showOptionDefence": False,
+            "selectionDefence": [],
+            "showOptionDefence2": False,
+            "showOptionField": False,
+            "showDialogField": False,
+            "showDiscardPlay": False,
+            "showOptionHand": False,
+            "showDialogHand": False,
+            "opponentHandTemp": [],
+            "discardHand": False,
+            "canClickEndTurn": True,
+            "index": -1
+        }
 
     def shuffleDeck(self):
         random.shuffle(self.deck)
@@ -108,14 +161,187 @@ class User:
         self.crisis = random.choice(crisis_deck)
         return self.crisis
 
-    def addHandCard(self, cardName):
-        if len(self.hand) >= 7:
-            self.discard = [self.hand.pop(0)] + self.discard
-        self.hand += [cardName]
+    def setHandEnablePlayStatus(self, status: bool):
+        handcopy = self.hand.copy()
+        for i in handcopy:
+            i["enablePlay"] = status
+        self.hand = handcopy
         return self.hand
 
+    def addHandCard(self, cardName):
+        self.hand.append({"name": cardName, "enablePlay": True,  # "blockPlay": False, # can play card without effect
+                          # these will be set later
+                          # everywhere that could affect this (e.g. draw card) will be accompanied by a recompute call
+                          # we just cannot call it here because this is Player not Game
+                          "requiresDialogNormal": False, "requiresOptionDefence": False,
+                          "requiresOptionField": False, "requiresDialogHand": False,
+                          "requiresOptionHand": False})
+        return self.hand
 
-logged_in : list[User] = []
+    def defenceCheck(self):
+        # check defences
+        # will return a string like "CDEMPS" where a letter appears if it is in the field
+        # and does not appear if it is not
+        # ignores community support
+        return "".join(list(sorted(set([i[0].upper() for i in self.field if i != "communitysupport"]))))
+
+    def gameDefenceFulfilled(self):
+        if self.defenceCheck() == "CDEMPS":
+            return 5
+        elif self.crisis == "crisis-1":
+            return len(self.defenceCheck().replace("M", ""))
+        elif self.crisis == "crisis-2":
+            return len(self.defenceCheck().replace("C", ""))
+        elif self.crisis == "crisis-3":
+            return len(self.defenceCheck().replace("E", ""))
+        elif self.crisis == "crisis-4":
+            return len(self.defenceCheck().replace("S", ""))
+        elif self.crisis == "crisis-5":
+            return len(self.defenceCheck().replace("P", ""))
+        elif self.crisis == "crisis-6":
+            return len(self.defenceCheck().replace("D", ""))
+
+    def gameWon(self):
+        return self.gameDefenceFulfilled() == 5
+
+
+class Game:
+    def __init__(self, player1_username, player2_username, internal_id):
+        self.player1 = Player(player1_username)
+        self.player2 = Player(player2_username)
+        while self.player1.crisis == self.player2.crisis:
+            # crises cannot be equal
+            self.player1 = Player(player1_username)
+            self.player2 = Player(player2_username)
+        self.player1_username = player1_username
+        self.player2_username = player2_username
+        self.gofirst = self.player1_username if self.player1.crisis > self.player2.crisis else self.player2_username
+        self.turn = self.gofirst
+        self.nextturnislast = False
+
+        self.internal_id = internal_id
+
+    def recomputeBlockAndDialogStatus(self):
+        handcopy = self.player1.hand.copy()
+        for i in handcopy:
+            # [1 CSC:] Draw 2 additional cards OR Take any card from your discard pile and place it back into your hand
+            if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
+                if len(self.player1.discard) == 0:
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                else:
+                    i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
+                    # for example to win the game
+            # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
+            if i["name"] in ("event-5", "event-6", "event-7", "event-8"):
+                i["requiresOptionDefence"] = True
+                if self.player2.field.count("communitysupport") <= 1 and (
+                        len(self.player2.field) - self.player2.field.count("communitysupport") >= 2
+                ):
+                    i["warn"] = ""
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player2.field) - self.player2.field.count("communitysupport") == 1
+                ):
+                    i["warn"] = "\nWarning: Opponent has only 1 defence card to select."
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player2.field) - self.player2.field.count("communitysupport") == 0
+                ):
+                    i["warn"] = "\nWarning: Opponent has no defence cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >1 community support. This card will have no effect."
+            # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
+            if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
+                i["requiresOptionField"] = True
+                if self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) >= 1:
+                    i["warn"] = ""
+                elif self.player2.field.count("communitysupport") <= 2 and len(self.player2.field) == 0:
+                    i["warn"] = "\nWarning: Opponent has no field cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
+            # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
+            if i["name"] in ("event-1", "event-3", "event-2", "event-4"):
+                i["requiresOptionHand"] = True
+                if len(self.player2.hand) > 0 and self.player2.field.count("communitysupport") == 0:
+                    i["warn"] = ""
+                elif len(self.player2.hand) == 0 and self.player2.field.count("communitysupport") == 0:
+                    i["warn"] = "\nWarning: Opponent has no hand cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >0 community support. This card will have no effect!"
+            # Look at the cards in your opponent's hand. [2 CSC:] Draw 1 additional card AND play 1 additional card this turn
+            if i["name"] in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                i["requiresDialogHand"] = True
+
+        self.player1.hand = handcopy
+
+        handcopy = self.player2.hand.copy()
+        for i in handcopy:
+            # [1 CSC:] Draw 2 additional cards OR Take any card from your discard pile and place it back into your hand
+            if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                i["requiresDialogNormal"] = self.player2.field.count("communitysupport") >= 1
+                if len(self.player2.discard) == 0:
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                else:
+                    i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
+                    # for example to win the game
+            # If your opponent has 1 or less Community Support points, discard any 2 Defence cards from your opponent's field
+            if i["name"] in ( "event-5", "event-6", "event-7", "event-8"):
+                i["requiresOptionDefence"] = True
+                if self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") >= 2
+                ):
+                    i["warn"] = ""
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") == 1
+                ):
+                    i["warn"] = "\nWarning: Opponent has only 1 defence card to select."
+                elif self.player1.field.count("communitysupport") <= 1 and (
+                        len(self.player1.field) - self.player1.field.count("communitysupport") == 0
+                ):
+                    i["warn"] = "\nWarning: Opponent has no defence cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >1 community support. This card will have no effect."
+            # If your opponent has 2 or less Community Support points, discard any 1 card from your opponent's field
+            if i["name"] in ("event-9", "event-10", "event-11", "event-12"):
+                i["requiresOptionField"] = True
+                if self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) >= 1:
+                    i["warn"] = ""
+                elif self.player1.field.count("communitysupport") <= 2 and len(self.player1.field) == 0:
+                    i["warn"] = "\nWarning: Opponent has no field cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >2 community support. This card will have no effect."
+            # If your opponent has no Community Support points, look at your opponent's hand and discard 1 card from there
+            if i["name"] in ("event-1", "event-3", "event-2", "event-4"):
+                i["requiresOptionHand"] = True
+                if len(self.player1.hand) > 0 and self.player1.field.count("communitysupport") == 0:
+                    i["warn"] = ""
+                elif len(self.player1.hand) == 0 and self.player1.field.count("communitysupport") == 0:
+                    i["warn"] = "\nWarning: Opponent has no hand cards to select. This card will have no effect."
+                else:
+                    i["warn"] = "\nWarning: Opponent has >0 community support. This card will have no effect!"
+            # Look at the cards in your opponent's hand. [2 CSC:] Draw 1 additional card AND play 1 additional card this turn
+            if i["name"] in ("military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                i["requiresDialogHand"] = True
+
+        self.player2.hand = handcopy
+        return self.player1.hand, self.player2.hand
+
+
+class User:
+    def __init__(self, name, last_checkin, login_session_key):
+        self.name: str = name
+        self.last_checkin: float = last_checkin
+        self.login_session_key: str = login_session_key
+        self.games: list[str] = []
+
+    def __str__(self):
+        return self.name + " | " + str(self.last_checkin)
+
+
+logged_in: list[User] = []
+queue: list[User] = []
+games: dict[str, Game] = {}
 
 
 def usersListString():
@@ -138,14 +364,17 @@ def clear_inactive_users_from_login():
         users_to_log_off = []
         curr_time = int(datetime.now().timestamp())
         for i in logged_in:
-            if(curr_time - i.last_checkin > 10*60):  #if not checked in for more than 10*60 secs = 10 mins
+            if (curr_time - i.last_checkin > 10 * 60):  # if not checked in for more than 10*60 secs = 10 mins
                 users_to_log_off.append(i)
         for i in users_to_log_off:
             logged_in.remove(i)
+            if i in queue:
+                queue.remove(i)
         writeLog("after clearing cycle @" + str(curr_time) + ": {")
         writeLog(usersListString())
         writeLog("}")
-        time.sleep(2*60) # do the check ever 2 mins
+        socketio.emit('number logged in', {'data': len(logged_in)})
+        time.sleep(2 * 60)  # do the check ever 2 mins
 
 
 log_in_clearer_daemon = threading.Thread(target=clear_inactive_users_from_login, daemon=True)
@@ -157,8 +386,8 @@ def main():  # put application's code here
     return 'Hello World!'
 
 
-@app.route('/calculate',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/calculate', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def calculate():
     if request.method == "POST":
@@ -195,11 +424,11 @@ def get_counter():
     # first check if logged_in
     target_user_logged_in = False
     for i in logged_in:
-        if(i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+        if (i.name == username) and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
             target_user_logged_in = True
             break
-    #if indeed logged in then do the get counter stuff
-    if(target_user_logged_in):
+    # if indeed logged in then do the get counter stuff
+    if (target_user_logged_in):
         with open("data.json", "r") as data_file:
             data = json.load(data_file)
             if username in data:
@@ -209,21 +438,24 @@ def get_counter():
     return "end of function"  # every method should return something
 
 
-@app.route('/sign_in',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/sign_in', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def sign_in():
     proposed_username = request.json['proposed_username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "confirmed_username" : "",
+        "text": "PLACEHOLDER",
+        "confirmed_username": "",
         "login_session_key": "0",
-        "login_success" : False
+        "login_success": False
     }
     if request.method == "POST":
         for i in logged_in:
-            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+
+            keys_equal = False if not type(
+                sent_login_sesh_key) == 'str' else secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+
             if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"
                 writeLog(usersListString())
@@ -237,7 +469,7 @@ def sign_in():
                 response["login_session_key"] = new_login_session_key
                 response["login_success"] = True
                 return response
-        #else
+        # else
         login_session_key = secrets.token_hex()
         logged_in.append(User(proposed_username, int(datetime.now().timestamp()), login_session_key))
         response["text"] = "Logged in as " + proposed_username
@@ -245,18 +477,19 @@ def sign_in():
         response["login_session_key"] = login_session_key
         response["login_success"] = True
         writeLog(usersListString())
+        socketio.emit('number logged in', {'data': len(logged_in)})
         return response
 
 
-@app.route('/sign_out',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/sign_out', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def sign_out():
     username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "signout_success" : False
+        "text": "PLACEHOLDER",
+        "signout_success": False
     }
 
     if request.method == "POST":
@@ -265,26 +498,61 @@ def sign_out():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == username) and keys_equal:
                 users_to_remove.append(i)
-        if(len(users_to_remove) > 0):
+        if len(users_to_remove) > 0:
             for i in users_to_remove:
                 logged_in.remove(i)
+                if i in queue:
+                    queue.remove(i)
             response["text"] = "signed out successfully"
             response["signout_success"] = True
+            socketio.emit('number logged in', {'data': len(logged_in)})
         else:
             response["text"] = "nobody was signed out"
             response["signout_success"] = False
         return response
 
 
-@app.route('/user_activity_ping',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/disconnect', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@cross_origin()
+def disconnect():
+    # yes this is the same as sign out. might be changed later
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    response = {
+        "text": "PLACEHOLDER",
+        "signout_success": False
+    }
+
+    if request.method == "POST":
+        users_to_remove = []
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == username) and keys_equal:
+                users_to_remove.append(i)
+        if len(users_to_remove) > 0:
+            for i in users_to_remove:
+                logged_in.remove(i)
+                if i in queue:
+                    queue.remove(i)
+            response["text"] = "signed out successfully"
+            response["signout_success"] = True
+            socketio.emit('number logged in', {'data': len(logged_in)})
+        else:
+            response["text"] = "nobody was signed out"
+            response["signout_success"] = False
+        return response
+
+
+@app.route('/user_activity_ping', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def user_activity_ping():
     pinger_username = request.json['username']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
-        "text" : "PLACEHOLDER",
-        "still_active" : False
+        "text": "PLACEHOLDER",
+        "still_active": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -294,20 +562,20 @@ def user_activity_ping():
                 response["text"] = "activity sucessfully registered"
                 response["still_active"] = True
                 return response
-        #else
+        # else
         response["text"] = "You were signed out due to inactivity!"
         response["still_active"] = False
         return response
 
 
-@app.route('/activity_status_request',methods=['POST'])
-#we need this cross-origin stuff for post requests since this is how people decided the internet would work
+@app.route('/activity_status_request', methods=['POST'])
+# we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def activity_status_request():
     pinger_username = request.json['username']
     response = {
-        "text" : "PLACEHOLDER",
-        "still_active" : False
+        "text": "PLACEHOLDER",
+        "still_active": False
     }
     if request.method == "POST":
         for i in logged_in:
@@ -315,7 +583,7 @@ def activity_status_request():
                 response["text"] = "account still logged in"
                 response["still_active"] = True
                 return response
-        #else
+        # else
         response["text"] = "You were signed out due to inactivity!"
         response["still_active"] = False
         return response
@@ -326,26 +594,156 @@ def get_image():
     return send_file("Oran_Berry_Sprite.png", mimetype='image/png')
 
 
+@app.route('/get_number_logged_in')
+def get_number_logged_in():
+    return str(len(logged_in))
+
+
+@app.route('/request_match', methods=['POST'])
+@cross_origin()
+def request_match():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    socketio.emit("challenge", {"username": username, "opponent": requested})
+                    return jsonify({"status": "Challenging opponent", "opponent": requested})
+            return jsonify({"status": "Opponent not logged in"})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+
+@app.route('/accept_match', methods=['POST'])
+@cross_origin()
+def accept_match():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    opponent = i
+                    random_uuid = str(uuid.uuid4())
+                    # can get away with using the same
+                    socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
+                    games[random_uuid] = Game(opponent.name, username, random_uuid)
+                    user.games.append(random_uuid)
+                    opponent.games.append(random_uuid)
+                    return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
+            return jsonify({"status": "Opponent not logged in"})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+
+@app.route('/deny_match', methods=['POST'])
+@cross_origin()
+def deny_match():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            # is the requested person logged in?
+            requested = request.json['requested_username']
+            for i in logged_in:
+                if i.name == requested:
+                    opponent = i
+                    socketio.emit("deny opponent", {"username": username, "opponent": opponent.name})
+                    # todo block opponent if too many deny requests?
+                    return jsonify({"status": "Denied opponent", "opponent": opponent.name})
+            return jsonify({"status": "Opponent not logged in"})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+
+@app.route('/random_opponent', methods=['POST'])
+@cross_origin()
+def random_opponent():
+    username = request.json['username']
+    sent_login_sesh_key = request.json['login_session_key']
+    # first check if logged_in
+    target_user_logged_in = False
+    for i in logged_in:
+        if i.name == username and secrets.compare_digest(sent_login_sesh_key, i.login_session_key):
+            target_user_logged_in = True
+            user = i
+            break
+    # if indeed logged in
+    if request.method == "POST":
+        if target_user_logged_in:
+            if len(queue) == 0:
+                queue.append(user)
+                return jsonify({"status": "Added to queue"})
+            else:
+                # failsafe
+                if user in queue:
+                    return jsonify({"status": "Added to queue"})
+                opponent = random.choice(queue)
+                queue.remove(opponent)
+                random_uuid = str(uuid.uuid4())
+                socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
+                games[random_uuid] = Game(opponent.name, username, random_uuid)
+                user.games.append(random_uuid)
+                opponent.games.append(random_uuid)
+                return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
+        abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
+
+
 @app.route('/get_card', methods=["GET"])
 def get_card():
     cardname = request.args.get('cardname')
-    return send_file(f"card_art/{cardname}.png", mimetype='image/png')
+    quality = request.args.get('quality')
+    if quality == "png":
+        return send_file(f"card_art/png/{cardname}.png", mimetype='image/png')
+    else:
+        return send_file(f"card_art/jpeg/{cardname}.jpg", mimetype='image/jpeg')
 
 
 @app.route('/get_deck', methods=["POST"])
 @cross_origin()
 def get_deck():
-    # return a user's full undrawn deck if username and login session key fits
+    # return a game's full undrawn deck if username and login session key fits
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "deck" : []
+        "deck": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["deck"] =  i.deck
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["deck"] = game.player1.deck
+                elif game.player2_username == request_username:
+                    response["deck"] = game.player2.deck
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
@@ -354,17 +752,23 @@ def get_deck():
 @app.route('/get_cardsleft', methods=["POST"])
 @cross_origin()
 def get_cardsleft():
-    # return a user's full undrawn deck if username and login session key fits
+    # return cards left in a game's deck if username and login session key fits
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "cardsLeft" : 0
+        "cardsLeft": 0
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["cardsLeft"] = len(i.deck)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["cardsLeft"] = len(game.player1.deck)
+                elif game.player2_username == request_username:
+                    response["cardsLeft"] = len(game.player2.deck)
                 return response
         # else
         abort(Response(json.dumps({"Message": "Cards Left Unavailable"}), 404))
@@ -375,59 +779,114 @@ def get_cardsleft():
 def pop_deck():
     # pop the top of a user's undrawn deck if username and login session key fits & return
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "card" : "",
-        "cardsLeft" : 0
+        "card": "",
+        "cardsLeft": 0
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                if len(i.deck) > 0:
-                    poppedCard = i.popDeck()
-                    i.addHandCard(poppedCard) #add the popped card to the hand
-                    response["card"] =  poppedCard
-                    response["cardsLeft"] = len(i.deck)
-                    return response
-                else:
-                    return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if len(game.player1.deck) > 0:
+                        poppedCard = game.player1.popDeck()
+                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                        game.recomputeBlockAndDialogStatus()
+                        response["card"] = poppedCard
+                        response["cardsLeft"] = len(game.player1.deck)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "cardsLeft": len(game.player1.deck), "discard": game.player1.discard}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+                    else:
+                        return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+                elif game.player2_username == request_username:
+                    if len(game.player2.deck) > 0:
+                        poppedCard = game.player2.popDeck()
+                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                        game.recomputeBlockAndDialogStatus()
+                        response["card"] = poppedCard
+                        response["cardsLeft"] = len(game.player2.deck)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "cardsLeft": len(game.player2.deck), "discard": game.player2.discard}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+                    else:
+                        return abort(Response(json.dumps({"Message": "Deck Empty"}), 404))
+                return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
+
 
 @app.route('/new_deck', methods=["POST"])
 @cross_origin()
 def new_deck():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "deck" : []
+        "deck": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                i.newDeck()
-                response["deck"] = i.deck
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    game.player1.newDeck()
+                    response["deck"] = game.player1.deck
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "cardsLeft": len(game.player1.deck)}
+                    socketio.emit("update opponent state", updater)
+                elif game.player2_username == request_username:
+                    game.player2.newDeck()
+                    response["deck"] = game.player2.deck
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "cardsLeft": len(game.player2.deck)}
+                    socketio.emit("update opponent state", updater)
                 return response
         # else
         abort(Response(json.dumps({"Message": "Deck Unavailable"}), 404))
 
+
 @app.route('/new_crisis', methods=["POST"])
 @cross_origin()
 def new_crisis():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # create a crisis for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "crisis" : ""
+        "crisis": ""
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["crisis"] = i.newCrisis()
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["crisis"] = game.player1.newCrisis()
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "crisis": response["crisis"]}
+                    socketio.emit("update opponent state", updater)
+                elif game.player2_username == request_username:
+                    response["crisis"] = game.player2.newCrisis()
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "crisis": response["crisis"]}
+                    socketio.emit("update opponent state", updater)
                 return response
         # else
         abort(Response(json.dumps({"Message": "New Crisis Unavailable"}), 404))
@@ -442,17 +901,23 @@ def new_deck_size():
 @app.route('/get_crisis', methods=["POST"])
 @cross_origin()
 def get_crisis():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # return crisis for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "crisis" : ""
+        "crisis": ""
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["crisis"] = i.crisis
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["crisis"] = game.player1.crisis
+                elif game.player2_username == request_username:
+                    response["crisis"] = game.player2.crisis
                 return response
         # else
         abort(Response(json.dumps({"Message": "Crisis Unavailable"}), 404))
@@ -461,47 +926,936 @@ def get_crisis():
 @app.route('/get_hand', methods=["POST"])
 @cross_origin()
 def get_hand():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # return hand for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "hand" : []
+        "hand": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["hand"] = i.hand
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                game.recomputeBlockAndDialogStatus()
+                if game.player1_username == request_username:
+                    response["hand"] = game.player1.hand
+                elif game.player2_username == request_username:
+                    response["hand"] = game.player2.hand
                 return response
         # else
         abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
 
-@app.route('/play_hand', methods=["POST"])
+
+@app.route('/get_opponent_hand', methods=["POST"])
 @cross_origin()
-def play_hand():
-    # make a new shuffled deck for the user whose LSK and username fit
+def get_opponent_hand():
+    # return opponent's hand for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
-    hand_index = request.json['card_index']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "cardPlayed" : "",
-        "hand" : [],
-        "discard" : [],
-        "cardsLeft" : 0,
+        "hand": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                if (hand_index < 0) or (hand_index >= len(i.hand)):
-                    abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
-                else:
-                    cardPlayed = i.hand.pop(hand_index)
-                    i.discard = [cardPlayed] + i.discard
-                    response["hand"] = i.hand
-                    response["discard"] = i.discard
-                    response["cardsLeft"] = len(i.deck)
-                    response["cardPlayed"] = cardPlayed
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                game.recomputeBlockAndDialogStatus()
+                if game.player1_username == request_username:
+                    response["hand"] = game.player2.hand
+                elif game.player2_username == request_username:
+                    response["hand"] = game.player1.hand
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Hand Unavailable"}), 404))
+
+
+@app.route('/play_hand', methods=["POST"])
+@cross_origin()
+def play_hand():
+    # play a card from hand for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    hand_index = request.json['card_index']
+    response = {
+        "cardPlayed": "",
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
+        "needDiscard": False,
+        "winThisTurn": False
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player1.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player1.hand.pop(hand_index)["name"]
+
+                        if cardPlayed == "communitysupport":
+                            game.player1.field.append("communitysupport")
+                            your_move_notifier = "You played Community Support."
+                            opponent_move_notifier = "Opponent played Community Support."
+                            next_turn = True
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
+                            game.player1.field.append(cardPlayed)
+                            if len(game.player1.deck) > 0:
+                                poppedCard = game.player1.popDeck()
+                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            next_turn = True
+                        elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                            game.player1.field.append(cardPlayed)
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # -1 if draw 2, else restore nth discarded card
+                                if extra == -1:
+                                    if len(game.player1.deck) > 1:
+                                        poppedCard = game.player1.popDeck()
+                                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                        poppedCard2 = game.player1.popDeck()
+                                        game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                    elif len(game.player1.deck) == 1:
+                                        poppedCard = game.player1.popDeck()
+                                        game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                    else:
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                                else:
+                                    restore = game.player1.discard.pop(extra)
+                                    game.player1.addHandCard(restore)
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and restored {lookup[restore]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in (
+                                "psychological-2", "social-2",
+                                "digital-2"):  # draw 1 card, 1 extra if have community support
+                            game.player1.field.append(cardPlayed)
+                            if game.player1.field.count("communitysupport") >= 1:
+                                if len(game.player1.deck) > 1:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    poppedCard2 = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard2)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                elif len(game.player1.deck) == 1:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            else:
+                                if len(game.player1.deck) > 0:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            next_turn = True
+                        elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
+                            game.player1.field.append(cardPlayed)
+                            your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
+                            next_turn = False
+                        elif cardPlayed in (
+                                "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                            game.player1.field.append(cardPlayed)
+                            if game.player1.field.count("communitysupport") >= 2:
+                                # draw 1, extra turn
+                                if len(game.player1.deck) > 0:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, viewed your opponent's hand and drew {lookup[poppedCard]}. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, viewed your hand and drew 1 card. It is still their turn."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck. It is still their turn."
+                                next_turn = False
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and viewed your hand."
+                                next_turn = True
+                        elif cardPlayed in ("event-1", "event-3", "event-4"):
+                            game.player1.discard = [cardPlayed] + game.player1.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]
+                                card1 = game.player2.hand.pop(extra)["name"]
+                                game.player2.discard = [card1] + game.player2.discard
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+                            game.player1.discard = [cardPlayed] + game.player1.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # [which, key]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[
+                                    extra[1]]
+                                game.player2.discard = [card1] + game.player2.discard
+                                if "extra2" in request.json:
+                                    extra2 = request.json["extra2"]
+                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player2.field))[
+                                        extra2[1]]
+                                    # todo (low priority) preserve order
+                                    game.player2.field.remove(card1)
+                                    game.player2.field.remove(card2)
+                                    game.player2.discard = [card2] + game.player2.discard
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
+                                else:
+                                    game.player2.field.remove(card1)
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in ("event-9", "event-10", "event-11", "event-12"):
+                            game.player1.discard = [cardPlayed] + game.player1.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # [which, key]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player2.field))[
+                                    extra[1]]
+                                game.player2.discard = [card1] + game.player2.discard
+                                game.player2.field.remove(card1)
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        else:  # UNUSED
+                            game.player1.discard = [cardPlayed] + game.player1.discard
+                            your_move_notifier = f"You discarded {lookup[cardPlayed]}."
+                            opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
+                            next_turn = False
+
+                        if game.player1.gameWon():
+                            your_move_notifier += "\nYou win!"
+                            opponent_move_notifier += "\nYou lose!"
+                            next_turn = False
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.player2.setHandEnablePlayStatus(False)
+                            response["winThisTurn"] = True
+
+                        if next_turn:
+                            if len(game.player1.hand) > 7:
+                                # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
+                                your_move_notifier += f"\nPlease discard cards until you have 7 cards."
+                                opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
+
+                                response["needDiscard"] = True
+                            else:
+                                if game.nextturnislast:
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier += "\nYOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                                elif len(game.player1.deck) == 0:
+                                    if game.gofirst == game.player1_username:
+                                        # award extra turn
+                                        game.nextturnislast = True
+                                        your_move_notifier += "\nWarning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                        opponent_move_notifier += "\nWarning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                    else:
+                                        # end game and compute winner
+                                        if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. You win due to having more defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        else:  # player 2 more than player 1
+                                            your_move_notifier += "\nYour deck ran out of cards. You lose due to having less defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                        response["winThisTurn"] = True
+                                else:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                                    game.player2.setHandEnablePlayStatus(True)
+                                    game.player1.setHandEnablePlayStatus(False)
+                                    game.recomputeBlockAndDialogStatus()
+                                    game.turn = game.player2_username
+
+                                    your_move_notifier += "\nOpponent's turn."
+                                    opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+
+                        response["hand"] = game.player1.hand
+                        response["discard"] = game.player1.discard
+                        response["cardsLeft"] = len(game.player1.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player1.field
+                        response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player1_username == game.turn
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "canClickEndTurn": game.turn == game.player2_username}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+                elif game.player2_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player2.hand.pop(hand_index)["name"]
+
+                        if cardPlayed == "communitysupport":
+                            game.player2.field.append("communitysupport")
+                            your_move_notifier = "You played Community Support."
+                            opponent_move_notifier = "Opponent played Community Support."
+                            next_turn = True
+                        elif cardPlayed in ("military-1", "economic-1", "economic-2", "civil-1"):  # draw 1 card
+                            game.player2.field.append(cardPlayed)
+                            if len(game.player2.deck) > 0:
+                                poppedCard = game.player2.popDeck()
+                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            next_turn = True
+                        elif cardPlayed in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
+                            game.player2.field.append(cardPlayed)
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # -1 if draw 2, else restore nth discarded card
+                                if extra == -1:
+                                    if len(game.player2.deck) > 1:
+                                        poppedCard = game.player2.popDeck()
+                                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                        poppedCard2 = game.player2.popDeck()
+                                        game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                    elif len(game.player2.deck) == 1:
+                                        poppedCard = game.player2.popDeck()
+                                        game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                    else:
+                                        your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                        opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                                else:
+                                    restore = game.player2.discard.pop(extra)
+                                    game.player2.addHandCard(restore)
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and restored {lookup[restore]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and restored {lookup[restore]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in (
+                                "psychological-2", "social-2",
+                                "digital-2"):  # draw 1 card, 1 extra if have community support
+                            game.player2.field.append(cardPlayed)
+                            if game.player2.field.count("communitysupport") >= 1:
+                                if len(game.player2.deck) > 1:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    poppedCard2 = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard2)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}, {lookup[poppedCard2]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 2 cards."
+                                elif len(game.player2.deck) == 1:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]} as you only had 1 card in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card as they had only 1 card in their deck."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            else:
+                                if len(game.player2.deck) > 0:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} and drew {lookup[poppedCard]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and drew 1 card."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck."
+                            next_turn = True
+                        elif cardPlayed in ("social-1", "psychological-1", "digital-1"):
+                            game.player2.field.append(cardPlayed)
+                            your_move_notifier = f"You played {lookup[cardPlayed]}. It is still your turn."
+                            opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}. It is still their turn."
+                            next_turn = False
+                        elif cardPlayed in (
+                                "military-4", "civil-3", "economic-5", "social-3", "psychological-3", "digital-3"):
+                            game.player2.field.append(cardPlayed)
+                            if game.player2.field.count("communitysupport") >= 2:
+                                # draw 1, extra turn
+                                if len(game.player2.deck) > 0:
+                                    poppedCard = game.player2.popDeck()
+                                    game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, viewed your opponent's hand and drew {lookup[poppedCard]}. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, viewed your hand and drew 1 card. It is still their turn."
+                                else:
+                                    your_move_notifier = f"You played {lookup[cardPlayed]} as you only had 0 cards in your deck. It is still your turn."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} as they had only 0 cards in their deck. It is still their turn."
+                                next_turn = False
+                            else:
+                                your_move_notifier = f"You played {lookup[cardPlayed]} and viewed your opponent's hand."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]} and viewed your hand."
+                                next_turn = True
+                        elif cardPlayed in ("event-1", "event-3", "event-4"):
+                            game.player2.discard = [cardPlayed] + game.player2.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]
+                                card1 = game.player1.hand.pop(extra)["name"]
+                                game.player1.discard = [card1] + game.player1.discard
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in ("event-2", "event-5", "event-6", "event-7", "event-8"):
+                            game.player2.discard = [cardPlayed] + game.player2.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # [which, key]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[
+                                    extra[1]]
+                                game.player1.discard = [card1] + game.player1.discard
+                                if "extra2" in request.json:
+                                    extra2 = request.json["extra2"]
+                                    card2 = list(filter(lambda name: name.startswith(extra2[0]), game.player1.field))[
+                                        extra2[1]]
+                                    # todo (low priority) preserve order
+                                    game.player1.field.remove(card1)
+                                    game.player1.field.remove(card2)
+                                    game.player1.discard = [card2] + game.player1.discard
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]} & {lookup[card2]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]} & {lookup[card2]}."
+                                else:
+                                    game.player1.field.remove(card1)
+                                    your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                    opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        elif cardPlayed in ("event-9", "event-10", "event-11", "event-12"):
+                            game.player2.discard = [cardPlayed] + game.player2.discard
+                            if "extra" in request.json:
+                                extra = request.json["extra"]  # [which, key]
+                                card1 = list(filter(lambda name: name.startswith(extra[0]), game.player1.field))[
+                                    extra[1]]
+                                game.player1.discard = [card1] + game.player1.discard
+                                game.player1.field.remove(card1)
+                                your_move_notifier = f"You played {lookup[cardPlayed]}, discarding opponent's {lookup[card1]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}, discarding your {lookup[card1]}."
+                            else:
+                                # no additional effect
+                                your_move_notifier = f"You played {lookup[cardPlayed]}."
+                                opponent_move_notifier = f"Opponent played {lookup[cardPlayed]}."
+                            next_turn = True
+                        else:  # UNUSED
+                            game.player2.discard = [cardPlayed] + game.player2.discard
+                            your_move_notifier = f"You discarded {lookup[cardPlayed]}."
+                            opponent_move_notifier = f"Opponent discarded {lookup[cardPlayed]}."
+                            next_turn = False
+
+                        if game.player2.gameWon():
+                            your_move_notifier += "\nYou win!"
+                            opponent_move_notifier += "\nYou lose!"
+                            next_turn = False
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.player2.setHandEnablePlayStatus(False)
+                            response["winThisTurn"] = True
+
+                        if next_turn:
+                            if len(game.player2.hand) > 7:
+                                # the max cards you can have is 9. 7 cards, draw 1 for turn, play 1 allowing draw 2.
+                                your_move_notifier += f"\nPlease discard cards until you have 7 cards."
+                                opponent_move_notifier += f"\nWaiting for opponent to discard hand cards."
+                                response["needDiscard"] = True
+                            else:
+                                if game.nextturnislast:
+                                    if game.player1.gameDefenceFulfilled() < game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier += "\nYOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                                elif len(game.player2.deck) == 0:
+                                    if game.gofirst == game.player2_username:
+                                        # award extra turn
+                                        game.nextturnislast = True
+                                        your_move_notifier += "\nWarning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                        opponent_move_notifier += "\nWarning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                    else:
+                                        # end game and compute winner
+                                        if game.player1.gameDefenceFulfilled() < game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. You win due to having more defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                            your_move_notifier += "\nYour deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        else:  # player 2 more than player 1
+                                            your_move_notifier += "\nYour deck ran out of cards. You lose due to having less defence fulfilled!"
+                                            opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                        response["winThisTurn"] = True
+                                else:
+                                    poppedCard = game.player1.popDeck()
+                                    game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+
+                                    game.player1.setHandEnablePlayStatus(True)
+                                    game.player2.setHandEnablePlayStatus(False)
+                                    game.recomputeBlockAndDialogStatus()
+                                    game.turn = game.player1_username
+
+                                    your_move_notifier += "\nOpponent's turn."
+                                    opponent_move_notifier += f"\nYour turn. You drew {lookup[poppedCard]}."
+
+                        response["hand"] = game.player2.hand
+                        response["discard"] = game.player2.discard
+                        response["cardsLeft"] = len(game.player2.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player2.field
+                        response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player2_username == game.turn
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "canClickEndTurn": game.turn == game.player1_username}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+
+
+@app.route('/discard_hand', methods=["POST"])
+@cross_origin()
+def discard_hand():
+    # discard a card from hand for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    hand_index = request.json['card_index']
+    response = {
+        "cardPlayed": "",
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
+        "nextTurn": False,
+        "winThisTurn": False
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player1.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player1.hand.pop(hand_index)["name"]
+                        game.player1.discard = [cardPlayed] + game.player1.discard
+
+                        next_turn = len(game.player1.hand) > 7
+
+                        if next_turn:
+                            your_move_notifier = "Please discard cards until you have 7 cards."
+                            opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                        else:
+                            if game.nextturnislast:
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                            elif len(game.player1.deck) == 0:
+                                if game.gofirst == game.player1_username:
+                                    # award extra turn
+                                    game.nextturnislast = True
+                                    your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                    opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                else:
+                                    # end game and compute winner
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                            else:
+                                poppedCard = game.player2.popDeck()
+                                game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                                game.player2.setHandEnablePlayStatus(True)
+                                game.player1.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player2_username
+
+                                your_move_notifier = "Opponent's turn."
+                                opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                                response["nextTurn"] = True
+
+                        response["hand"] = game.player1.hand
+                        response["discard"] = game.player1.discard
+                        response["cardsLeft"] = len(game.player1.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player1.field
+                        response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player1_username == game.turn
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "canClickEndTurn": game.turn == game.player2_username}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+                elif game.player2_username == request_username:
+                    if (hand_index < 0) or (hand_index >= len(game.player2.hand)):
+                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    else:
+                        cardPlayed = game.player2.hand.pop(hand_index)["name"]
+                        game.player2.discard = [cardPlayed] + game.player2.discard
+
+                        next_turn = len(game.player2.hand) > 7
+
+                        if next_turn:
+                            your_move_notifier = "Please discard cards until you have 7 cards."
+                            opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                        else:
+                            if game.nextturnislast:
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                            elif len(game.player1.deck) == 0:
+                                if game.gofirst == game.player1_username:
+                                    # award extra turn
+                                    game.nextturnislast = True
+                                    your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                    opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                                else:
+                                    # end game and compute winner
+                                    if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                        your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    else:  # player 2 more than player 1
+                                        your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                        opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                    response["winThisTurn"] = True
+                            else:
+                                poppedCard = game.player1.popDeck()
+                                game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+
+                                game.player1.setHandEnablePlayStatus(True)
+                                game.player2.setHandEnablePlayStatus(False)
+                                game.recomputeBlockAndDialogStatus()
+                                game.turn = game.player1_username
+
+                                your_move_notifier = "Opponent's turn."
+                                opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                            response["nextTurn"] = True
+
+                        response["hand"] = game.player2.hand
+                        response["discard"] = game.player2.discard
+                        response["cardsLeft"] = len(game.player2.deck)
+                        response["cardPlayed"] = cardPlayed
+                        response["field"] = game.player2.field
+                        response["moveNotifier"] = your_move_notifier
+                        response["canClickEndTurn"] = game.player2_username == game.turn
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player2.hand, "discard": game.player2.discard,
+                                   "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                                   "moveNotifier": opponent_move_notifier}
+                        socketio.emit("update opponent state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player1_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                                   "canClickEndTurn": game.player1_username == game.turn}
+                        socketio.emit("update your state", updater)
+
+                        updater = {"uuid": game_id, "username": game.player2_username,
+                                   "hand": game.player1.hand, "discard": game.player1.discard,
+                                   "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                        socketio.emit("update opponent state", updater)
+
+                        return response
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+
+
+@app.route('/pass_turn', methods=["POST"])
+@cross_origin()
+def pass_turn():
+    # pass turn for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    response = {
+        "hand": [],
+        "discard": [],
+        "cardsLeft": 0,
+        "nextTurn": False,
+        "winThisTurn": False
+    }
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    next_turn = len(game.player1.hand) > 7
+
+                    if next_turn:
+                        your_move_notifier = "Please discard cards until you have 7 cards."
+                        opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                    else:
+                        if game.nextturnislast:
+                            if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                            elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                            else:  # player 2 more than player 1
+                                your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                            response["winThisTurn"] = True
+                        elif len(game.player1.deck) == 0:
+                            if game.gofirst == game.player1_username:
+                                # award extra turn
+                                game.nextturnislast = True
+                                your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                            else:
+                                # end game and compute winner
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                        else:
+                            poppedCard = game.player2.popDeck()
+                            game.player2.addHandCard(poppedCard)  # add the popped card to the hand
+
+                            game.player2.setHandEnablePlayStatus(True)
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player2_username
+
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                        response["nextTurn"] = True
+
+                    response["hand"] = game.player1.hand
+                    response["discard"] = game.player1.discard
+                    response["cardsLeft"] = len(game.player1.deck)
+                    response["field"] = game.player1.field
+                    response["moveNotifier"] = your_move_notifier
+                    response["canClickEndTurn"] = game.player1_username == game.turn
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                               "moveNotifier": opponent_move_notifier}
+                    socketio.emit("update opponent state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                               "canClickEndTurn": game.player2_username == game.turn}
+                    socketio.emit("update your state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field}
+                    socketio.emit("update opponent state", updater)
+
+                    return response
+
+                elif game.player2_username == request_username:
+                    next_turn = len(game.player2.hand) > 7
+
+                    if next_turn:
+                        your_move_notifier = "Please discard cards until you have 7 cards."
+                        opponent_move_notifier = "Waiting for opponent to discard hand cards."
+                    else:
+                        if game.nextturnislast:
+                            if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                            elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                            else:  # player 2 more than player 1
+                                your_move_notifier = "YOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                                opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                            response["winThisTurn"] = True
+                        elif len(game.player1.deck) == 0:
+                            if game.gofirst == game.player1_username:
+                                # award extra turn
+                                game.nextturnislast = True
+                                your_move_notifier = "Warning: Your opponent's next turn is the last turn, due to your deck running out of cards."
+                                opponent_move_notifier = "Warning: Your opponent's next turn is the last, due to their deck running out of cards."
+                            else:
+                                # end game and compute winner
+                                if game.player1.gameDefenceFulfilled() > game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                                elif game.player1.gameDefenceFulfilled() == game.player2.gameDefenceFulfilled():
+                                    your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                                else:  # player 2 more than player 1
+                                    your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
+                                    opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                                response["winThisTurn"] = True
+                        else:
+                            poppedCard = game.player1.popDeck()
+                            game.player1.addHandCard(poppedCard)  # add the popped card to the hand
+
+                            game.player1.setHandEnablePlayStatus(True)
+                            game.player2.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            game.turn = game.player1_username
+
+                            your_move_notifier = "Opponent's turn."
+                            opponent_move_notifier = f"Your turn. You drew {lookup[poppedCard]}."
+
+                        response["nextTurn"] = True
+
+                    response["hand"] = game.player2.hand
+                    response["discard"] = game.player2.discard
+                    response["cardsLeft"] = len(game.player2.deck)
+                    response["field"] = game.player2.field
+                    response["moveNotifier"] = your_move_notifier
+                    response["canClickEndTurn"] = game.player2_username == game.turn
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player2.hand, "discard": game.player2.discard,
+                               "cardsLeft": len(game.player2.deck), "field": game.player2.field,
+                               "moveNotifier": opponent_move_notifier}
+                    socketio.emit("update opponent state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player1_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field,
+                               "canClickEndTurn": game.player1_username == game.turn}
+                    socketio.emit("update your state", updater)
+
+                    updater = {"uuid": game_id, "username": game.player2_username,
+                               "hand": game.player1.hand, "discard": game.player1.discard,
+                               "cardsLeft": len(game.player1.deck), "field": game.player1.field}
+                    socketio.emit("update opponent state", updater)
+
                     return response
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
@@ -512,19 +1866,169 @@ def play_hand():
 def get_discard():
     # make a new shuffled deck for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
-    request_username = request.json['username']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
     response = {
-        "discard" : []
+        "discard": []
     }
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
-            if (i.name == request_username) and keys_equal:
-                response["discard"] = ["discard-placeholder"] if (len(i.discard) < 1) else i.discard
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    response["discard"] = game.player1.discard
+                elif game.player2_username == request_username:
+                    response["discard"] = game.player2.discard
                 return response
         # else
         abort(Response(json.dumps({"Message": "Discard Unavailable"}), 404))
 
 
+@app.route('/write_storage', methods=["POST"])
+@cross_origin()
+def write_storage():
+    # make a new shuffled deck for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    game_id = request.json['game_id']
+    response = {}
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == your_username:
+                    game.player1.storage |= request.json["storage"]
+                elif game.player2_username == your_username:
+                    game.player2.storage |= request.json["storage"]
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Updating Storage Unavailable"}), 404))
+
+
+@app.route('/game_init', methods=["POST"])
+@cross_origin()
+def game_init():
+    # Initialises the game for the user whose LSK and username fit. 1 person per call, called 2 times.
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    game_id = request.json['game_id']
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                try:
+                    game: Game = games[game_id]
+                except KeyError:
+                    return "Not Found"
+                if game.player1_username == your_username or game.player2_username == your_username:
+                    notifier = ""
+                    if game.player1.crisis > game.player2.crisis and game.player1_username == your_username:
+                        if len(game.player1.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player1.addHandCard(game.player1.popDeck())
+                            game.player1.setHandEnablePlayStatus(True)
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the higher number. You are going first. Drew {lookup[game.player1.hand[-1]['name']]}."
+                        returned = {"username": your_username,
+                                    "hand": game.player1.hand,
+                                    "cardsLeft": len(game.player1.deck),
+                                    "field": game.player1.field,
+                                    "discard": game.player1.discard,
+                                    "crisis": game.player1.crisis,
+                                    "moveNotifier": notifier,
+                                    "uuid": game.internal_id,
+                                    "canClickEndTurn": game.turn == game.player1_username,
+                                    "storage": game.player1.storage}
+                        socketio.emit("update your state", returned)
+                        socketio.emit("update opponent state", {"username": game.player2_username,
+                                                                "cardsLeft": len(game.player1.deck),
+                                                                "field": game.player1.field,
+                                                                "discard": game.player1.discard,
+                                                                "crisis": game.player1.crisis,
+                                                                "uuid": game.internal_id})
+                        return "First"
+                    elif game.player1.crisis < game.player2.crisis and game.player1_username == your_username:
+                        if len(game.player1.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player1.addHandCard(game.player1.popDeck())
+                            game.player1.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the lower number.  You are going second."
+                        returned = {"username": your_username,
+                                    "hand": game.player1.hand,
+                                    "cardsLeft": len(game.player1.deck),
+                                    "field": game.player1.field,
+                                    "discard": game.player1.discard,
+                                    "crisis": game.player1.crisis,
+                                    "moveNotifier": notifier,
+                                    "uuid": game.internal_id,
+                                    "canClickEndTurn": game.turn == game.player1_username,
+                                    "storage": game.player1.storage}
+                        socketio.emit("update your state", returned)
+                        socketio.emit("update opponent state", {"username": game.player2_username,
+                                                                "cardsLeft": len(game.player1.deck),
+                                                                "field": game.player1.field,
+                                                                "discard": game.player1.discard,
+                                                                "crisis": game.player1.crisis,
+                                                                "uuid": game.internal_id})
+                        return "Second"
+                    elif game.player1.crisis > game.player2.crisis and game.player2_username == your_username:
+                        if len(game.player2.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player2.addHandCard(game.player2.popDeck())
+                            game.player2.setHandEnablePlayStatus(False)
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the lower number.  You are going second."
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player2.hand,
+                                                            "cardsLeft": len(game.player2.deck),
+                                                            "field": game.player2.field,
+                                                            "discard": game.player2.discard,
+                                                            "crisis": game.player2.crisis,
+                                                            "moveNotifier": notifier,
+                                                            "uuid": game.internal_id,
+                                                            "canClickEndTurn": game.turn == game.player2_username,
+                                                            "storage": game.player2.storage})
+                        socketio.emit("update opponent state", {"username": game.player1_username,
+                                                                "cardsLeft": len(game.player2.deck),
+                                                                "field": game.player2.field,
+                                                                "discard": game.player2.discard,
+                                                                "crisis": game.player2.crisis,
+                                                                "uuid": game.internal_id})
+                        return "Second"
+                    else:  # player 2 crisis bigger and you are player 2
+                        if len(game.player2.deck) == 46:  # fresh game, should initialise
+                            for q in range(5):
+                                game.player2.addHandCard(game.player2.popDeck())
+                            game.player2.setHandEnablePlayStatus(True)
+                            game.recomputeBlockAndDialogStatus()
+                            notifier = f"Your crisis has the higher number. You are going first. Drew {lookup[game.player2.hand[-1]['name']]}."
+                        socketio.emit("update your state", {"username": your_username,
+                                                            "hand": game.player2.hand,
+                                                            "cardsLeft": len(game.player2.deck),
+                                                            "field": game.player2.field,
+                                                            "discard": game.player2.discard,
+                                                            "crisis": game.player2.crisis,
+                                                            "moveNotifier": notifier,
+                                                            "uuid": game.internal_id,
+                                                            "canClickEndTurn": game.turn == game.player2_username,
+                                                            "storage": game.player2.storage})
+                        socketio.emit("update opponent state", {"username": game.player1_username,
+                                                                "cardsLeft": len(game.player2.deck),
+                                                                "field": game.player2.field,
+                                                                "discard": game.player2.discard,
+                                                                "crisis": game.player2.crisis,
+                                                                "uuid": game.internal_id})
+                        return "First"
+                else:
+                    # todo: spectator mode
+                    return "Not Playing"
+        # else
+        abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
+
+
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app, allow_unsafe_werkzeug=True)

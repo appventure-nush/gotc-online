@@ -216,21 +216,74 @@ export default defineComponent({
     refreshText(json_response : any){
       if (json_response["login_success"]) this.userform_status_top_text = json_response["text"]
       this.result = json_response["text"]
-    }
+    },
 
-  }
+    async leaving(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      await fetch(`${BACKEND_URL}/disconnect`, {
+        method: "POST",
+        body: JSON.stringify({
+          username: this.userStore.username,
+          login_session_key: localStorage.getItem("LoginSessionKey")
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+          .then((response) => {
+            if(!response.ok) return Promise.reject(response)
+            else return response.text()
+          })
+          .then((json_text) => {
+            let json_response = JSON.parse(json_text)
+            if(json_response["signout_success"] === true) {
+              this.signout(json_response["text"])
+            }
+          })
+
+          .catch(error => {
+            this.result = error.toString()
+          })
+    }
+  },
+  created() {
+    window.addEventListener("beforeunload", this.leaving);
+  },
 })
 
 </script>
 
 <template>
-  <p style="border: white; border-width: 5px" id = "userform_status_top">{{ userform_status_top_text }}</p>
-  <input type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">&nbsp;
-  <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button> <br>
+  <p class="userform-status top" id="userform_status_top">{{ userform_status_top_text }}</p>
+  <input class="userform-input" type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">
+  <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button>
   <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
-  <p style="border: white; border-width: 5px" id = "userform_status_bottom">{{ result }}</p>
+  <p class="userform-status bottom" id="userform_status_bottom">{{ result }}</p>
 </template>
 
 <style scoped>
-  @import "../style.css";
+
+  .userform-status{
+    color: white;
+  }
+
+  .top{
+    font-size: 1.3rem;
+    margin: .1em 0;
+  }
+
+  .userform-input{
+    font-size: 1rem;
+  }
+
+  button{
+    font-size: 1.2rem;
+    padding: .25rem .5rem !important;
+  }
+
+  .bottom{
+    font-size: 1.1rem;
+    margin: .1em 0;
+  }
+
 </style>
