@@ -16,7 +16,7 @@ export default defineComponent({
   beforeMount() {
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
-    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    // we did not pass {detached:true} so this subscription automatically ends when we unmount
     // next time we can also check if a game's going on after checking if the user's signed in
     this.userStore.$subscribe(() => {
       if(this.userStore.isSignedIn) this.playerCards.getHand()
@@ -28,7 +28,7 @@ export default defineComponent({
     }
   },
   computed:{
-    showOpponentHand() {
+    showOpponentHand() { // shows hand if an appropriate card was played and vetoShowOpponentHand (more explanation in PlayerCardsStore)
       return (playerCardsStore.showOptionHand || playerCardsStore.showDialogHand) && !playerCardsStore.vetoShowOpponentHand
     }
   }
@@ -36,7 +36,7 @@ export default defineComponent({
 </script>
 
 <!--
-  This is the component that displays up to 7 cards in the player's hand
+  This is the component that displays cards in the player's hand
 
   Uses v-for to horizontally stack cardholders
   The hand itself is stored in the playerCards Store's handlist
@@ -46,7 +46,7 @@ export default defineComponent({
 <template>
   <div class="hand-component-div">
     <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"
-                v-if="showOpponentHand"
+                v-if="showOpponentHand // only show if the computed variable was true. v-else in another CardHolder ensures only 1 is active at any time"
                 :card-name="card['name']"
                 :key="card['name']+index"
                 :play-button-func="()=>{
@@ -62,12 +62,17 @@ export default defineComponent({
                 :card-name="card['name']"
                 :key="card['name']+index"
                 :play-button-func="()=>{
-                  if (playerCards.discardHand) {
+                  // the function that is immediately run when a card is clicked
+                  if (playerCards.discardHand) { // in discarding phase
                     playerCards.discardCardFromHand(index)
-                  } else {
-                    playerCards.vetoShowOpponentHand = false
+                  } else { // in playing phase
+                    playerCards.vetoShowOpponentHand = false // the point of this variable is to ensure
+                    // if opponent has community support and the discard from hand card was played,
+                    // the opponent's hand does not show
+
+                    // now toggle all other variables
                     if (card['requiresDialogNormal']) {
-                      playerCards.showDialogNormal = true // dont forget to reset all dialogs
+                      playerCards.showDialogNormal = true // dont forget to reset dialogs
                       playerCards.showOptionDefence = false
                       playerCards.showDialogDefence = false
                       playerCards.showOptionField = false
@@ -77,7 +82,7 @@ export default defineComponent({
                       playerCards.index = index
                       playerCards.moveNotifier = 'Pick an option.'+card['warn']
                     } else if (card['requiresOptionDefence']) {
-                      playerCards.showDialogNormal = false // dont forget to reset all dialogs
+                      playerCards.showDialogNormal = false
                       playerCards.showOptionField = false
                       playerCards.showDialogField = false
                       playerCards.showDialogHand = false
@@ -146,7 +151,7 @@ export default defineComponent({
                       playerCards.playHand(index)
                       playerCards.index = -1 // just in case
                     }
-                    playerCards.showDiscardPlay = false
+                    playerCards.showDiscardPlay = false // options that should always be reset
                     playerCards.showOptionDefence2 = false
                     playerCards.selectionDefence = []
                   }

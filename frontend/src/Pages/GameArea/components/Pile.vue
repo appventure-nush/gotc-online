@@ -16,7 +16,7 @@ export default defineComponent({
   beforeMount() {
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
-    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
+    // we did not pass {detached:true} so this subscription automatically ends when we unmount
     // next time we can also check if a game's going on after checking if the user's signed in
     this.userStore.$subscribe( () => {
       if (this.userStore.isSignedIn) {
@@ -65,6 +65,7 @@ export default defineComponent({
       <CardHolder card-name="back-black" class="pile-component-card" rename-play="End Turn" :enable-details="false"
                   :play-button-func="playerCards.passTurn"
                   :enable-play="playerCards.canClickEndTurn && !playerCards.discardHand && !playerCards.showOptionHand && !playerCards.showDialogHand"/>
+      <!-- end turn is only clickable if canClickEndTurn is true, as well as if player is not in discarding phase/viewing opponent's hand -->
       <!-- todo make end turn more visible -->
       <p v-if="userStore.isSignedIn" class="draw-remainder">{{ playerCards.cardsLeft }} Left</p>
       <p v-else class="draw-remainder sign-in-reminder">Not Signed In</p>

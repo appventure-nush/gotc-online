@@ -35,7 +35,7 @@ socket.on("number logged in", (args) => {
 
 socket.on("match request", (args) => {
     if (args["username"] == state.userStore.username) {
-        router.push("/GameArea/"+args["id"])
+        router.push("/GameArea/"+args["id"]) // jump into a game
     }
 })
 
@@ -65,7 +65,7 @@ socket.on("update your state", (args) => {
             state.yourField.canClickEndTurn = args["canClickEndTurn"]
         }
         if ("storage" in args && args["storage"].length != 0) {
-            // update all the other game logic variables
+            // update all the other game logic variables (described in backend classes.py)
             state.yourField.showDialogNormal = args["storage"]["showDialogNormal"]
             state.yourField.showDialogDefence = args["storage"]["showDialogDefence"]
             state.yourField.showOptionDefence = args["storage"]["showOptionDefence"]

@@ -8,7 +8,7 @@ export default defineComponent({
     const playerCards = playerCardsStore
     return { playerCards }
   },
-  computed:{
+  computed:{ // use "display" css property to show dialogs based on variables
     dialogNormal() {
       return playerCardsStore.showDialogNormal ? "flex": "none"
     },
@@ -28,6 +28,7 @@ export default defineComponent({
 <template>
   <div class="movenotif-component-div">
     <p class="allowlinebreaks-p">{{ playerCards.moveNotifier }}</p>
+    <!-- the confirmation/selection dialogs are displayed here -->
     <!-- todo only 1 choice should not display a dialog-->
     <div class="dial dialognormal">
       <button @click="() => {playerCards.showDialogNormal = false
