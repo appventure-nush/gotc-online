@@ -27,7 +27,7 @@ class Game:
         # for meanings of the dialogs and options, see classes.py
         # the extra attribute "warn" is the warning that will be shown in the move notifier
 
-        # do the logic for player 1...
+        # do the logic for player 1
         handcopy = self.player1.hand.copy()
         for i in handcopy:
             # [1 CSC:] Draw 2 additional cards OR Take any card from your discard pile and place it back into your hand
