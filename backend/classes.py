@@ -5,6 +5,7 @@ import flask_socketio
 
 
 class Player:
+    # stores information about an individual player in a game
     def __init__(self, name):
         self.name = name
         self.deck: list[str] = lists.STANDARD_DECK.copy()
@@ -13,21 +14,22 @@ class Player:
         self.hand: list[dict[str, Union[str, bool]]] = []  # server side hand
         self.discard: list[str] = []
         self.field: list[str] = []
-        self.storage = {
-            "showDialogNormal": False,
-            "showDialogDefence": False,
-            "showOptionDefence": False,
-            "selectionDefence": [],
-            "showOptionDefence2": False,
-            "showOptionField": False,
-            "showDialogField": False,
-            "showDiscardPlay": False,
-            "showOptionHand": False,
-            "showDialogHand": False,
-            "opponentHandTemp": [],
-            "discardHand": False,
-            "canClickEndTurn": True,
-            "index": -1
+        self.storage = {  # just variables for showing appropriate dialogs in frontend
+            # below assume discard is from opponent, draw/restore is for you
+            "showDialogNormal": False,  # draw 2/restore 1 dialog
+            "showDialogDefence": False,  # in discard 2 defences, are you sure dialog (if can only discard 0/1 defences)
+            "showOptionDefence": False,  # in discard 2 defences, has not selected any defences
+            "selectionDefence": [],  # in discard 2 defences, selection of first defence if any
+            "showOptionDefence2": False,  # in discard 2 defences, has only selected 1 defence
+            "showOptionField": False,  # in discard 1 field card, has not selected any field cards
+            "showDialogField": False,  # in discard 1 field card, are you sure dialog (if cannot discard field cards)
+            "showDiscardPlay": False,  # in restore 1 from discard, has not selected a card to restore
+            "showOptionHand": False,  # in discard 1 from hand, has not selected a card to discard
+            "showDialogHand": False,  # viewing opponent's hand but no option to discard
+            "opponentHandTemp": [],  # used when getting opponent's hand
+            "discardHand": False,  # in discarding hand phase (at end of turn)
+            "canClickEndTurn": True, # normally true, set to false in discarding hand phase/end of game/viewing opponent's hand
+            "index": -1  # card index selected, to store which card was clicked on to pull up a dialog/options
         }
 
     def shuffleDeck(self):
@@ -47,6 +49,9 @@ class Player:
         return self.crisis
 
     def setHandEnablePlayStatus(self, status: bool):
+        # this function ensures that upon turn switch,
+        # the player whose turn it is, can play cards
+        # the player whose turn just ended, cannot play cards
         handcopy = self.hand.copy()
         for i in handcopy:
             i["enablePlay"] = status
@@ -55,7 +60,9 @@ class Player:
 
     def addHandCard(self, cardName):
         self.hand.append({"name": cardName, "enablePlay": True,  # "blockPlay": False, # can play card without effect
-                          # these will be set later
+                          # these will be set later (refer up for meanings)
+                          # requires prefix just means it sets the corresponding variable in backend
+
                           # everywhere that could affect this (e.g. draw card) will be accompanied by a recompute call
                           # we just cannot call it here because this is Player not Game
                           "requiresDialogNormal": False, "requiresOptionDefence": False,
@@ -90,9 +97,8 @@ class Player:
         return self.gameDefenceFulfilled() == 5
 
 
-
-
 class User:
+    # like an account, in the future will be used to store stats
     def __init__(self, name, last_checkin, login_session_key):
         self.name: str = name
         self.last_checkin: float = last_checkin
