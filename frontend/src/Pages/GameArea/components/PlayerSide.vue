@@ -35,6 +35,9 @@ export default defineComponent({
 
 <style scoped>
 
+*{
+ font-size: 2vh;
+}
 
 .separator{
   position: absolute;
@@ -111,6 +114,7 @@ export default defineComponent({
   height: 10%;
   width: 100%;
   background: grey;
+  font-size: 2vh;
 }
 
 

@@ -178,7 +178,9 @@ export default defineComponent({
   color: white;
   font-weight: 600;
   font-size: 1.25em;
-  padding: .25em 0;
+  padding: .25em .25em;
+  line-height: 1.2em;
+  overflow-y: auto;
 }
 
 .opponent-defence{

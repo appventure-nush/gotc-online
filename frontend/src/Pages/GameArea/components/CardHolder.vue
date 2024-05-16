@@ -180,6 +180,7 @@ export default defineComponent({
   display: block;
   text-align: center;
   padding: 0;
+  font-size: 1em;
 }
 .details{
   top: 20%;

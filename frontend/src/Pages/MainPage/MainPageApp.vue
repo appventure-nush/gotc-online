@@ -66,7 +66,8 @@ export default defineComponent({
   font-size: 2.5vh;
   font-weight: 600;
   font-style: italic;
-  width: 12rem;
+  width: 12vw;
+  line-height: 1;
 }
 
 

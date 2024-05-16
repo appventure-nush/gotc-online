@@ -118,12 +118,12 @@ export default defineComponent( {
 
   <a @click="toggleSignInPrompt" class="sign-in-option">
     <div v-if="userStore.isSignedIn"
-         style="position: relative;top: 0;font-size: .8em;padding: .1em 0;overflow: hidden; text-overflow: ellipsis;">
+         class="signed-in-text">
       Signed In as:<br>
       {{userStore.username}}
     </div>
     <div v-else
-         style="position: relative;top: .5em;height: fit-content;">
+         class="signed-out-text">
       Sign In
     </div>
   </a>
@@ -134,18 +134,20 @@ export default defineComponent( {
 
 .nav{
   display: inline-block;
-  font-size: 21pt;
+  font-size: 3.5vh;
   border-left: 1px white solid;
   border-right: 1px white solid;
   color: white;
-  height: 1.2em;
+  height: 6vh;
   width: 5em;
   text-align: center;
 }
 
 .navdiv{
-  display: inline-block;
-  vertical-align: middle;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: inherit;
 }
 
 .help:hover{
@@ -224,15 +226,23 @@ dialog[open]::backdrop {
 
 .sign-in-option{
   display: flex;
-  font-size: 21pt;
+  font-size: 3.5vh;
   color: white;
   height: 2em;
-  width: 12rem;
+  width: 10vw;
   text-align: center;
   justify-content: center;
+  line-height: 1;
 }
 .sign-in-option:hover{
   background: radial-gradient(circle, #C8553D 0%, #C8553D 50%, #F28F3B 100%);
+}
+
+.sign-in-option .signed-in-text{
+  position: relative;top: 0;font-size: .8em;padding: .1em 0;overflow: hidden; text-overflow: ellipsis;
+}
+.sign-in-option .signed-out-text{
+  position: relative;height: inherit; display: flex; justify-content: center; align-items: center
 }
 
 
