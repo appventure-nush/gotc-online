@@ -45,10 +45,13 @@ export default defineComponent({
 
 <template>
   <div class="hand-component-div">
-    <CardHolder v-for="(card,index) in playerCards.opponentHandTemp"
-                v-if="showOpponentHand // only show if the computed variable was true. v-else in another CardHolder ensures only 1 is active at any time"
+    <!--
+       only show if the computed variable was true. v-else in another CardHolder ensures only 1 is active at any time
+    -->
+    <CardHolder v-if="showOpponentHand"
+                v-for="(card,index) in playerCards.opponentHandTemp"
                 :card-name="card['name']"
-                :key="card['name']+index"
+                :key="1+card['name']+index"
                 :play-button-func="()=>{
                   playerCards.playHand(playerCards.index, index)
                   playerCards.showOptionHand = false
@@ -57,10 +60,10 @@ export default defineComponent({
                 :rename-play="'Discard'"
                 class="handcard"
     />
-    <CardHolder v-for="(card,index) in playerCards.handList"
-                v-else
+    <CardHolder v-else
+                v-for="(card,index) in playerCards.handList"
                 :card-name="card['name']"
-                :key="card['name']+index"
+                :key="0+card['name']+index"
                 :play-button-func="()=>{
                   // the function that is immediately run when a card is clicked
                   if (playerCards.discardHand) { // in discarding phase
@@ -158,8 +161,7 @@ export default defineComponent({
                 }"
                 :enable-play="(card['enablePlay'] || playerCards.discardHand) && playerCards.canClickEndTurn"
                 :rename-play="playerCards.discardHand ? 'Discard' : 'Play'"
-                class="handcard"
-    />
+                class="handcard"></CardHolder>
   </div>
 
 </template>

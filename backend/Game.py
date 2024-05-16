@@ -34,8 +34,7 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
                 if len(self.player1.discard) == 0:
-                    i[
-                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -87,8 +86,7 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player2.field.count("communitysupport") >= 1
                 if len(self.player2.discard) == 0:
-                    i[
-                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
