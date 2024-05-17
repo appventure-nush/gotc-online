@@ -8,7 +8,7 @@ export default defineComponent({
     const playerCards = playerCardsStore
     return { playerCards }
   },
-  computed:{
+  computed:{ // use "display" css property to show dialogs based on variables
     dialogNormal() {
       return playerCardsStore.showDialogNormal ? "flex": "none"
     },
@@ -27,7 +27,8 @@ export default defineComponent({
 
 <template>
   <div class="movenotif-component-div">
-    <p class="allowlinebreaks-p">{{ playerCards.moveNotifier }}</p>
+    <p class="movenotif-p">{{ playerCards.moveNotifier }}</p>
+    <!-- the confirmation/selection dialogs are displayed here -->
     <!-- todo only 1 choice should not display a dialog-->
     <div class="dial dialognormal">
       <button @click="() => {playerCards.showDialogNormal = false
@@ -67,20 +68,19 @@ export default defineComponent({
   justify-content: space-evenly;
 }
 
-.allowlinebreaks-p {
+.movenotif-p {
   white-space: pre-line;
+  text-align: center;
 }
 
 .dial{
-  top: 10%;
-  position: absolute;
-  right: 5%;
+  position: relative;
   flex-direction: row;
   background: #80808080;
   justify-content: center;
   align-items: center;
-  padding: 1em;
-  row-gap: .5em;
+  padding: .5em;
+  gap: .5em;
 }
 
 .dialognormal {

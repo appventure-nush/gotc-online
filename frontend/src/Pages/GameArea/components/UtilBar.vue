@@ -47,7 +47,8 @@ export default defineComponent({
   position: relative;
   border: steelblue 2px solid;
   color: #03145b;
-  padding: .3% 1%;
+  padding: 0 .5em;
+  line-height: 1.8em;
 }
 
 </style>

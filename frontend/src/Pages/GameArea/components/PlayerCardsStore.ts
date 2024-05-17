@@ -13,7 +13,13 @@ export const playerCardsStore  = defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: 'playerCards',
     state: () =>({
-        handList : [] as {}[],
+        handList : [] as {
+            name: string, enablePlay: boolean,
+            requiresDialogNormal: boolean, requiresOptionDefence: boolean,
+            requiresOptionField: boolean, requiresDialogHand: boolean,
+            requiresOptionHand: boolean,
+            warn:any
+        }[],
         discardDeck : ["back-black"] as string[],
         cardsLeft : 46 as number,
 
@@ -25,10 +31,12 @@ export const playerCardsStore  = defineStore({
         // field consists of defences & community supports in play
         field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
-        uuid: "",
+        uuid: "", // the game id
 
+        // notifier shown
         moveNotifier: "Move Notifier",
 
+        // variables (most described in backend classes.py)
         showDialogNormal : false,
         showDialogDefence : false,
         showOptionDefence : false,
@@ -43,7 +51,7 @@ export const playerCardsStore  = defineStore({
         discardHand : false,
         canClickEndTurn: true,
         index : -1,
-
+        // this variable is described in Hand.vue
         vetoShowOpponentHand : false
 
         // variables here need to be added to beforeMount storage writer in GameAppArea.vue
@@ -51,7 +59,7 @@ export const playerCardsStore  = defineStore({
     actions:{
         async resetStore() {
             // reset the store to its default values
-            this.handList = [] as {}[]
+            this.handList = []
             this.discardDeck = ["back-black"] as string[]
             this.cardsLeft = await this.getStdDeckSize()
         },
@@ -311,7 +319,13 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as {}[]
+                    this.handList = json_response["hand"] as {
+                        name: string, enablePlay: boolean,
+                        requiresDialogNormal: boolean, requiresOptionDefence: boolean,
+                        requiresOptionField: boolean, requiresDialogHand: boolean,
+                        requiresOptionHand: boolean,
+                        warn:any
+                    }[]
 
                     return json_response["hand"] as string[]
 
@@ -397,7 +411,7 @@ export const playerCardsStore  = defineStore({
                     game_id: this.uuid,
                     login_session_key : userSignInStore.login_session_key(),
                     card_index : hand_card_index,
-                    extra: extra,
+                    extra: extra, // additional arguments that some cards might need
                     extra2: extra2
                 }),
                 headers: {
@@ -411,7 +425,13 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as {}[]
+                    this.handList = json_response["hand"] as {
+                        name: string, enablePlay: boolean,
+                        requiresDialogNormal: boolean, requiresOptionDefence: boolean,
+                        requiresOptionField: boolean, requiresDialogHand: boolean,
+                        requiresOptionHand: boolean,
+                        warn:any
+                    }[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]
@@ -455,7 +475,13 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as {}[]
+                    this.handList = json_response["hand"] as {
+                        name: string, enablePlay: boolean,
+                        requiresDialogNormal: boolean, requiresOptionDefence: boolean,
+                        requiresOptionField: boolean, requiresDialogHand: boolean,
+                        requiresOptionHand: boolean,
+                        warn:any
+                    }[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]
@@ -507,7 +533,13 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
-                    this.handList = json_response["hand"] as {}[]
+                    this.handList = json_response["hand"] as {
+                        name: string, enablePlay: boolean,
+                        requiresDialogNormal: boolean, requiresOptionDefence: boolean,
+                        requiresOptionField: boolean, requiresDialogHand: boolean,
+                        requiresOptionHand: boolean,
+                        warn:any
+                    }[]
                     this.discardDeck = json_response["discard"] as string[]
                     this.cardsLeft = json_response["cardsLeft"] as number
                     this.field = json_response["field"] as string[]

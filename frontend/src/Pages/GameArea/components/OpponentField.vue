@@ -37,17 +37,18 @@ export default defineComponent({
     },
     clickfunction : function () { // yes, this is a triple nested function
       return (which: string) => {return (key: number) => {return () => {
-        if (this.playerCards.showOptionDefence) {
-          // if only 1 card
+        if (this.playerCards.showOptionDefence) { // selecting the first defence card
           if (this.opponentStore.field.length - this.communitySupportList.length == 1) {
+            // if only 1 card is available to select
             this.playerCards.playHand(this.playerCards.index, [which, key])
             this.playerCards.showOptionDefence = false
           } else {
+            // there is another card to select
             this.playerCards.selectionDefence = [which, key]
             this.playerCards.showOptionDefence = false
             this.playerCards.showOptionDefence2 = true
           }
-        } else if (this.playerCards.showOptionDefence2) {
+        } else if (this.playerCards.showOptionDefence2) { // selecting the second defence card
           // make sure no duplicates first
           if (which == this.playerCards.selectionDefence[0] && key == this.playerCards.selectionDefence[1]) {
             this.playerCards.moveNotifier = "Do not select the same card again."
@@ -56,7 +57,7 @@ export default defineComponent({
             this.playerCards.playHand(this.playerCards.index, this.playerCards.selectionDefence, [which, key])
             this.playerCards.selectionDefence = []
           }
-        } else if (this.playerCards.showOptionField) {
+        } else if (this.playerCards.showOptionField) { // select 1 from field
           this.playerCards.showOptionField = false
           this.playerCards.playHand(this.playerCards.index, [which, key])
         }
@@ -177,7 +178,9 @@ export default defineComponent({
   color: white;
   font-weight: 600;
   font-size: 1.25em;
-  padding: .25em 0;
+  padding: .25em .25em;
+  line-height: 1.2em;
+  overflow-y: auto;
 }
 
 .opponent-defence{

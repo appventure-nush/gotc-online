@@ -25,6 +25,7 @@ export default defineComponent({
   height: 70%;
   width: 100%;
   background-color: #588B8B;
+  font-size: 2vh;
 }
 
 .movenotif{
@@ -35,7 +36,7 @@ export default defineComponent({
   width: 100%;
   background-color: #C8553D;
   color: black;
-  font-size: 1.25em;
+  font-size: 3vh;
 }
 
 </style>

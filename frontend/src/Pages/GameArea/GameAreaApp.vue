@@ -19,10 +19,11 @@ export default defineComponent({
   beforeMount() {
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
-    // we did not pass {detached:true} so this subssctiption automatically ends when we unmount
-    playerCardsStore.$subscribe( (mutation, state) => {
+    // we did not pass {detached:true} so this subscription automatically ends when we unmount
+    playerCardsStore.$subscribe( (mutation, state) => { // upon a change in the store
       console.log(state)
       // update the variables when they are written to
+      // please see backend classes.py for explanation of these variables
       fetch(`${BACKEND_URL}/write_storage`, {
         method: "POST",
         body: JSON.stringify({
@@ -52,7 +53,7 @@ export default defineComponent({
           "Content-type": "application/json; charset=UTF-8"
         }
       })
-    }, {deep:true})
+    }, {deep:true}) // be recursive for lists
   },
   created() {
     this.$watch(

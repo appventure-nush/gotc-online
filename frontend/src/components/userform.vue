@@ -268,21 +268,21 @@ export default defineComponent({
   }
 
   .top{
-    font-size: 1.3rem;
+    font-size: 1.3em;
     margin: .1em 0;
   }
 
   .userform-input{
-    font-size: 1rem;
+    font-size: 1em;
   }
 
   button{
-    font-size: 1.2rem;
-    padding: .25rem .5rem !important;
+    font-size: 1.2em;
+    padding: .25em .5em !important;
   }
 
   .bottom{
-    font-size: 1.1rem;
+    font-size: 1.1em;
     margin: .1em 0;
   }
 
