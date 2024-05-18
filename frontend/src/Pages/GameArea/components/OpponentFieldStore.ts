@@ -13,7 +13,7 @@ export const opponentFieldStore  = defineStore({
         cardsLeft : 46 as number,
 
         uuid: "",
-        opponentsideusername: "Default",
+        opponentsideusername: "NO GAME INITIATED",
 
     }),
     getters: {

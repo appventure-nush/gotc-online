@@ -3,6 +3,7 @@
 import {defineComponent} from "vue"
 import {userSignInStore} from "./UserSignInStore";
 import {playerCardsStore} from "../Pages/GameArea/components/PlayerCardsStore";
+import {mainPageStore} from "../Pages/MainPage/MainPageStore";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -35,12 +36,6 @@ export default defineComponent({
   },
   methods:{
     signin_submit(_event : Event){
-      if (this.proposed_username === "") {
-        // prevent username from being blank string
-        // as blank string is used to detect if signed in
-        this.result = "Blank usernames are not allowed. Not signed in."
-        return
-      }
       this.result = "Sending sign in request..."
       fetch(`${BACKEND_URL}/sign_in`, {
         method: "POST",
@@ -71,6 +66,7 @@ export default defineComponent({
               // console.log(userSignInStore.login_session_key())
               this.refreshText(json_response)
               this.activity_pinger_id = setInterval(this.activity_ping, 20_000)
+              mainPageStore.showSignInPrompt = false
               // emit a sign in event with current user's username in detail param
               // emitted on document for ease of listening
               // DEPRECATE, USE THE USER STORE
@@ -262,10 +258,6 @@ export default defineComponent({
 </template>
 
 <style scoped>
-
-  .userform-status{
-    color: white;
-  }
 
   .top{
     font-size: 1.3em;

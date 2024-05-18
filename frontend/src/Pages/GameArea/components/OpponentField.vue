@@ -70,7 +70,7 @@ export default defineComponent({
 <template>
   <div class="oppfield-component-div">
     <div class="opponent-crisis">
-      <p class="cards-left">{{opponentStore.opponentsideusername}}: {{opponentStore.cardsLeft}} Cards Left</p>
+      <p class="cards-left">{{opponentStore.cardsLeft}} Cards Left</p>
       <CardHolder :card-name="opponentStore.crisis" class="crisiscard" :enable-play="false" />
     </div>
     <div class="opponent-defence">
@@ -177,7 +177,7 @@ export default defineComponent({
   background: linear-gradient(to bottom, dimgrey, darkslategrey);
   color: white;
   font-weight: 600;
-  font-size: 1.25em;
+  font-size: 1em;
   padding: .25em .25em;
   line-height: 1.2em;
   overflow-y: auto;

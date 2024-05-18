@@ -44,8 +44,8 @@ export default defineComponent({
             discardHand : state.discardHand,
             canClickEndTurn: state.canClickEndTurn,
             index : state.index,
-            moveNotifier: state.moveNotifier,
-            vetoShowOpponentHand: state.vetoShowOpponentHand,
+            // moveNotifier: state.moveNotifier, movenotifier is now saved in backend
+            // vetoShowOpponentHand: state.vetoShowOpponentHand, needn't be saved
           }
         }),
         headers: {

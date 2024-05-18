@@ -63,6 +63,8 @@ export const playerCardsStore  = defineStore({
             this.handList = []
             this.discardDeck = ["back-black"] as string[]
             this.cardsLeft = await this.getStdDeckSize()
+            this.playersideusername = ""
+            this.uuid = ""
         },
 
         getStdDeckSize() : Promise<number> {
