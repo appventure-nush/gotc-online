@@ -59,9 +59,6 @@ socket.on("update your state", (args) => {
             state.yourField.handList = args["hand"]
         }
         // notifications are specific to the person
-        if ("moveNotifier" in args) {
-            state.yourField.moveNotifier = args["moveNotifier"]
-        }
         if ("storage" in args && args["storage"].length != 0) {
             // update all the other game logic variables (described in backend classes.py)
             state.yourField.showDialogNormal = args["storage"]["showDialogNormal"]
@@ -78,9 +75,12 @@ socket.on("update your state", (args) => {
             state.yourField.discardHand = args["storage"]["discardHand"]
             state.yourField.canClickEndTurn = args["storage"]["canClickEndTurn"]
             state.yourField.index = args["storage"]["index"]
-            if (args["storage"]["moveNotifier"] != undefined) {
-                state.yourField.moveNotifier = args["storage"]["moveNotifier"]
-            }
+        }
+        if ("moveNotifier" in args) {
+            state.yourField.moveNotifier =
+                (args["storage"]["moveNotifier"] != undefined) ?
+                    args["storage"]["moveNotifier"] + "\n(" + args["moveNotifier"] + ")" :  args["moveNotifier"]
+            console.log(state.yourField.moveNotifier)
         }
         if ("canClickEndTurn" in args) {
             state.yourField.canClickEndTurn = args["canClickEndTurn"]

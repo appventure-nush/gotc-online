@@ -31,6 +31,7 @@ class Player:
             "canClickEndTurn": True, # normally true, set to false when not your turn. also set to false upon game ending
             "index": -1  # card index selected, to store which card was clicked on to pull up a dialog/options
         }
+        self.latestMoveNotif = ""
 
     def shuffleDeck(self):
         random.shuffle(self.deck)

@@ -36,7 +36,7 @@ export default defineComponent({
   width: 100%;
   background-color: #C8553D;
   color: black;
-  font-size: 3vh;
+  font-size: 2.5vh;
 }
 
 </style>

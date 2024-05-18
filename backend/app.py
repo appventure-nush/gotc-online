@@ -135,6 +135,17 @@ def sign_in():
         "login_success": False
     }
     if request.method == "POST":
+
+        # check for invalid usernames
+        if proposed_username == "":
+            response["text"] = "Blank usernames are not allowed. Not signed in."
+            return response
+        if proposed_username in ("NO GAME INITIATED",):
+            # this username is the placeholder for invalid/uninitiated game boards
+            response["text"] = "This username is not allowed. Not signed in."
+            return response
+
+
         for i in logged_in:
 
             keys_equal = False if not type(
@@ -813,6 +824,26 @@ def game_init():
                 except KeyError:
                     return "Not Found"
                 return game.game_init(socketio, your_username)
+        # else
+        abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
+
+
+@app.route('/get_my_running_games', methods=["POST"])
+@cross_origin()
+def get_my_running_games():
+    # Initialises the game for the user whose LSK and username fit. 1 person per call, called 2 times.
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                list_of_my_games : list[[str,str]] = []
+                for g in games.values():
+                    if (i.name == g.player1.name) or (i.name == g.player2.name):
+                        list_of_my_games.append([g.internal_id, g.player1.name if i.name != g.player1.name else g.player2.name, g.init_time.isoformat(timespec="seconds")])
+                return {"games":list_of_my_games}
+
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
 
