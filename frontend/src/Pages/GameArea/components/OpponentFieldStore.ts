@@ -12,7 +12,8 @@ export const opponentFieldStore  = defineStore({
         crisis: "back-black" as string,
         cardsLeft : 46 as number,
 
-        uuid: ""
+        uuid: "",
+        opponentsideusername: "Default",
 
     }),
     getters: {

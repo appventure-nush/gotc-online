@@ -70,7 +70,7 @@ export default defineComponent({
 <template>
   <div class="oppfield-component-div">
     <div class="opponent-crisis">
-      <p class="cards-left">{{opponentStore.cardsLeft}} Cards Left</p>
+      <p class="cards-left">{{opponentStore.opponentsideusername}}: {{opponentStore.cardsLeft}} Cards Left</p>
       <CardHolder :card-name="opponentStore.crisis" class="crisiscard" :enable-play="false" />
     </div>
     <div class="opponent-defence">

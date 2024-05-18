@@ -42,6 +42,7 @@ socket.on("match request", (args) => {
 socket.on("update your state", (args) => {
     // sends your username and your data
     if (args["username"] == state.userStore.username && args["uuid"] == state.yourField.uuid) {
+        state.yourField.playersideusername = args["username"]
         if ("cardsLeft" in args) {
             state.yourField.cardsLeft = args["cardsLeft"]
         }
@@ -60,9 +61,6 @@ socket.on("update your state", (args) => {
         // notifications are specific to the person
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier = args["moveNotifier"]
-        }
-        if ("canClickEndTurn" in args) {
-            state.yourField.canClickEndTurn = args["canClickEndTurn"]
         }
         if ("storage" in args && args["storage"].length != 0) {
             // update all the other game logic variables (described in backend classes.py)
@@ -83,6 +81,9 @@ socket.on("update your state", (args) => {
             if (args["storage"]["moveNotifier"] != undefined) {
                 state.yourField.moveNotifier = args["storage"]["moveNotifier"]
             }
+        }
+        if ("canClickEndTurn" in args) {
+            state.yourField.canClickEndTurn = args["canClickEndTurn"]
         }
     }
 })
@@ -105,6 +106,9 @@ socket.on("update opponent state", (args) => {
         // notifications are specific to the person
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier = args["moveNotifier"]
+        }
+        if ("opponentSideUsername" in args) {
+            state.oppField.opponentsideusername = args["opponentSideUsername"]
         }
     }
 })

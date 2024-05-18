@@ -34,7 +34,8 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
                 if len(self.player1.discard) == 0:
-                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -86,7 +87,8 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player2.field.count("communitysupport") >= 1
                 if len(self.player2.discard) == 0:
-                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -136,40 +138,49 @@ class Game:
         # starts off the game upon entering GameArea, initialises the players in the frontend
         if self.player1_username == username or self.player2_username == username:
             # you are a player in the current game
-            notifier = ""
+            returned = {}
             if self.player1.crisis > self.player2.crisis and self.player1_username == username:
+                # start by assuming game was resumed, if that is found to be not true in len(deck)==46,
+                # reinitialise notifier
+                notifier = f"Resumed game against {self.player2_username}."
                 if len(self.player1.deck) == 46:  # fresh game, should initialise
                     for q in range(5):
                         self.player1.addHandCard(self.player1.popDeck())
                     self.player1.setHandEnablePlayStatus(True)
                     self.recomputeBlockAndDialogStatus()
-                    notifier = f"Your crisis has the higher number. You are going first. Drew {lists.LOOKUP[self.player1.hand[-1]['name']]}."
-                returned = {"username": username,
-                            "hand": self.player1.hand,
-                            "cardsLeft": len(self.player1.deck),
-                            "field": self.player1.field,
-                            "discard": self.player1.discard,
-                            "crisis": self.player1.crisis,
-                            "moveNotifier": notifier,
-                            "uuid": self.internal_id,
-                            "canClickEndTurn": self.turn == self.player1_username,
-                            "storage": self.player1.storage}
+                    notifier = f"Started game against {self.player2_username}.\n" \
+                               f"Your crisis has the higher number. You are going first. " \
+                               f"Drew {lists.LOOKUP[self.player1.hand[-1]['name']]}."
+                    returned["canClickEndTurn"] = True  # override value in storage
+                returned |= {"username": username,
+                             "hand": self.player1.hand,
+                             "cardsLeft": len(self.player1.deck),
+                             "field": self.player1.field,
+                             "discard": self.player1.discard,
+                             "crisis": self.player1.crisis,
+                             "moveNotifier": notifier,
+                             "uuid": self.internal_id,
+                             "storage": self.player1.storage}
                 socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": self.player2_username,
                                                           "cardsLeft": len(self.player1.deck),
                                                           "field": self.player1.field,
                                                           "discard": self.player1.discard,
                                                           "crisis": self.player1.crisis,
+                                                          "opponentSideUsername": self.player1_username,
                                                           "uuid": self.internal_id})
                 return "First"
             elif self.player1.crisis < self.player2.crisis and self.player1_username == username:
+                notifier = f"Resumed game against {self.player2_username}."
                 if len(self.player1.deck) == 46:  # fresh game, should initialise
                     for q in range(5):
                         self.player1.addHandCard(self.player1.popDeck())
                     self.player1.setHandEnablePlayStatus(False)
                     self.recomputeBlockAndDialogStatus()
-                    notifier = f"Your crisis has the lower number.  You are going second."
-                returned = {"username": username,
+                    notifier = f"Started game against {self.player2_username}.\n" \
+                               f"Your crisis has the lower number. You are going second."
+                    returned["canClickEndTurn"] = False  # override value in storage
+                returned |= {"username": username,
                             "hand": self.player1.hand,
                             "cardsLeft": len(self.player1.deck),
                             "field": self.player1.field,
@@ -177,7 +188,6 @@ class Game:
                             "crisis": self.player1.crisis,
                             "moveNotifier": notifier,
                             "uuid": self.internal_id,
-                            "canClickEndTurn": self.turn == self.player1_username,
                             "storage": self.player1.storage}
                 socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": self.player2_username,
@@ -185,54 +195,64 @@ class Game:
                                                           "field": self.player1.field,
                                                           "discard": self.player1.discard,
                                                           "crisis": self.player1.crisis,
+                                                          "opponentSideUsername": self.player1_username,
                                                           "uuid": self.internal_id})
                 return "Second"
             elif self.player1.crisis > self.player2.crisis and self.player2_username == username:
+                notifier = f"Resumed game against {self.player1_username}."
                 if len(self.player2.deck) == 46:  # fresh game, should initialise
                     for q in range(5):
                         self.player2.addHandCard(self.player2.popDeck())
                     self.player2.setHandEnablePlayStatus(False)
                     self.recomputeBlockAndDialogStatus()
-                    notifier = f"Your crisis has the lower number.  You are going second."
-                socket_obj.emit("update your state", {"username": username,
-                                                      "hand": self.player2.hand,
-                                                      "cardsLeft": len(self.player2.deck),
-                                                      "field": self.player2.field,
-                                                      "discard": self.player2.discard,
-                                                      "crisis": self.player2.crisis,
-                                                      "moveNotifier": notifier,
-                                                      "uuid": self.internal_id,
-                                                      "canClickEndTurn": self.turn == self.player2_username,
-                                                      "storage": self.player2.storage})
+                    notifier = f"Started game against {self.player1_username}.\n" \
+                               f"Your crisis has the lower number. You are going second."
+                    returned["canClickEndTurn"] = False  # override value in storage
+                returned |= {"username": username,
+                             "hand": self.player2.hand,
+                             "cardsLeft": len(self.player2.deck),
+                             "field": self.player2.field,
+                             "discard": self.player2.discard,
+                             "crisis": self.player2.crisis,
+                             "moveNotifier": notifier,
+                             "uuid": self.internal_id,
+                             "storage": self.player2.storage}
+                socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": self.player1_username,
                                                           "cardsLeft": len(self.player2.deck),
                                                           "field": self.player2.field,
                                                           "discard": self.player2.discard,
                                                           "crisis": self.player2.crisis,
+                                                          "opponentSideUsername": self.player2_username,
                                                           "uuid": self.internal_id})
                 return "Second"
             else:  # player 2 crisis bigger and you are player 2
+                notifier = f"Resumed game against {self.player1_username}."
                 if len(self.player2.deck) == 46:  # fresh game, should initialise
                     for q in range(5):
                         self.player2.addHandCard(self.player2.popDeck())
                     self.player2.setHandEnablePlayStatus(True)
                     self.recomputeBlockAndDialogStatus()
-                    notifier = f"Your crisis has the higher number. You are going first. Drew {lists.LOOKUP[self.player2.hand[-1]['name']]}."
-                socket_obj.emit("update your state", {"username": username,
-                                                      "hand": self.player2.hand,
-                                                      "cardsLeft": len(self.player2.deck),
-                                                      "field": self.player2.field,
-                                                      "discard": self.player2.discard,
-                                                      "crisis": self.player2.crisis,
-                                                      "moveNotifier": notifier,
-                                                      "uuid": self.internal_id,
-                                                      "canClickEndTurn": self.turn == self.player2_username,
-                                                      "storage": self.player2.storage})
+                    notifier = f"Started game against {self.player1_username}.\n" \
+                               f"Your crisis has the higher number. You are going first. " \
+                               f"Drew {lists.LOOKUP[self.player2.hand[-1]['name']]}."
+                    returned["canClickEndTurn"] = True  # override value in storage
+                returned |= {"username": username,
+                             "hand": self.player2.hand,
+                             "cardsLeft": len(self.player2.deck),
+                             "field": self.player2.field,
+                             "discard": self.player2.discard,
+                             "crisis": self.player2.crisis,
+                             "moveNotifier": notifier,
+                             "uuid": self.internal_id,
+                             "storage": self.player2.storage}
+                socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": self.player1_username,
                                                           "cardsLeft": len(self.player2.deck),
                                                           "field": self.player2.field,
                                                           "discard": self.player2.discard,
                                                           "crisis": self.player2.crisis,
+                                                          "opponentSideUsername": self.player2_username,
                                                           "uuid": self.internal_id})
                 return "First"
         else:
@@ -553,7 +573,7 @@ class Game:
                 opponent_move_notifier = f"Opponent played {lists.LOOKUP[cardPlayed]} and viewed your hand."
                 next_turn = True
         elif cardPlayed in (
-        "event-1", "event-3", "event-4", "event-2"):  # discard 1 from hand if opponent has no community support
+                "event-1", "event-3", "event-4", "event-2"):  # discard 1 from hand if opponent has no community support
             curr_player.discard = [cardPlayed] + curr_player.discard
             if "extra" in frontend_request_json.json:  # if it does not exist, card cannot be discarded (no card exists/opponent has too much community support)
                 extra = frontend_request_json.json["extra"]
@@ -567,7 +587,8 @@ class Game:
                 opponent_move_notifier = f"Opponent played {lists.LOOKUP[cardPlayed]}."
             next_turn = True
         elif cardPlayed in (
-        "event-5", "event-6", "event-7", "event-8"):  # discard 2 from defence if opponent has <=1 community support
+                "event-5", "event-6", "event-7",
+                "event-8"):  # discard 2 from defence if opponent has <=1 community support
             curr_player.discard = [cardPlayed] + curr_player.discard
             if "extra" in frontend_request_json.json:  # the first defence card, if it does not exist, card cannot be discarded (no card exists/opponent has too much community support)
                 extra = frontend_request_json.json["extra"]  # [which (defence type), key (index)]
@@ -595,7 +616,8 @@ class Game:
                 opponent_move_notifier = f"Opponent played {lists.LOOKUP[cardPlayed]}."
             next_turn = True
         elif cardPlayed in (
-        "event-9", "event-10", "event-11", "event-12"):  # discard 1 from field if opponent has <=2 community support
+                "event-9", "event-10", "event-11",
+                "event-12"):  # discard 1 from field if opponent has <=2 community support
             curr_player.discard = [cardPlayed] + curr_player.discard
             if "extra" in frontend_request_json.json:  # if it does not exist, card cannot be discarded (no card exists/opponent has too much community support)
                 extra = frontend_request_json.json["extra"]  # [which, key]

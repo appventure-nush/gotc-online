@@ -21,7 +21,6 @@ export default defineComponent({
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
     // we did not pass {detached:true} so this subscription automatically ends when we unmount
     playerCardsStore.$subscribe( (mutation, state) => { // upon a change in the store
-      console.log(state)
       // update the variables when they are written to
       // please see backend classes.py for explanation of these variables
       fetch(`${BACKEND_URL}/write_storage`, {
@@ -103,7 +102,6 @@ export default defineComponent({
 
   <div class="gamearea">
 
-    <!-- todo: display usernames to indicate who is who -->
     <OpponentSide class="opponent-side"/>
     <player-side class="player-side"/>
 

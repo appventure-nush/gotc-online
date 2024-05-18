@@ -33,8 +33,8 @@ export default defineComponent({
 </script>
 
 <template>
-
   <div class="crisis-component-div">
+    <p class="cards-left">{{playerStore.playersideusername}}: {{playerStore.cardsLeft}} Cards Left</p>
     <CardHolder :card-name="playerStore.crisis" class="crisiscard" :enable-play="false" />
   </div>
 </template>
@@ -42,9 +42,35 @@ export default defineComponent({
 <style scoped>
 
 .crisis-component-div{
+  background-color: transparent;
   display: inline-flex;
-  align-items: center;
   justify-content: space-evenly;
+  align-items: center;
+}
+
+.crisis-component-div>.crisiscard{
+  position: absolute;
+  height: 60%;
+  aspect-ratio: 2/3;
+  bottom: 10%;
+  display: block;
+}
+
+.crisis-component-div>.cards-left{
+  position: absolute;
+  width: 80%;
+  margin: 0 0 2.5%;
+  top: 10%;
+  display: block;
+  text-align: center;
+  white-space: nowrap;
+  background: linear-gradient(to bottom, dimgrey, darkslategrey);
+  color: white;
+  font-weight: 600;
+  font-size: 1.25em;
+  padding: .25em .25em;
+  line-height: 1.2em;
+  overflow-y: auto;
 }
 
 .crisiscard {
