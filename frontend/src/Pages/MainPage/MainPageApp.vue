@@ -117,6 +117,8 @@ export default defineComponent({
   align-items: center;
   padding: 1em;
   row-gap: .5em;
+  color: white;
+  width: 26ch;
 }
 
 .topbar .gotc-online-pseudologo{

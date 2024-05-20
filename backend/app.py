@@ -1,3 +1,4 @@
+import hashlib
 import random
 import secrets
 import time
@@ -122,6 +123,45 @@ def get_counter():
     return "end of function"  # every method should return something
 
 
+@app.route('/create_account', methods=['POST'])
+@cross_origin()
+def create_account():
+    proposed_username = request.json['proposed_username']
+    proposed_password = request.json['proposed_password']
+    response = {
+        "text": "PLACEHOLDER",
+        "confirmed_username": "",
+        "account_creation_success": False
+    }
+    if request.method == "POST":
+
+        if proposed_username == "":
+            response["text"] = "Blank usernames are not allowed. Account not created."
+            return response
+
+        with open("local_data_files/accounts.json", "r") as accs_file:
+            accounts = json.load(accs_file)
+            for a in accounts:
+                if a["username"] == proposed_username:
+                    response["text"] = "Account already exists. Account not created."
+                    response["confirmed_username"] = proposed_username
+                    return response
+        # if the account doesn't exist
+        with open("local_data_files/accounts.json", "w") as accs_file:
+            accounts += [{
+                "username": proposed_username,
+                "password": hashlib.sha256(bytes(proposed_username, 'utf-8')).hexdigest()
+            }]
+            json.dump(accounts, accs_file)
+            response["text"] = "Account successfully created"
+            response["account_creation_success"] = True
+        return response
+
+
+#TODO : Delete account functionality
+
+#TODO: Implement passwords in signing in
+
 @app.route('/sign_in', methods=['POST'])
 # we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
@@ -145,6 +185,17 @@ def sign_in():
             response["text"] = "This username is not allowed. Not signed in."
             return response
 
+        # check if user exists
+        with open("local_data_files/accounts.json", "r") as accs_file:
+            account_exists = False
+            accounts = json.load(accs_file)
+            for a in accounts:
+                if a["username"] == proposed_username:
+                    account_exists = True
+                    break
+            if not account_exists:
+                response["text"] = "There is no account with this username. Please create an account first."
+                return response
 
         for i in logged_in:
 

@@ -16,7 +16,6 @@ export default defineComponent({
       userform_status_top_text: "Sign In:" as String,
       result : "waiting for input" as String,
       proposed_username : "" as String,
-      activity_pinger_id : 0 as unknown as NodeJS.Timer,
       userStore : userSignInStore, // NOTE: USE THE USERSTORE AND NOT THE SIGN IN/OUT EVENTS FROM THIS COMMIT ON
       playerStore : playerCardsStore,
     }
@@ -65,7 +64,7 @@ export default defineComponent({
               // console.log(localStorage.getItem("LoginSessionKey"))
               // console.log(userSignInStore.login_session_key())
               this.refreshText(json_response)
-              this.activity_pinger_id = setInterval(this.activity_ping, 20_000)
+              userSignInStore.activity_pinger_id = setInterval(this.activity_ping, 20_000)
               mainPageStore.showSignInPrompt = false
               // emit a sign in event with current user's username in detail param
               // emitted on document for ease of listening
@@ -195,7 +194,7 @@ export default defineComponent({
     },
 
     signout(json_response_text : String){
-      clearInterval(this.activity_pinger_id)
+      clearInterval(userSignInStore .activity_pinger_id)
       this.userStore.username = ""
       this.userStore.username = ""
       this.userform_status_top_text = "Sign In:"
@@ -251,31 +250,59 @@ export default defineComponent({
 
 <template>
   <p class="userform-status top" id="userform_status_top">{{ userform_status_top_text }}</p>
+  <p class="userform-input-labels">Username:</p>
   <input class="userform-input" type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">
-  <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button>
-  <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
+  <div style="display: flex; flex-direction: row; position: relative; width: 90%; justify-content: space-evenly">
+    <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button>
+    <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
+  </div>
+  <router-link to="/CreateAccount" class="create-account-link"><u>Create an Account</u></router-link>
   <p class="userform-status bottom" id="userform_status_bottom">{{ result }}</p>
 </template>
 
 <style scoped>
 
-  .top{
-    font-size: 1.3em;
-    margin: .1em 0;
-  }
+.top{
+  font-size: 1.3em;
+  margin: .1em 0;
+}
 
-  .userform-input{
-    font-size: 1em;
-  }
+.userform-input-labels{
+  font-size: 1em;
+  padding: 0;
+  text-align: left;
+  align-self: flex-start;
+  margin: 0;
+}
 
-  button{
-    font-size: 1.2em;
-    padding: .25em .5em !important;
-  }
+.userform-input{
+  font-size: 1.1em;
+  width: 90%;
+}
 
-  .bottom{
-    font-size: 1.1em;
-    margin: .1em 0;
-  }
+button{
+  font-size: 1.2em;
+  padding: .25em .5em !important;
+}
+
+.bottom{
+  font-size: 1.2em;
+  margin: .1em 0;
+}
+
+.create-account-link{
+  color: inherit;
+  font-size: 1em;
+  line-height: 2;
+  background-color: #588B8B;
+  padding: .1em .5em;
+  border-radius: .5em;
+  border: transparent 1px solid;
+}
+.create-account-link:hover{
+  font-style: italic;
+  border: white 1px solid;
+  transition: .1s;
+}
 
 </style>

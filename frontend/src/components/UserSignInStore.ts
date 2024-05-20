@@ -12,7 +12,8 @@ export const userSignInStore  = defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: 'userSignIn',
     state: () =>({
-        username : "" as string
+        username : "" as string,
+        activity_pinger_id : 0 as unknown as NodeJS.Timer,
     }),
     getters: {
         isSignedIn: (state) => state.username !== "",

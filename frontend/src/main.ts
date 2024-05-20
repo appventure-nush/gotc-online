@@ -3,6 +3,7 @@ import FrontPageApp from "./Pages/FrontPage/FrontPageApp.vue";
 import MainPageApp from "./Pages/MainPage/MainPageApp.vue";
 import GameAreaApp from "./Pages/GameArea/GameAreaApp.vue";
 import HelpAreaApp from "./Pages/HelpArea/HelpAreaApp.vue";
+import CreateAccountApp from "./Pages/CreateProfile/CreateAccountApp.vue";
 
 
 //import vue-router's things here
@@ -32,6 +33,7 @@ const FrontPage = FrontPageApp
 const MainPage = MainPageApp
 const GameArea = GameAreaApp
 const HelpArea = HelpAreaApp
+const CreateAccountPage = CreateAccountApp
 
 // 2. Define some routes
 // Each route should map to a component.
@@ -39,8 +41,9 @@ const HelpArea = HelpAreaApp
 const routes = [
     { path: '/', component: MainPage },
     { path: '/FrontPage', component: FrontPage },
+    { path: '/CreateAccount', component: CreateAccountPage},
     { path: '/GameArea/:gameid', component: GameArea},
-    { path: '/HelpArea', component: HelpArea}
+    { path: '/HelpArea', component: HelpArea},
 ]
 
 // 3. Create the router instance and pass the `routes` option
