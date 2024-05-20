@@ -303,6 +303,36 @@ class Game:
 
         return response
 
+    def forfeit(self, socket_obj: flask_socketio.SocketIO, povplayer: Literal[1, 2]):
+        # forfeits game. only called if you get past the Are you sure? dialog
+        response = {
+            "winThisTurn": True  # someone won this turn, end game in frontend
+        }
+
+        curr_player: Player
+        other_player: Player
+        curr_player, other_player = (self.player1, self.player2) if (povplayer == 1) else (self.player2, self.player1)
+
+        your_move_notifier = "You forfeited the game!\nYou lose!"
+        opponent_move_notifier = "Your opponent forfeited the game!\nYou win!"
+
+        # update both player's displays
+        curr_player.latestMoveNotif = your_move_notifier
+        other_player.latestMoveNotif = opponent_move_notifier
+
+        response["moveNotifier"] = your_move_notifier
+        response["canClickEndTurn"] = False
+
+        updater = {"uuid": self.internal_id, "username": other_player.name,
+                   "moveNotifier": opponent_move_notifier, "forfeited": True}
+        socket_obj.emit("update opponent state", updater)
+
+        updater = {"uuid": self.internal_id, "username": other_player.name,
+                   "canClickEndTurn": False}
+        socket_obj.emit("update your state", updater)
+
+        return response
+
     def discard_hand(self, socket_obj: flask_socketio.SocketIO, povplayer: Literal[1, 2], hand_index: int):
         # in the discarding phase, this function is called
         response = {

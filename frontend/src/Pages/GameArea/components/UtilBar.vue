@@ -36,8 +36,11 @@ export default defineComponent({
       <router-link to="/" v-slot="{href, route, navigate}">
         <p class="back-temp">Click to go back to MainPage.</p>
       </router-link>
-      <button>
-        Forfeit Game (not implemented yet)
+      <button v-if="playerCards.showForfeitButton && !playerCards.showForfeit" @click="() => {
+        playerCards.showForfeit = true
+        playerCards.moveNotifier = 'Are you sure you want to forfeit?'
+      }">
+        Forfeit Game
       </button>
     </div>
   </div>

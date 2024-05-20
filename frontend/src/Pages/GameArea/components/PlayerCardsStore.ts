@@ -52,10 +52,15 @@ export const playerCardsStore  = defineStore({
         discardHand : false,
         canClickEndTurn: true,
         index : -1,
+        // variables above here need to be added to beforeMount storage writer in GameAppArea.vue
+        // variables below do not need to be saved, as they do not need to be restored
+        // show forfeit dialog
+        showForfeit : false,
         // this variable is described in Hand.vue
-        vetoShowOpponentHand : false
-
-        // variables here need to be added to beforeMount storage writer in GameAppArea.vue
+        vetoShowOpponentHand : false,
+        // there is no need to save this variable. it just disables forfeiting when opponent has already forfeited
+        // buttons should be disabled in replays so there is no need to save
+        showForfeitButton : true
     }),
     actions:{
         async resetStore() {
@@ -458,6 +463,8 @@ export const playerCardsStore  = defineStore({
                 });
         },
         discardCardFromHand(hand_card_index : number) : Promise<string> {
+            this.showForfeit = false
+
             return fetch(`${BACKEND_URL}/discard_hand`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -516,6 +523,7 @@ export const playerCardsStore  = defineStore({
             this.showDiscardPlay = false
             this.showOptionDefence2 = false
             this.selectionDefence = []
+            this.showForfeit = false
 
             return fetch(`${BACKEND_URL}/pass_turn`, {
                 method: "POST",
@@ -554,6 +562,56 @@ export const playerCardsStore  = defineStore({
                     }
 
                     this.discardHand = !json_response["nextTurn"]
+
+                    return "Success"
+
+                })
+                .catch(error => {
+                    console.log(error.toString())
+                    return "Could not play hand"
+                });
+        },
+        forfeitGame() {
+            this.showDialogNormal = false // no stray dialogs
+            this.showOptionDefence = false
+            this.showDialogDefence = false
+            this.showOptionField = false
+            this.showDialogField = false
+            this.showDialogHand = false
+            this.showOptionHand = false
+            this.showDiscardPlay = false
+            this.showOptionDefence2 = false
+            this.selectionDefence = []
+            this.showForfeit = false
+            this.showForfeitButton = false
+
+            return fetch(`${BACKEND_URL}/forfeit`, {
+                method: "POST",
+                body: JSON.stringify({
+                    username: userSignInStore.username,
+                    request_username: userSignInStore.username,
+                    game_id: this.uuid,
+                    login_session_key: userSignInStore.login_session_key(),
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .then((response) => {
+                    if (!response.ok) return Promise.reject(response)
+                    else return response.text()
+                })
+                .then((json_text) => {
+                    let json_response = JSON.parse(json_text)
+
+                    this.moveNotifier = json_response["moveNotifier"] as string
+                    this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                    if (json_response["winThisTurn"]) { // always true
+                        this.canClickEndTurn = false
+                    }
+
+                    this.discardHand = false
 
                     return "Success"
 

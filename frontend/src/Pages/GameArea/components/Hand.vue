@@ -157,6 +157,7 @@ export default defineComponent({
                     playerCards.showDiscardPlay = false // options that should always be reset
                     playerCards.showOptionDefence2 = false
                     playerCards.selectionDefence = []
+                    playerCards.showForfeit = false
                   }
                 }"
                 :enable-play="(card['enablePlay'] || playerCards.discardHand) && playerCards.canClickEndTurn"

@@ -110,6 +110,9 @@ socket.on("update opponent state", (args) => {
         if ("opponentSideUsername" in args) {
             state.oppField.opponentsideusername = args["opponentSideUsername"]
         }
+        if ("forfeited" in args) {
+            state.yourField.showForfeitButton = !args["forfeited"]
+        }
     }
 })
 

@@ -811,6 +811,24 @@ def pass_turn():
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
+@app.route('/forfeit', methods=["POST"])
+@cross_origin()
+def forfeit():
+    # forfeit game for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    # response = {"hand": [], "discard": [], "cardsLeft": 0, "nextTurn": False, "winThisTurn": False}
+    # response is constructed in the game pass turn function
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                return game.forfeit(socketio, 1 if game.player1_username == request_username else 2)
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
 @app.route('/get_discard', methods=["POST"])
 @cross_origin()

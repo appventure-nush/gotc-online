@@ -37,6 +37,7 @@ export default defineComponent({
     },
     clickfunction : function () { // yes, this is a triple nested function
       return (which: string) => {return (key: number) => {return () => {
+        this.playerCards.showForfeit = false
         if (this.playerCards.showOptionDefence) { // selecting the first defence card
           if (this.opponentStore.field.length - this.communitySupportList.length == 1) {
             // if only 1 card is available to select

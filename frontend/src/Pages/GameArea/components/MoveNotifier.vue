@@ -20,6 +20,9 @@ export default defineComponent({
     },
     dialogHand() {
       return playerCardsStore.showDialogHand ? "flex": "none"
+    },
+    dialogForfeit() {
+      return playerCardsStore.showForfeit ? "flex": "none"
     }
   }
 })
@@ -56,6 +59,10 @@ export default defineComponent({
     <div class="dial dialoghand">
       <button @click="() => {playerCards.showDialogHand = false
       playerCards.playHand(playerCards.index)}">Confirm</button>
+    </div>
+    <div class="dial dialogforfeit">
+      <button @click="playerCards.forfeitGame()">Forfeit (irreversible!)</button>
+      <button @click="playerCards.showForfeit = false">Cancel</button>
     </div>
   </div>
 </template>
@@ -96,7 +103,11 @@ export default defineComponent({
 }
 
 .dialoghand {
-  display: v-bind(dialogHand)
+  display: v-bind(dialogHand);
+}
+
+.dialogforfeit {
+  display: v-bind(dialogForfeit);
 }
 
 </style>
