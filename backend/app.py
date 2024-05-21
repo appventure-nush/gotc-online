@@ -1,20 +1,19 @@
 import hashlib
-import random
+import json
+import os
 import secrets
-import time
 import threading
+import time
 import uuid
 from datetime import datetime
-from typing import Union
 
 from flask import Flask, request, send_file, abort, Response, jsonify
 from flask_cors import CORS, cross_origin
-import json
 from flask_socketio import SocketIO
 
-from classes import *
 import lists
 from Game import Game
+from classes import *
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -29,6 +28,10 @@ queue: list[User] = []
 games: dict[str, Game] = {}
 
 # create account files if not present
+try:
+    os.mkdir("./local_data_files")
+except FileExistsError:
+    pass
 try:
     with open("local_data_files/accounts.json", "x"):
         pass
