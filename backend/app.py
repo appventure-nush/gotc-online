@@ -990,7 +990,7 @@ def get_my_running_games():
                 for g in games.values():
                     if (i.name == g.player1.name) or (i.name == g.player2.name):
                         list_of_my_games.append([g.internal_id, g.player1.name if i.name != g.player1.name else g.player2.name, g.init_time.isoformat(timespec="seconds")])
-                return {"games":list_of_my_games}
+                return {"games":list_of_my_games}  # todo: do not return won games, create a separate section
 
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))

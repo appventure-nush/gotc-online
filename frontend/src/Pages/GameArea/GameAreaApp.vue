@@ -44,6 +44,7 @@ export default defineComponent({
             discardHand : state.discardHand,
             canClickEndTurn: state.canClickEndTurn,
             index : state.index,
+            showForfeitButton : state.showForfeitButton
             // moveNotifier: state.moveNotifier, movenotifier is now saved in backend
             // vetoShowOpponentHand: state.vetoShowOpponentHand, needn't be saved
           }

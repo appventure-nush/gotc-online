@@ -75,6 +75,7 @@ socket.on("update your state", (args) => {
             state.yourField.discardHand = args["storage"]["discardHand"]
             state.yourField.canClickEndTurn = args["storage"]["canClickEndTurn"]
             state.yourField.index = args["storage"]["index"]
+            state.yourField.showForfeitButton = args["storage"]["showForfeitButton"]
         }
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier =
@@ -110,8 +111,8 @@ socket.on("update opponent state", (args) => {
         if ("opponentSideUsername" in args) {
             state.oppField.opponentsideusername = args["opponentSideUsername"]
         }
-        if ("forfeited" in args) {
-            state.yourField.showForfeitButton = !args["forfeited"]
+        if ("gameEnd" in args) {
+            state.yourField.showForfeitButton = !args["gameEnd"]
         }
     }
 })

@@ -1,9 +1,9 @@
 import datetime
-
-import flask
+from typing import Literal
 
 from classes import *
-from typing import Literal
+
+import flask_socketio
 
 
 class Game:
@@ -23,7 +23,9 @@ class Game:
         self.nextturnislast = False  # used for running out of deck cards logic, whether next turn played will be last
 
         self.internal_id = internal_id  # game uuid
-        self.init_time = datetime.datetime.now(datetime.timezone.utc) # time game was initiated in utc
+        self.init_time = datetime.datetime.now(datetime.timezone.utc)  # time game was initiated in utc
+        self.winner = None  # note: empty string = tie. None = undecided (game still ongoing)
+        # cleanest solution since empty strings cannot be usernames
 
     def recomputeBlockAndDialogStatus(self):
         # this is where all the dialogs and options are set, to ensure they show up in the frontend
@@ -37,7 +39,8 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
                 if len(self.player1.discard) == 0:
-                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i[
+                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -139,7 +142,8 @@ class Game:
         # starts off the game upon entering GameArea, initialises the players in the frontend
         if self.player1_username == username or self.player2_username == username:
             # you are a player in the current game
-            curr_player, other_player = (self.player1, self.player2) if self.player1_username == username else (self.player2, self.player1)
+            curr_player, other_player = (self.player1, self.player2) if self.player1_username == username else (
+            self.player2, self.player1)
             returned = {"canClickEndTurn": self.turn == curr_player.name}
             if curr_player.crisis > other_player.crisis:
                 # start by assuming game was resumed, if that is found to be not true in len(deck)==46,
@@ -183,14 +187,14 @@ class Game:
                                f"Your crisis has the lower number. You are going second."
                     returned["canClickEndTurn"] = False  # override value in storage
                 returned |= {"username": username,
-                            "hand": curr_player.hand,
-                            "cardsLeft": len(curr_player.deck),
-                            "field": curr_player.field,
-                            "discard": curr_player.discard,
-                            "crisis": curr_player.crisis,
-                            "moveNotifier": notifier,
-                            "uuid": self.internal_id,
-                            "storage": curr_player.storage}
+                             "hand": curr_player.hand,
+                             "cardsLeft": len(curr_player.deck),
+                             "field": curr_player.field,
+                             "discard": curr_player.discard,
+                             "crisis": curr_player.crisis,
+                             "moveNotifier": notifier,
+                             "uuid": self.internal_id,
+                             "storage": curr_player.storage}
                 socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": other_player.name,
                                                           "cardsLeft": len(curr_player.deck),
@@ -231,12 +235,15 @@ class Game:
                 if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                    self.winner = curr_player.name
                 elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                    self.winner = ""
                 else:
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                    self.winner = other_player.name
                 response["winThisTurn"] = True
             elif len(curr_player.deck) == 0:
                 # current player ran out of cards, run appropriate logic
@@ -250,12 +257,15 @@ class Game:
                     if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                         your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                        self.winner = curr_player.name
                     elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                         your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                        self.winner = ""
                     else:
                         your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                        self.winner = other_player.name
                     response["winThisTurn"] = True
             else:
                 # move to next turn
@@ -315,6 +325,7 @@ class Game:
 
         your_move_notifier = "You forfeited the game!\nYou lose!"
         opponent_move_notifier = "Your opponent forfeited the game!\nYou win!"
+        self.winner = other_player.name
 
         # update both player's displays
         curr_player.latestMoveNotif = your_move_notifier
@@ -324,7 +335,7 @@ class Game:
         response["canClickEndTurn"] = False
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
-                   "moveNotifier": opponent_move_notifier, "forfeited": True}
+                   "moveNotifier": opponent_move_notifier, "gameEnd": True}
         socket_obj.emit("update opponent state", updater)
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
@@ -362,12 +373,15 @@ class Game:
                 if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                    self.winner = curr_player.name
                 elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                    self.winner = ""
                 else:  # player 2 more than player 1
                     your_move_notifier = "Opponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                    self.winner = other_player.name
                 response["winThisTurn"] = True
             elif len(curr_player.deck) == 0:
                 # current player ran out of cards, run appropriate logic
@@ -381,12 +395,15 @@ class Game:
                     if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                         your_move_notifier = "Your deck ran out of cards. You win due to having more defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                        self.winner = curr_player.name
                     elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                         your_move_notifier = "Your deck ran out of cards. Tie due to having equal defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                        self.winner = ""
                     else:  # player 2 more than player 1
                         your_move_notifier = "Your deck ran out of cards. You lose due to having less defence fulfilled!"
                         opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                        self.winner = other_player.name
                     response["winThisTurn"] = True
             else:
                 # move to next turn
@@ -620,8 +637,9 @@ class Game:
             next_turn = False
 
         if curr_player.gameWon():
-            your_move_notifier += "\nYou win!"
-            opponent_move_notifier += "\nYou lose!"
+            your_move_notifier += "\nYou fulfilled your required defences! You win!"
+            opponent_move_notifier += "\nYour opponent fulfilled their required defences! You lose!"
+            self.winner = curr_player.name
             next_turn = False
             curr_player.setHandEnablePlayStatus(False)
             other_player.setHandEnablePlayStatus(False)
@@ -643,12 +661,15 @@ class Game:
                     if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                         your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                         opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                        self.winner = curr_player.name
                     elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                         your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
                         opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. Tie due to having equal defence fulfilled!"
+                        self.winner = ""
                     else:  # player 2 more than player 1
-                        your_move_notifier += "\nYOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
+                        your_move_notifier += "\nOpponent's deck ran out of cards 1 turn ago. You lose due to having less defence fulfilled!"
                         opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
+                        self.winner = other_player.name
                     response["winThisTurn"] = True
                 elif len(curr_player.deck) == 0:
                     # current player ran out of cards, run appropriate logic
@@ -662,12 +683,15 @@ class Game:
                         if curr_player.gameDefenceFulfilled() > other_player.gameDefenceFulfilled():
                             your_move_notifier += "\nYour deck ran out of cards. You win due to having more defence fulfilled!"
                             opponent_move_notifier += "\nOpponent's deck ran out of cards. You lose due to having less defence fulfilled!"
+                            self.winner = curr_player.name
                         elif curr_player.gameDefenceFulfilled() == other_player.gameDefenceFulfilled():
                             your_move_notifier += "\nYour deck ran out of cards. Tie due to having equal defence fulfilled!"
                             opponent_move_notifier += "\nOpponent's deck ran out of cards. Tie due to having equal defence fulfilled!"
+                            self.winner = ""
                         else:  # player 2 more than player 1
                             your_move_notifier += "\nYour deck ran out of cards. You lose due to having less defence fulfilled!"
                             opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
+                            self.winner = other_player.name
                         response["winThisTurn"] = True
                 else:
                     # switch turn
