@@ -28,6 +28,21 @@ logged_in: list[User] = []
 queue: list[User] = []
 games: dict[str, Game] = {}
 
+# create account files if not present
+try:
+    with open("local_data_files/accounts.json", "x"):
+        pass
+    with open("local_data_files/accounts.json", "w") as w:
+        w.write("[]")
+except FileExistsError:
+    pass
+try:
+    with open("local_data_files/data.json", "x"):
+        pass
+    with open("local_data_files/accounts.json", "w") as w:
+        w.write("{}")
+except FileExistsError:
+    pass
 
 def usersListString():
     ret_string = ""
@@ -93,9 +108,9 @@ def set_counter():
     # if indeed logged in then do the set counter stuff
     if (target_user_logged_in):
         if request.method == "POST":
-            with open("data.json", "r") as data_file:
+            with open("local_data_files/data.json", "r") as data_file:
                 data = json.load(data_file)
-            with open("data.json", "w") as data_file:
+            with open("local_data_files/data.json", "w") as data_file:
                 data[request.json["username"]] = request.json["value"]
                 json.dump(data, data_file)
     return "end of function"  # every method should return something
@@ -114,7 +129,7 @@ def get_counter():
             break
     # if indeed logged in then do the get counter stuff
     if (target_user_logged_in):
-        with open("data.json", "r") as data_file:
+        with open("local_data_files/data.json", "r") as data_file:
             data = json.load(data_file)
             if username in data:
                 return str(data[username])

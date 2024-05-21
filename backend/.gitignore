@@ -1,3 +1,6 @@
+# our own local data files
+local_data_files/
+
 # Created by https://www.toptal.com/developers/gitignore/api/flask
 # Edit at https://www.toptal.com/developers/gitignore?templates=flask
 
