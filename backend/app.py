@@ -42,7 +42,7 @@ except FileExistsError:
 try:
     with open("local_data_files/data.json", "x"):
         pass
-    with open("local_data_files/accounts.json", "w") as w:
+    with open("local_data_files/data.json", "w") as w:
         w.write("{}")
 except FileExistsError:
     pass
