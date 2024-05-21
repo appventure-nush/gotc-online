@@ -153,6 +153,9 @@ def create_account():
         if proposed_username == "":
             response["text"] = "Blank usernames are not allowed. Account not created."
             return response
+        if proposed_password == "":
+            response["text"] = "Blank passwords are not allowed. Account not created."
+            return response
 
         with open("local_data_files/accounts.json", "r") as accs_file:
             accounts = json.load(accs_file)
@@ -165,7 +168,7 @@ def create_account():
         with open("local_data_files/accounts.json", "w") as accs_file:
             accounts += [{
                 "username": proposed_username,
-                "password": hashlib.sha256(bytes(proposed_username, 'utf-8')).hexdigest()
+                "password": hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest()
             }]
             json.dump(accounts, accs_file)
             response["text"] = "Account successfully created"
@@ -173,15 +176,69 @@ def create_account():
         return response
 
 
-#TODO : Delete account functionality
+@app.route('/delete_account', methods=['POST'])
+@cross_origin()
+def delete_account():
+    username = request.json['username']
+    password = request.json['password']
+    sent_login_sesh_key = request.json['login_session_key']
+    response = {
+        "text": "PLACEHOLDER",
+        "wrong_password": False,
+        "account_deletion_success": False
+    }
+    if request.method == "POST":
+        account_to_delete = None
+        user_to_delete = None
+        with open("local_data_files/accounts.json", "r") as accs_file:
+            accounts = json.load(accs_file)
+            for a in accounts:
+                if a["username"] == username:
+                    # account exists
+                    # check if account signed in
+                    for u in logged_in:
+                        keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(u.login_session_key, sent_login_sesh_key)
+                        if u.name == a["username"] and keys_equal:
+                            if a["password"] == hashlib.sha256(bytes(password, 'utf-8')).hexdigest():
+                                # password is correct
+                                account_to_delete = a
+                                user_to_delete = u
+                                break
+                            response["text"] = "Wrong password. Account not deleted."
+                            response["wrong_password"] = True
+                            return response
 
-#TODO: Implement passwords in signing in
+                    # if there is an account to delete, break
+                    if account_to_delete is not None:
+                        break
+                    # else, User is not logged in
+                    response["text"] = "User is not logged in. Account not deleted."
+                    return response
+        #if account to delete exists
+        if account_to_delete is not None:
+            with open("local_data_files/accounts.json", "w") as accs_file:
+                # all checks out, start deletion process
+                # first sign out
+                logged_in.remove(user_to_delete)
+                # then erase from accounts
+                accounts.remove(account_to_delete)
+                # then delete from accounts file
+                json.dump(accounts, accs_file)
+                # return success
+                response["text"] = "Account successfully deleted."
+                response["account_deletion_success"] = True
+                return response
+        # if the account doesn't exist (& other errors)
+        response["text"] = "Account does not exist. Account not deleted."
+        response["account_deletion_success"] = False
+        return response
 
 @app.route('/sign_in', methods=['POST'])
 # we need this cross-origin stuff for post requests since this is how people decided the internet would work
 @cross_origin()
 def sign_in():
     proposed_username = request.json['proposed_username']
+    proposed_password = request.json['proposed_password']
     sent_login_sesh_key = request.json['login_session_key']
     response = {
         "text": "PLACEHOLDER",
@@ -206,6 +263,11 @@ def sign_in():
             accounts = json.load(accs_file)
             for a in accounts:
                 if a["username"] == proposed_username:
+                    # check if password is wrong
+                    if a["password"] != hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest():
+                        response["text"] = "Password is incorrect."
+                        return response
+                    # else go on
                     account_exists = True
                     break
             if not account_exists:
@@ -214,8 +276,7 @@ def sign_in():
 
         for i in logged_in:
 
-            keys_equal = False if not type(
-                sent_login_sesh_key) == 'str' else secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
 
             if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"

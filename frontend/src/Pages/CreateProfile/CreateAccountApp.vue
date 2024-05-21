@@ -17,13 +17,15 @@ export default defineComponent({
         proposed_password : "" as string,
         proposed_password2 : "" as string,
 
+        response_recieved : false as boolean,
         result : "" as String,
         signin_result : "" as String,
-        sucessful : false as boolean,
+        successful : false as boolean,
     }
   },
   methods:{
     createacc_submit(_event : Event){
+      this.creating = false
       this.result = "Creating Account..."
       fetch(`${BACKEND_URL}/create_account`, {
         method: "POST",
@@ -44,15 +46,14 @@ export default defineComponent({
               if(json_response["account_creation_success"] === true) {
                 // might put sign in code here later
                 this.result = json_response["text"]
-                this.sucessful = true
+                this.successful = true
                 this.signin()
               }
               else {
                 this.result = json_response["text"]
                 this.signin_result = ""
-                this.sucessful = false
+                this.successful = false
               }
-              this.creating = false
             })
             .catch(error => {
               this.result = error.toString()
@@ -65,6 +66,7 @@ export default defineComponent({
         method: "POST",
         body: JSON.stringify({
           proposed_username : this.proposed_username,
+          proposed_password : this.proposed_password,
           login_session_key : userSignInStore.login_session_key()
         }),
         headers: {
@@ -93,7 +95,13 @@ export default defineComponent({
               this.signin_result = json_response["text"]
             }
           })
-
+          .finally(()=>{
+              this.response_recieved = true
+              //reset this variable for security maybe
+              this.proposed_password = ""
+              this.proposed_password2 = ""
+            }
+          )
           .catch(error => {
             this.signin_result = error.toString()
           });
@@ -125,7 +133,6 @@ export default defineComponent({
               } else {
                 // sign out routine (inline this time)
                 clearInterval(userSignInStore.activity_pinger_id)
-                userSignInStore.username = ""
                 userSignInStore.username = ""
                 // reset the PlayerCardsStore
                 playerCardsStore.resetStore()
@@ -159,11 +166,11 @@ export default defineComponent({
     <p style="font-size: 1.2em">
       {{result}}
     </p>
-    <p v-if="sucessful" style="font-size: 1.1em">
+    <p v-if="successful" style="font-size: 1.1em">
       {{signin_result}}
     </p>
-    <button v-if="!sucessful" @click="()=>{creating=true}">Back to Account Creation</button>
-    <router-link to="/" class="mainpage-link">Back to Homepage</router-link>
+    <button v-if="response_recieved && !successful" @click="()=>{creating=true; successful=false; response_recieved=false}">Back to Account Creation</button>
+    <router-link v-if="response_recieved" to="/" class="mainpage-link">Back to Homepage</router-link>
   </div>
 </template>
 
@@ -207,6 +214,7 @@ button{
   margin: 1em 0;
   font-size: 1em;
   background-color: black;
+  color: white;
 }
 button:hover{
   font-style: italic;
@@ -214,7 +222,6 @@ button:hover{
   transition: .2s;
 }
 .mainpage-link{
-  color: inherit;
   font-size: 1em;
   text-align: center;
   line-height: 2;

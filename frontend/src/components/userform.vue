@@ -16,6 +16,7 @@ export default defineComponent({
       userform_status_top_text: "Sign In:" as String,
       result : "waiting for input" as String,
       proposed_username : "" as String,
+      proposed_password : "" as String,
       userStore : userSignInStore, // NOTE: USE THE USERSTORE AND NOT THE SIGN IN/OUT EVENTS FROM THIS COMMIT ON
       playerStore : playerCardsStore,
     }
@@ -40,6 +41,7 @@ export default defineComponent({
         method: "POST",
         body: JSON.stringify({
           proposed_username : this.proposed_username,
+          proposed_password : this.proposed_password,
           login_session_key : this.userStore.login_session_key()
         }),
         headers: {
@@ -75,7 +77,11 @@ export default defineComponent({
               this.refreshText(json_response)
             }
           })
-
+          .finally(()=>{
+              //reset this variable for security maybe
+              this.proposed_password = ""
+            }
+          )
           .catch(error => {
             this.result = error.toString()
           });
@@ -250,17 +256,36 @@ export default defineComponent({
 
 <template>
   <p class="userform-status top" id="userform_status_top">{{ userform_status_top_text }}</p>
-  <p class="userform-input-labels">Username:</p>
-  <input class="userform-input" type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">
-  <div style="display: flex; flex-direction: row; position: relative; width: 90%; justify-content: space-evenly">
+  <div v-if="!userStore.isSignedIn" class="content-wrapper">
+    <p class="userform-input-labels">Username:</p>
+    <input class="userform-input" type="text" id = "username_textin" v-model.lazy="proposed_username" placeholder="enter username">
+    <p class="userform-input-labels">Password:</p>
+    <input class="userform-input" type="password" id = "password_textin" v-model.lazy="proposed_password" placeholder="enter password">
     <button type="submit" id = "userform_butt" :disabled="userform_butt_disabled" @click="signin_submit">sign in</button>
-    <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
+    <router-link to="/CreateAccount" class="create-account-link"><u>Create an Account</u></router-link>
+    <p class="userform-status bottom" id="userform_status_bottom">{{ result }}</p>
   </div>
-  <router-link to="/CreateAccount" class="create-account-link"><u>Create an Account</u></router-link>
-  <p class="userform-status bottom" id="userform_status_bottom">{{ result }}</p>
+  <div v-else class="content-wrapper signed-in">
+    <button type="submit" id = "signout_butt" :disabled="!userform_butt_disabled" @click="signout_submit">sign out</button>
+    <router-link to="/DeleteAccount" class="delete-account-link"><u>Delete Account</u></router-link>
+  </div>
 </template>
 
 <style scoped>
+
+.content-wrapper{
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  justify-content: inherit;
+}
+
+.signed-in{
+  width: 100%;
+}
+.signed-in>button{
+  border-radius: .3em;
+}
 
 .top{
   font-size: 1.3em;
@@ -277,7 +302,6 @@ export default defineComponent({
 
 .userform-input{
   font-size: 1.1em;
-  width: 90%;
 }
 
 button{
@@ -293,13 +317,30 @@ button{
 .create-account-link{
   color: inherit;
   font-size: 1em;
-  line-height: 2;
+  line-height: 1.5;
   background-color: #588B8B;
   padding: .1em .5em;
   border-radius: .5em;
   border: transparent 1px solid;
+  text-align: center;
 }
 .create-account-link:hover{
+  font-style: italic;
+  border: white 1px solid;
+  transition: .1s;
+}
+
+.delete-account-link{
+  color: inherit;
+  font-size: 1em;
+  line-height: 1.5;
+  background-color: #E00000;
+  padding: .1em .5em;
+  border-radius: .3em;
+  border: transparent 1px solid;
+  text-align: center;
+}
+.delete-account-link:hover{
   font-style: italic;
   border: white 1px solid;
   transition: .1s;
