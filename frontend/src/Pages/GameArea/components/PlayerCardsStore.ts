@@ -52,15 +52,13 @@ export const playerCardsStore  = defineStore({
         discardHand : false,
         canClickEndTurn: true,
         index : -1,
+        showForfeitButton : true,
         // variables above here need to be added to beforeMount storage writer in GameAppArea.vue
         // variables below do not need to be saved, as they do not need to be restored
         // show forfeit dialog
         showForfeit : false,
         // this variable is described in Hand.vue
         vetoShowOpponentHand : false,
-        // there is no need to save this variable. it just disables forfeiting when opponent has already forfeited
-        // buttons should be disabled in replays so there is no need to save
-        showForfeitButton : true
     }),
     actions:{
         async resetStore() {

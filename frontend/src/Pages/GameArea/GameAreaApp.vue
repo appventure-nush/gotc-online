@@ -20,6 +20,20 @@ export default defineComponent({
     // subscribing to the store makes the callback function within the $subscribe function run whenever the userStore updates
     // see more here: https://pinia.vuejs.org/core-concepts/state.html#Subscribing-to-the-state
     // we did not pass {detached:true} so this subscription automatically ends when we unmount
+    userSignInStore.$subscribe(() => {
+      // call game init again upon login or logout
+      fetch(`${BACKEND_URL}/game_init`, {
+        method: "POST",
+        body: JSON.stringify({
+          username : userSignInStore.username,
+          game_id: this.$route.params.gameid as string,
+          login_session_key : userSignInStore.login_session_key()
+        }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      })
+    })
     playerCardsStore.$subscribe( (mutation, state) => { // upon a change in the store
       // update the variables when they are written to
       // please see backend classes.py for explanation of these variables
@@ -62,7 +76,6 @@ export default defineComponent({
           playerCardsStore.uuid = this.$route.params.gameid as string
           opponentFieldStore.uuid = this.$route.params.gameid as string
           // todo use game_init backend call which returns if you are first, second, spectating or the game does not exist
-          // also call game init on login or logout
 
           fetch(`${BACKEND_URL}/game_init`, {
             method: "POST",
