@@ -158,6 +158,16 @@ class Game:
                                f"Your crisis has the higher number. You are going first. " \
                                f"Drew {lists.LOOKUP[curr_player.hand[-1]['name']]}."
                     returned["canClickEndTurn"] = True  # override value in storage
+                else:
+                    # not a new game
+                    # need to update opponent's state for curr_player since there is no corresponding game_init call
+                    socket_obj.emit("update opponent state", {"username": curr_player.name,
+                                                              "cardsLeft": len(other_player.deck),
+                                                              "field": other_player.field,
+                                                              "discard": other_player.discard,
+                                                              "crisis": other_player.crisis,
+                                                              "opponentSideUsername": other_player.name,
+                                                              "uuid": self.internal_id})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),
@@ -186,6 +196,16 @@ class Game:
                     notifier = f"Started game against {other_player.name}.\n" \
                                f"Your crisis has the lower number. You are going second."
                     returned["canClickEndTurn"] = False  # override value in storage
+                else:
+                    # not a new game
+                    # need to update opponent's state for curr_player since there is no corresponding game_init call
+                    socket_obj.emit("update opponent state", {"username": curr_player.name,
+                                                              "cardsLeft": len(other_player.deck),
+                                                              "field": other_player.field,
+                                                              "discard": other_player.discard,
+                                                              "crisis": other_player.crisis,
+                                                              "opponentSideUsername": other_player.name,
+                                                              "uuid": self.internal_id})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),

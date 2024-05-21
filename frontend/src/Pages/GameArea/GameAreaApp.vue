@@ -22,6 +22,8 @@ export default defineComponent({
     // we did not pass {detached:true} so this subscription automatically ends when we unmount
     userSignInStore.$subscribe(() => {
       // call game init again upon login or logout
+      playerCardsStore.uuid = this.$route.params.gameid as string
+      opponentFieldStore.uuid = this.$route.params.gameid as string
       fetch(`${BACKEND_URL}/game_init`, {
         method: "POST",
         body: JSON.stringify({
