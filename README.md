@@ -4,7 +4,7 @@ A Web App to play the Guardians Of The City 2 (GOTC) card game
 ## What is GOTC
 Guardians Of The City is a card game designed by MINDEF Singapore. 
 
-It is a is a Total Defence strategy card game designed to help youths develop a deeper understanding of Singapore security threats and the part we play in keeping Singapore safe and secure. The card game presents different security threats as crises and illustrates how the six pillars of Total Defence can be applied to respond to and recover from the crises.
+It is a Total Defence strategy card game designed to help youths develop a deeper understanding of Singapore security threats and the part we play in keeping Singapore safe and secure. The card game presents different security threats as crises and illustrates how the six pillars of Total Defence can be applied to respond to and recover from the crises.
 
 For more information, refer to the official website for GOTC: https://www.mindef.gov.sg/oms/imindef/mindef_websites/topics/totaldefence/resources-guardians-of-the-city.html
 
@@ -22,4 +22,5 @@ Deploy using `npm run build` in the backend directory and the built project will
 Use web server to serve `index.html` from the backend.
 
 The backend uses Python and the Flask library.<br>
-Use a WSGI server to serve the flask app.
+Use a WSGI server to serve the flask app.<br>
+If you have `accounts.json` and `data.json` files to load, put them in the local_data_files folder. If not, they will be automatically created by the backend.
