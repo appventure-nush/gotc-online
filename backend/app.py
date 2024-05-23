@@ -22,7 +22,6 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 LOG_FILE = "runtime.log"
 
-
 logged_in: list[User] = []
 queue: list[User] = []
 games: dict[str, Game] = {}
@@ -46,6 +45,7 @@ try:
         w.write("{}")
 except FileExistsError:
     pass
+
 
 def usersListString():
     ret_string = ""
@@ -200,7 +200,8 @@ def delete_account():
                     # account exists
                     # check if account signed in
                     for u in logged_in:
-                        keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(u.login_session_key, sent_login_sesh_key)
+                        keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(
+                            u.login_session_key, sent_login_sesh_key)
                         if u.name == a["username"] and keys_equal:
                             if a["password"] == hashlib.sha256(bytes(password, 'utf-8')).hexdigest():
                                 # password is correct
@@ -217,7 +218,7 @@ def delete_account():
                     # else, User is not logged in
                     response["text"] = "User is not logged in. Account not deleted."
                     return response
-        #if account to delete exists
+        # if account to delete exists
         if account_to_delete is not None:
             with open("local_data_files/accounts.json", "w") as accs_file:
                 # all checks out, start deletion process
@@ -235,6 +236,7 @@ def delete_account():
         response["text"] = "Account does not exist. Account not deleted."
         response["account_deletion_success"] = False
         return response
+
 
 @app.route('/sign_in', methods=['POST'])
 # we need this cross-origin stuff for post requests since this is how people decided the internet would work
@@ -279,7 +281,8 @@ def sign_in():
 
         for i in logged_in:
 
-            keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(
+                i.login_session_key, sent_login_sesh_key)
 
             if (i.name == proposed_username) and not keys_equal:
                 response["text"] = "This username is already logged in"
@@ -830,7 +833,8 @@ def play_hand():
                         ((hand_index < 0) or (hand_index >= len(game.player2.hand)))
                 ):
                     abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
-                return game.play_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index, request)
+                return game.play_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index,
+                                      request)
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
@@ -844,31 +848,25 @@ def discard_hand():
     request_username = request.json["request_username"]
     game_id = request.json['game_id']
     hand_index = request.json['card_index']
-    response = {
-        "cardPlayed": "",
-        "hand": [],
-        "discard": [],
-        "cardsLeft": 0,
-        "nextTurn": False,
-        "winThisTurn": False
-    }
+    # response = {"cardPlayed": "", "hand": [], "discard": [], "cardsLeft": 0, "nextTurn": False, "winThisTurn": False}
+    # response is constructed in the game discard hand function
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
                 if (
-                    (game.player1_username == request_username) and
-                    ((hand_index < 0) or (hand_index >= len(game.player1.hand)))
+                        (game.player1_username == request_username) and
+                        ((hand_index < 0) or (hand_index >= len(game.player1.hand)))
                 ) or (
-                    (game.player2_username == request_username) and
-                    ((hand_index < 0) or (hand_index >= len(game.player2.hand)))
+                        (game.player2_username == request_username) and
+                        ((hand_index < 0) or (hand_index >= len(game.player2.hand)))
                 ):
-                        abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
+                    abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
                 return game.discard_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index)
 
         # else
-        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+        abort(Response(json.dumps({"Message": "Cannot Discard Hand"}), 404))
 
 
 @app.route('/pass_turn', methods=["POST"])
@@ -888,7 +886,8 @@ def pass_turn():
                 game: Game = games[game_id]
                 return game.pass_turn(socketio, 1 if game.player1_username == request_username else 2)
         # else
-        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+        abort(Response(json.dumps({"Message": "Cannot Pass Turn"}), 404))
+
 
 @app.route('/forfeit', methods=["POST"])
 @cross_origin()
@@ -899,7 +898,7 @@ def forfeit():
     request_username = request.json["request_username"]
     game_id = request.json['game_id']
     # response = {"hand": [], "discard": [], "cardsLeft": 0, "nextTurn": False, "winThisTurn": False}
-    # response is constructed in the game pass turn function
+    # response is constructed in the game forfeit function
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
@@ -907,12 +906,13 @@ def forfeit():
                 game: Game = games[game_id]
                 return game.forfeit(socketio, 1 if game.player1_username == request_username else 2)
         # else
-        abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
+        abort(Response(json.dumps({"Message": "Cannot Forfeit"}), 404))
+
 
 @app.route('/get_discard', methods=["POST"])
 @cross_origin()
 def get_discard():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # gets discard for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     request_username = request.json["request_username"]
@@ -937,7 +937,7 @@ def get_discard():
 @app.route('/write_storage', methods=["POST"])
 @cross_origin()
 def write_storage():
-    # make a new shuffled deck for the user whose LSK and username fit
+    # saves data to game storage for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     game_id = request.json['game_id']
@@ -979,18 +979,22 @@ def game_init():
 @app.route('/get_my_running_games', methods=["POST"])
 @cross_origin()
 def get_my_running_games():
-    # Initialises the game for the user whose LSK and username fit. 1 person per call, called 2 times.
+    # Gets all running games for the user whose LSK and username fit
     sent_login_sesh_key = request.json['login_session_key']
     your_username = request.json['username']
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == your_username) and keys_equal:
-                list_of_my_games : list[[str,str]] = []
+                list_of_my_games: list[[str, str]] = []
                 for g in games.values():
-                    if (i.name == g.player1.name) or (i.name == g.player2.name):
-                        list_of_my_games.append([g.internal_id, g.player1.name if i.name != g.player1.name else g.player2.name, g.init_time.isoformat(timespec="seconds")])
-                return {"games":list_of_my_games}  # todo: do not return won games, create a separate section
+                    if g.winner is None and ((i.name == g.player1.name) or (i.name == g.player2.name)):
+                        list_of_my_games.append([g.internal_id,
+                                                 g.player1.name if i.name != g.player1.name else g.player2.name,
+                                                 g.init_time.isoformat(timespec="seconds")])
+                # currently: only unfinished games are returned
+                # finished games are kept in games but not deleted, this behaviour is to be changed
+                return {"games": list_of_my_games}  # todo: create a separate section for won games
 
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
