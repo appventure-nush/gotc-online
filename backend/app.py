@@ -846,7 +846,7 @@ def play_hand():
                     abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
                 # add and save winners and losers (or drawers)
                 ret = game.play_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index,
-                                      request)
+                                     request)
                 if ret["winThisTurn"]:
                     with open("local_data_files/accounts.json", "r") as accs_file:
                         accounts = json.load(accs_file)
@@ -966,10 +966,10 @@ def forfeit():
                     with open("local_data_files/accounts.json", "r") as accs_file:
                         accounts = json.load(accs_file)
                     with open("local_data_files/accounts.json", "w") as accs_file:
-                        accounts[game.winner]["wins"+game.gametype] += 1
+                        accounts[game.winner]["wins" + game.gametype] += 1
                         accounts[
                             game.player1_username if game.winner == game.player2_username else game.player2_username
-                        ]["losses"+game.gametype] += 1
+                        ]["losses" + game.gametype] += 1
                         json.dump(accounts, accs_file)
                 return ret
         # else
@@ -1065,6 +1065,27 @@ def get_my_running_games():
 
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
+
+
+@app.route('/get_ladder', methods=["GET"])
+def get_ladder():
+    with open("local_data_files/accounts.json", "r") as accs_file:
+        accounts = json.load(accs_file)
+    for a in accounts:
+        accounts[a].pop("password")  # do not send password hashes
+
+    # arbitrary sort order of highest percentage of wins, tiebreak by earliest created account
+    # todo better sort order, more stats like created date, include computer
+    def sortorder(element):
+        if element["winschallenge"] + element["drawschallenge"] + element["losseschallenge"] \
+                + element["winsrandom"] + element["drawsrandom"] + element["lossesrandom"] == 0:
+            return 0
+        else:
+            return (element["winschallenge"] + element["winsrandom"]) / \
+                (element["winschallenge"] + element["drawschallenge"] + element["losseschallenge"]
+                 + element["winsrandom"] + element["drawsrandom"] + element["lossesrandom"])
+
+    return list(sorted(accounts.values(), key=sortorder, reverse=True))
 
 
 if __name__ == '__main__':

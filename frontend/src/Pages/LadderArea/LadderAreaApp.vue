@@ -1,8 +1,23 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+
 export default defineComponent({
-  name: "LadderAreaApp"
+  name: "LadderAreaApp",
+  data() {
+    return {
+      display: [] as {}[]
+    }
+  },
+  methods: {
+    async getLadder() {
+      this.display = await (await fetch(`${BACKEND_URL}/get_ladder`)).json()
+    }
+  },
+  beforeMount() {
+    this.getLadder()
+  }
 })
 </script>
 
@@ -10,7 +25,7 @@ export default defineComponent({
   <div class="container">
     <table class="ladder">
       <caption>
-        Ladder
+        This leaderboard shows you a list of players and their corresponding statistics.
       </caption>
       <colgroup><col></colgroup>
       <colgroup><col></colgroup>
@@ -34,15 +49,15 @@ export default defineComponent({
       </tr>
       </thead>
       <tbody>
-      <tr>
-        <th scope="row">1</th>
-        <td>2</td>
-        <td>3</td>
-        <td>4</td>
-        <td>5</td>
-        <td>6</td>
-        <td>7</td>
-        <td>8</td>
+      <tr v-for="(element, index) in display">
+        <th scope="row">{{index+1}}</th>
+        <td>{{element["username"]}}</td>
+        <td>{{element["winsrandom"]}}</td>
+        <td>{{element["drawsrandom"]}}</td>
+        <td>{{element["lossesrandom"]}}</td>
+        <td>{{element["winschallenge"]}}</td>
+        <td>{{element["drawschallenge"]}}</td>
+        <td>{{element["losseschallenge"]}}</td>
       </tr>
       </tbody>
     </table>
