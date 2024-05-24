@@ -39,8 +39,7 @@ class Game:
             if i["name"] in ("military-2", "military-3", "civil-2", "economic-3", "economic-4"):
                 i["requiresDialogNormal"] = self.player1.field.count("communitysupport") >= 1
                 if len(self.player1.discard) == 0:
-                    i[
-                        "warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
+                    i["warn"] = "\nWarning: There are no cards in your discard pile. Picking the second option will have no effect."
                 else:
                     i["warn"] = ""  # no warning for playing def card without effect as it could be helpful
                     # for example to win the game
@@ -265,6 +264,7 @@ class Game:
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                     self.winner = other_player.name
                 response["winThisTurn"] = True
+                other_player.storage["showForfeitButton"] = False
             elif len(curr_player.deck) == 0:
                 # current player ran out of cards, run appropriate logic
                 if self.gofirst == curr_player.name:
@@ -287,6 +287,7 @@ class Game:
                         opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
                         self.winner = other_player.name
                     response["winThisTurn"] = True
+                    other_player.storage["showForfeitButton"] = False
             else:
                 # move to next turn
                 poppedCard = other_player.popDeck()
@@ -346,6 +347,7 @@ class Game:
         your_move_notifier = "You forfeited the game!\nYou lose!"
         opponent_move_notifier = "Your opponent forfeited the game!\nYou win!"
         self.winner = other_player.name
+        other_player.storage["showForfeitButton"] = False
 
         # update both player's displays
         curr_player.latestMoveNotif = your_move_notifier
@@ -403,6 +405,7 @@ class Game:
                     opponent_move_notifier = "Your deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                     self.winner = other_player.name
                 response["winThisTurn"] = True
+                other_player.storage["showForfeitButton"] = False
             elif len(curr_player.deck) == 0:
                 # current player ran out of cards, run appropriate logic
                 if self.gofirst == curr_player.name:
@@ -425,6 +428,7 @@ class Game:
                         opponent_move_notifier = "Opponent's deck ran out of cards. You win due to having more defence fulfilled!"
                         self.winner = other_player.name
                     response["winThisTurn"] = True
+                    other_player.storage["showForfeitButton"] = False
             else:
                 # move to next turn
                 poppedCard = other_player.popDeck()
@@ -660,6 +664,7 @@ class Game:
             your_move_notifier += "\nYou fulfilled your required defences! You win!"
             opponent_move_notifier += "\nYour opponent fulfilled their required defences! You lose!"
             self.winner = curr_player.name
+            other_player.storage["showForfeitButton"] = False
             next_turn = False
             curr_player.setHandEnablePlayStatus(False)
             other_player.setHandEnablePlayStatus(False)
@@ -691,6 +696,7 @@ class Game:
                         opponent_move_notifier += "\nYour deck ran out of cards 1 turn ago. You win due to having more defence fulfilled!"
                         self.winner = other_player.name
                     response["winThisTurn"] = True
+                    other_player.storage["showForfeitButton"] = False
                 elif len(curr_player.deck) == 0:
                     # current player ran out of cards, run appropriate logic
                     if self.gofirst == curr_player.name:
@@ -713,6 +719,7 @@ class Game:
                             opponent_move_notifier += "\nOpponent's deck ran out of cards. You win due to having more defence fulfilled!"
                             self.winner = other_player.name
                         response["winThisTurn"] = True
+                        other_player.storage["showForfeitButton"] = False
                 else:
                     # switch turn
                     poppedCard = other_player.popDeck()

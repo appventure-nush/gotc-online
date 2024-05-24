@@ -450,6 +450,7 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
+                        this.showForfeitButton = false
                     }
 
                     return json_response["cardPlayed"] as string
@@ -498,6 +499,7 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
+                        this.showForfeitButton = false
                     }
 
                     this.discardHand = !json_response["nextTurn"]
@@ -557,6 +559,7 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
+                        this.showForfeitButton = false
                     }
 
                     this.discardHand = !json_response["nextTurn"]
