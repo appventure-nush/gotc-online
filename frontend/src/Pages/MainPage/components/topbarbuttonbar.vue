@@ -83,7 +83,7 @@ export default defineComponent( {
     <router-link to="/" class="nav replay">
       <div class="navdiv">REPLAY</div>
     </router-link>
-    <router-link to="/" class="nav ladder">
+    <router-link to="/LadderArea" class="nav ladder">
       <div class="navdiv">LADDER</div>
     </router-link>
     <!-- <router-link to="/GameArea" v-slot="{href, route, navigate}" class="nav play"> -->

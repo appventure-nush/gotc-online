@@ -35,7 +35,7 @@ try:
     with open("local_data_files/accounts.json", "x"):
         pass
     with open("local_data_files/accounts.json", "w") as w:
-        w.write("[]")
+        w.write("{}")
 except FileExistsError:
     pass
 try:
@@ -163,16 +163,22 @@ def create_account():
         with open("local_data_files/accounts.json", "r") as accs_file:
             accounts = json.load(accs_file)
             for a in accounts:
-                if a["username"] == proposed_username:
+                if a == proposed_username:
                     response["text"] = "Account already exists. Account not created."
                     response["confirmed_username"] = proposed_username
                     return response
         # if the account doesn't exist
         with open("local_data_files/accounts.json", "w") as accs_file:
-            accounts += [{
+            accounts[proposed_username] = {
                 "username": proposed_username,
-                "password": hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest()
-            }]
+                "password": hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest(),
+                "losseschallenge": 0,
+                "drawschallenge": 0,
+                "winschallenge": 0,
+                "lossesrandom": 0,
+                "drawsrandom": 0,
+                "winsrandom": 0,
+            }
             json.dump(accounts, accs_file)
             response["text"] = "Account successfully created"
             response["account_creation_success"] = True
@@ -195,37 +201,36 @@ def delete_account():
         user_to_delete = None
         with open("local_data_files/accounts.json", "r") as accs_file:
             accounts = json.load(accs_file)
-            for a in accounts:
-                if a["username"] == username:
-                    # account exists
-                    # check if account signed in
-                    for u in logged_in:
-                        keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(
-                            u.login_session_key, sent_login_sesh_key)
-                        if u.name == a["username"] and keys_equal:
-                            if a["password"] == hashlib.sha256(bytes(password, 'utf-8')).hexdigest():
-                                # password is correct
-                                account_to_delete = a
-                                user_to_delete = u
-                                break
-                            response["text"] = "Wrong password. Account not deleted."
-                            response["wrong_password"] = True
-                            return response
-
-                    # if there is an account to delete, break
-                    if account_to_delete is not None:
-                        break
-                    # else, User is not logged in
-                    response["text"] = "User is not logged in. Account not deleted."
-                    return response
+            if username in accounts:
+                a = accounts[username]
+                # account exists
+                # check if account signed in
+                for u in logged_in:
+                    keys_equal = False if (type(sent_login_sesh_key) is not str) else secrets.compare_digest(
+                        u.login_session_key, sent_login_sesh_key)
+                    if u.name == a["username"] and keys_equal:
+                        if a["password"] == hashlib.sha256(bytes(password, 'utf-8')).hexdigest():
+                            # password is correct
+                            account_to_delete = a
+                            user_to_delete = u
+                            break
+                        response["text"] = "Wrong password. Account not deleted."
+                        response["wrong_password"] = True
+                        return response
+            else:
+                # else, User is not logged in
+                response["text"] = "User is not logged in. Account not deleted."
+                return response
         # if account to delete exists
         if account_to_delete is not None:
             with open("local_data_files/accounts.json", "w") as accs_file:
                 # all checks out, start deletion process
                 # first sign out
+                if user_to_delete in queue:
+                    queue.remove(user_to_delete)
                 logged_in.remove(user_to_delete)
                 # then erase from accounts
-                accounts.remove(account_to_delete)
+                accounts.pop(user_to_delete.name)
                 # then delete from accounts file
                 json.dump(accounts, accs_file)
                 # return success
@@ -266,15 +271,20 @@ def sign_in():
         with open("local_data_files/accounts.json", "r") as accs_file:
             account_exists = False
             accounts = json.load(accs_file)
-            for a in accounts:
-                if a["username"] == proposed_username:
-                    # check if password is wrong
-                    if a["password"] != hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest():
-                        response["text"] = "Password is incorrect."
-                        return response
-                    # else go on
-                    account_exists = True
-                    break
+            if proposed_username in accounts:
+                a = accounts[proposed_username]
+                # check if password is wrong
+                if a["password"] != hashlib.sha256(bytes(proposed_password, 'utf-8')).hexdigest():
+                    response["text"] = "Password is incorrect."
+                    return response
+                # else go on
+                account_exists = True
+                losseschallenge = a["losseschallenge"]
+                drawschallenge = a["drawschallenge"]
+                winschallenge = a["winschallenge"]
+                lossesrandom = a["lossesrandom"]
+                drawsrandom = a["drawsrandom"]
+                winsrandom = a["winsrandom"]
             if not account_exists:
                 response["text"] = "There is no account with this username. Please create an account first."
                 return response
@@ -299,7 +309,8 @@ def sign_in():
                 return response
         # else
         login_session_key = secrets.token_hex()
-        logged_in.append(User(proposed_username, int(datetime.now().timestamp()), login_session_key))
+        logged_in.append(User(proposed_username, int(datetime.now().timestamp()), login_session_key,
+                              winsrandom, drawsrandom, lossesrandom, winschallenge, drawschallenge, losseschallenge))
         response["text"] = "Logged in as " + proposed_username
         response["confirmed_username"] = proposed_username
         response["login_session_key"] = login_session_key
@@ -474,7 +485,7 @@ def accept_match():
                     random_uuid = str(uuid.uuid4())
                     # can get away with using the same
                     socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
-                    games[random_uuid] = Game(opponent.name, username, random_uuid)
+                    games[random_uuid] = Game(opponent.name, username, random_uuid, "challenge")
                     user.games.append(random_uuid)
                     opponent.games.append(random_uuid)
                     return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
@@ -535,7 +546,7 @@ def random_opponent():
                 queue.remove(opponent)
                 random_uuid = str(uuid.uuid4())
                 socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
-                games[random_uuid] = Game(opponent.name, username, random_uuid)
+                games[random_uuid] = Game(opponent.name, username, random_uuid, "random")
                 user.games.append(random_uuid)
                 opponent.games.append(random_uuid)
                 return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
@@ -833,8 +844,23 @@ def play_hand():
                         ((hand_index < 0) or (hand_index >= len(game.player2.hand)))
                 ):
                     abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
-                return game.play_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index,
+                # add and save winners and losers (or drawers)
+                ret = game.play_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index,
                                       request)
+                if ret["winThisTurn"]:
+                    with open("local_data_files/accounts.json", "r") as accs_file:
+                        accounts = json.load(accs_file)
+                    with open("local_data_files/accounts.json", "w") as accs_file:
+                        if game.winner == "":
+                            accounts[game.player1_username]["draws" + game.gametype] += 1
+                            accounts[game.player2_username]["draws" + game.gametype] += 1
+                        else:
+                            accounts[game.winner]["wins" + game.gametype] += 1
+                            accounts[
+                                game.player1_username if game.winner == game.player2_username else game.player2_username
+                            ]["losses" + game.gametype] += 1
+                        json.dump(accounts, accs_file)
+                return ret
         # else
         abort(Response(json.dumps({"Message": "Cannot Play Hand"}), 404))
 
@@ -863,7 +889,22 @@ def discard_hand():
                         ((hand_index < 0) or (hand_index >= len(game.player2.hand)))
                 ):
                     abort(Response(json.dumps({"Message": "Card Index Out Of Range"}), 422))
-                return game.discard_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index)
+                # add and save winners and losers (or drawers)
+                ret = game.discard_hand(socketio, 1 if game.player1_username == request_username else 2, hand_index)
+                if ret["winThisTurn"]:
+                    with open("local_data_files/accounts.json", "r") as accs_file:
+                        accounts = json.load(accs_file)
+                    with open("local_data_files/accounts.json", "w") as accs_file:
+                        if game.winner == "":
+                            accounts[game.player1_username]["draws" + game.gametype] += 1
+                            accounts[game.player2_username]["draws" + game.gametype] += 1
+                        else:
+                            accounts[game.winner]["wins" + game.gametype] += 1
+                            accounts[
+                                game.player1_username if game.winner == game.player2_username else game.player2_username
+                            ]["losses" + game.gametype] += 1
+                        json.dump(accounts, accs_file)
+                return ret
 
         # else
         abort(Response(json.dumps({"Message": "Cannot Discard Hand"}), 404))
@@ -884,7 +925,22 @@ def pass_turn():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
-                return game.pass_turn(socketio, 1 if game.player1_username == request_username else 2)
+                # add and save winners and losers (or drawers)
+                ret = game.pass_turn(socketio, 1 if game.player1_username == request_username else 2)
+                if ret["winThisTurn"]:
+                    with open("local_data_files/accounts.json", "r") as accs_file:
+                        accounts = json.load(accs_file)
+                    with open("local_data_files/accounts.json", "w") as accs_file:
+                        if game.winner == "":
+                            accounts[game.player1_username]["draws" + game.gametype] += 1
+                            accounts[game.player2_username]["draws" + game.gametype] += 1
+                        else:
+                            accounts[game.winner]["wins" + game.gametype] += 1
+                            accounts[
+                                game.player1_username if game.winner == game.player2_username else game.player2_username
+                            ]["losses" + game.gametype] += 1
+                        json.dump(accounts, accs_file)
+                return ret
         # else
         abort(Response(json.dumps({"Message": "Cannot Pass Turn"}), 404))
 
@@ -904,7 +960,18 @@ def forfeit():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
-                return game.forfeit(socketio, 1 if game.player1_username == request_username else 2)
+                # add and save winners and losers (guaranteed, since this is forfeit)
+                ret = game.forfeit(socketio, 1 if game.player1_username == request_username else 2)
+                if ret["winThisTurn"]:
+                    with open("local_data_files/accounts.json", "r") as accs_file:
+                        accounts = json.load(accs_file)
+                    with open("local_data_files/accounts.json", "w") as accs_file:
+                        accounts[game.winner]["wins"+game.gametype] += 1
+                        accounts[
+                            game.player1_username if game.winner == game.player2_username else game.player2_username
+                        ]["losses"+game.gametype] += 1
+                        json.dump(accounts, accs_file)
+                return ret
         # else
         abort(Response(json.dumps({"Message": "Cannot Forfeit"}), 404))
 

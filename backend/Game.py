@@ -8,7 +8,8 @@ import flask_socketio
 
 class Game:
     # the main game class, contains variables for the entire game
-    def __init__(self, player1_username, player2_username, internal_id):
+    def __init__(self, player1_username: str, player2_username: str, internal_id: str,  # uuid
+                 gametype: Literal["computer", "random", "challenge"]):
         self.player1 = Player(player1_username)
         self.player2 = Player(player2_username)
         while self.player1.crisis == self.player2.crisis:
@@ -26,6 +27,7 @@ class Game:
         self.init_time = datetime.datetime.now(datetime.timezone.utc)  # time game was initiated in utc
         self.winner = None  # note: empty string = tie. None = undecided (game still ongoing)
         # cleanest solution since empty strings cannot be usernames
+        self.gametype = gametype
 
     def recomputeBlockAndDialogStatus(self):
         # this is where all the dialogs and options are set, to ensure they show up in the frontend

@@ -5,11 +5,11 @@ import GameAreaApp from "./Pages/GameArea/GameAreaApp.vue";
 import HelpAreaApp from "./Pages/HelpArea/HelpAreaApp.vue";
 import CreateAccountApp from "./Pages/CreateProfile/CreateAccountApp.vue";
 import DeleteAccountApp from "./Pages/DeleteAccount/DeleteAccountApp.vue";
+import LadderAreaApp from "./Pages/LadderArea/LadderAreaApp.vue";
 
 
 //import vue-router's things here
 import { createRouter, createWebHistory } from 'vue-router'
-
 
 
 // We import the RoutingApp page that contains the router-view (and any other ui elements) that will be mounted to
@@ -25,8 +25,6 @@ import {createApp} from "vue";
 import {globalPiniaInstance} from "./global";
 
 
-
-
 // 1. Define route components.
 // These can be imported from other files
 // which is what we do in this case
@@ -36,6 +34,7 @@ const GameArea = GameAreaApp
 const HelpArea = HelpAreaApp
 const CreateAccountPage = CreateAccountApp
 const DeleteAccountPage = DeleteAccountApp
+const LadderArea = LadderAreaApp
 
 // 2. Define some routes
 // Each route should map to a component.
@@ -43,10 +42,11 @@ const DeleteAccountPage = DeleteAccountApp
 const routes = [
     { path: '/', component: MainPage },
     { path: '/FrontPage', component: FrontPage },
-    { path: '/CreateAccount', component: CreateAccountPage},
-    { path: '/DeleteAccount', component: DeleteAccountPage},
-    { path: '/GameArea/:gameid', component: GameArea},
-    { path: '/HelpArea', component: HelpArea},
+    { path: '/CreateAccount', component: CreateAccountPage },
+    { path: '/DeleteAccount', component: DeleteAccountPage },
+    { path: '/GameArea/:gameid', component: GameArea },
+    { path: '/HelpArea', component: HelpArea },
+    { path: '/LadderArea', component: LadderArea },
 ]
 
 // 3. Create the router instance and pass the `routes` option

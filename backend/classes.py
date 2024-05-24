@@ -1,3 +1,4 @@
+import json
 import random
 from typing import Union
 
@@ -101,11 +102,20 @@ class Player:
 
 class User:
     # like an account, in the future will be used to store stats
-    def __init__(self, name, last_checkin, login_session_key):
+    def __init__(self, name, last_checkin, login_session_key,
+                 winsrandom, drawsrandom, lossesrandom,
+                 winschallenge, drawschallenge, losseschallenge):
         self.name: str = name
         self.last_checkin: float = last_checkin
         self.login_session_key: str = login_session_key
         self.games: list[str] = []
+
+        self.losseschallenge = losseschallenge
+        self.drawschallenge = drawschallenge
+        self.winschallenge = winschallenge
+        self.lossesrandom = lossesrandom
+        self.drawsrandom = drawsrandom
+        self.winsrandom = winsrandom
 
     def __str__(self):
         return self.name + " | " + str(self.last_checkin)
