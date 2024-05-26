@@ -6,6 +6,7 @@ import {opponentFieldStore} from "./Pages/GameArea/components/OpponentFieldStore
 import {playerCardsStore} from "./Pages/GameArea/components/PlayerCardsStore";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+const VITE_BACKEND_SOCKETIO_SUBDIRECTORY = import.meta.env.VITE_BACKEND_SOCKETIO_SUBDIRECTORY
 
 export const state = reactive({
     connected: false,
@@ -18,6 +19,7 @@ export const state = reactive({
 const URL = import.meta.env.VITE_BACKEND_URL
 
 export const socket = io(URL, {
+    path : VITE_BACKEND_SOCKETIO_SUBDIRECTORY,
     withCredentials: true
 })
 
