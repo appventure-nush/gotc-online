@@ -146,6 +146,7 @@ class Game:
             curr_player, other_player = (self.player1, self.player2) if self.player1_username == username else (
             self.player2, self.player1)
             returned = {"canClickEndTurn": self.turn == curr_player.name}
+            fresh = False
             if curr_player.crisis > other_player.crisis:
                 # start by assuming game was resumed, if that is found to be not true in len(deck)==46,
                 # reinitialise notifier
@@ -159,6 +160,7 @@ class Game:
                                f"Your crisis has the higher number. You are going first. " \
                                f"Drew {lists.LOOKUP[curr_player.hand[-1]['name']]}."
                     returned["canClickEndTurn"] = True  # override value in storage
+                    fresh = True
                 else:
                     # not a new game
                     # need to update opponent's state for curr_player since there is no corresponding game_init call
@@ -168,7 +170,8 @@ class Game:
                                                               "discard": other_player.discard,
                                                               "crisis": other_player.crisis,
                                                               "opponentSideUsername": other_player.name,
-                                                              "uuid": self.internal_id})
+                                                              "uuid": self.internal_id,
+                                                              "timer": other_player.timer})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),
@@ -177,7 +180,10 @@ class Game:
                              "crisis": curr_player.crisis,
                              "moveNotifier": notifier,
                              "uuid": self.internal_id,
-                             "storage": curr_player.storage}
+                             "storage": curr_player.storage,
+                             "timer": curr_player.timer,
+                             "fresh": fresh,
+                             "startTimer": self.turn == curr_player.name}
                 socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": other_player.name,
                                                           "cardsLeft": len(curr_player.deck),
@@ -185,8 +191,9 @@ class Game:
                                                           "discard": curr_player.discard,
                                                           "crisis": curr_player.crisis,
                                                           "opponentSideUsername": curr_player.name,
-                                                          "uuid": self.internal_id})
-                return "First"
+                                                          "uuid": self.internal_id,
+                                                          "timer": other_player.timer})
+                return ["First", self.turn == curr_player, fresh]
             else:
                 notifier = f"Resumed game against {other_player.name}.\n{curr_player.latestMoveNotif}"
                 if len(curr_player.deck) == 46:  # fresh game, should initialise
@@ -197,6 +204,7 @@ class Game:
                     notifier = f"Started game against {other_player.name}.\n" \
                                f"Your crisis has the lower number. You are going second."
                     returned["canClickEndTurn"] = False  # override value in storage
+                    fresh = True
                 else:
                     # not a new game
                     # need to update opponent's state for curr_player since there is no corresponding game_init call
@@ -206,7 +214,8 @@ class Game:
                                                               "discard": other_player.discard,
                                                               "crisis": other_player.crisis,
                                                               "opponentSideUsername": other_player.name,
-                                                              "uuid": self.internal_id})
+                                                              "uuid": self.internal_id,
+                                                              "timer": other_player.timer})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),
@@ -215,7 +224,10 @@ class Game:
                              "crisis": curr_player.crisis,
                              "moveNotifier": notifier,
                              "uuid": self.internal_id,
-                             "storage": curr_player.storage}
+                             "storage": curr_player.storage,
+                             "timer": curr_player.timer,
+                             "fresh": fresh,
+                             "startTimer": self.turn == curr_player.name}
                 socket_obj.emit("update your state", returned)
                 socket_obj.emit("update opponent state", {"username": other_player.name,
                                                           "cardsLeft": len(curr_player.deck),
@@ -223,11 +235,12 @@ class Game:
                                                           "discard": curr_player.discard,
                                                           "crisis": curr_player.crisis,
                                                           "opponentSideUsername": curr_player.name,
-                                                          "uuid": self.internal_id})
-                return "Second"
+                                                          "uuid": self.internal_id,
+                                                          "timer": other_player.timer})
+                return ["Second", self.turn == curr_player, fresh]
         else:
             # you are a spectator
-            # todo: spectator mode
+            # todo: spectator mode, inform user no multiple games?
             return "Not Playing"
 
     def pass_turn(self, socket_obj: flask_socketio.SocketIO, povplayer: Literal[1, 2]):
@@ -320,13 +333,15 @@ class Game:
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": curr_player.hand, "discard": curr_player.discard,
                    "cardsLeft": len(curr_player.deck), "field": curr_player.field,
-                   "moveNotifier": opponent_move_notifier}
+                   "moveNotifier": opponent_move_notifier,
+                   "gameEnd": response["winThisTurn"]}
         socket_obj.emit("update opponent state", updater)
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": other_player.hand, "discard": other_player.discard,
                    "cardsLeft": len(other_player.deck), "field": other_player.field,
-                   "canClickEndTurn": other_player.name == self.turn}
+                   "canClickEndTurn": other_player.name == self.turn,
+                   "startTimer": self.turn == other_player.name, "fresh": True}
         socket_obj.emit("update your state", updater)
 
         updater = {"uuid": self.internal_id, "username": curr_player.name,
@@ -360,6 +375,39 @@ class Game:
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "moveNotifier": opponent_move_notifier, "gameEnd": True}
+        socket_obj.emit("update opponent state", updater)
+
+        updater = {"uuid": self.internal_id, "username": other_player.name,
+                   "canClickEndTurn": False}
+        socket_obj.emit("update your state", updater)
+
+        return response
+
+    def timeout(self, socket_obj: flask_socketio.SocketIO, povplayer: Literal[1, 2]):
+        # game lost by timeout
+        response = {
+            "winThisTurn": True  # someone won this turn, end game in frontend
+        }
+
+        curr_player: Player
+        other_player: Player
+        curr_player, other_player = (self.player1, self.player2) if (povplayer == 1) else (self.player2, self.player1)
+
+        your_move_notifier = "You ran out of time!\nYou lose!"
+        opponent_move_notifier = "Your opponent ran out of time!\nYou win!"
+        self.winner = other_player.name
+        other_player.storage["showForfeitButton"] = False
+
+        # update both player's displays
+        curr_player.latestMoveNotif = your_move_notifier
+        other_player.latestMoveNotif = opponent_move_notifier
+
+        response["moveNotifier"] = your_move_notifier
+        response["canClickEndTurn"] = False
+
+        updater = {"uuid": self.internal_id, "username": other_player.name,
+                   "moveNotifier": opponent_move_notifier, "gameEnd": True,
+                   "timer": 0.0}
         socket_obj.emit("update opponent state", updater)
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
@@ -462,13 +510,15 @@ class Game:
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": curr_player.hand, "discard": curr_player.discard,
                    "cardsLeft": len(curr_player.deck), "field": curr_player.field,
-                   "moveNotifier": opponent_move_notifier}
+                   "moveNotifier": opponent_move_notifier,
+                   "gameEnd": response["winThisTurn"]}
         socket_obj.emit("update opponent state", updater)
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": other_player.hand, "discard": other_player.discard,
                    "cardsLeft": len(other_player.deck), "field": other_player.field,
-                   "canClickEndTurn": self.turn == other_player.name}
+                   "canClickEndTurn": self.turn == other_player.name,
+                   "startTimer": self.turn == other_player.name, "fresh": True}
         socket_obj.emit("update your state", updater)
 
         updater = {"uuid": self.internal_id, "username": curr_player.name,
@@ -735,6 +785,8 @@ class Game:
                     your_move_notifier += "\nOpponent's turn."
                     opponent_move_notifier += f"\nYour turn. You drew {lists.LOOKUP[poppedCard]}."
 
+                    response["nextTurn"] = True
+
         # update both player's displays
 
         curr_player.latestMoveNotif = your_move_notifier
@@ -751,13 +803,15 @@ class Game:
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": curr_player.hand, "discard": curr_player.discard,
                    "cardsLeft": len(curr_player.deck), "field": curr_player.field,
-                   "moveNotifier": opponent_move_notifier}
+                   "moveNotifier": opponent_move_notifier,
+                   "gameEnd": response["winThisTurn"]}
         socket_obj.emit("update opponent state", updater)
 
         updater = {"uuid": self.internal_id, "username": other_player.name,
                    "hand": other_player.hand, "discard": other_player.discard,
                    "cardsLeft": len(other_player.deck), "field": other_player.field,
-                   "canClickEndTurn": self.turn == other_player.name}
+                   "canClickEndTurn": self.turn == other_player.name,
+                   "startTimer": self.turn == other_player.name, "fresh": True}
         socket_obj.emit("update your state", updater)
 
         updater = {"uuid": self.internal_id, "username": curr_player.name,

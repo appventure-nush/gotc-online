@@ -18,6 +18,21 @@ export default defineComponent({
     return{
 
     }
+  },
+  methods: {
+    displayFormattedTime(t: number) {
+      if (t < 1) {
+        return "0:0"+t.toFixed(2)
+      } else if (t < 10) {
+        return "0:0"+t.toFixed(1)
+      } else {
+        // format time eg: 9:09
+        if ((t%60).toFixed(0) === "60") {
+          return ""+(Math.floor(t/60)+1)+":00"
+        }
+        return ""+Math.floor(t/60)+":"+(t%60<9.5 ? "0": "")+(t%60).toFixed(0)
+      }
+    }
   }
 })
 </script>
@@ -32,7 +47,7 @@ export default defineComponent({
     </div>
     <div v-else class="utilbar-component-div utilbar-signed-in" >
       <p v-if="oppStore.opponentsideusername==='NO GAME INITIATED'" class="playerinfo" style="font-size: 1.5em"><b>NO GAME INITIATED</b></p>
-      <p v-else class="playerinfo">Playing Against: <b>{{oppStore.opponentsideusername}}</b><br>Signed In As: <b>{{userStore.username}}</b></p>
+      <p v-else class="playerinfo">Playing Against: <b>{{oppStore.opponentsideusername}}</b> Time: {{displayFormattedTime(oppStore.timer)}}<br>Signed In As: <b>{{userStore.username}}</b> Time: {{displayFormattedTime(playerCards.timer)}}</p>
       <router-link to="/" v-slot="{href, route, navigate}">
         <p class="back-temp">Click to go back to MainPage.</p>
       </router-link>
@@ -98,7 +113,7 @@ export default defineComponent({
   margin: auto 0;
   text-align: center;
   height: fit-content;
-  max-width: 15vw;
+  max-width: 20vw;
   max-height: 2.2em;
   overflow: hidden;
   text-overflow: ellipsis;

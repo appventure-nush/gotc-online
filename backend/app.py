@@ -823,14 +823,8 @@ def play_hand():
     request_username = request.json["request_username"]
     game_id = request.json['game_id']
     hand_index = request.json['card_index']
-    response = {
-        "cardPlayed": "",
-        "hand": [],
-        "discard": [],
-        "cardsLeft": 0,
-        "needDiscard": False,
-        "winThisTurn": False
-    }
+    # response = {"cardPlayed": "", "hand": [], "discard": [], "cardsLeft": 0, "needDiscard": False, "winThisTurn": False}
+    # response is constructed in the game play hand function
     if request.method == "POST":
         for i in logged_in:
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
@@ -976,6 +970,37 @@ def forfeit():
         abort(Response(json.dumps({"Message": "Cannot Forfeit"}), 404))
 
 
+@app.route('/timeout', methods=["POST"])
+@cross_origin()
+def timeout():
+    # for the user whose LSK and username fit, they lose by timeout
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json["request_username"]
+    game_id = request.json['game_id']
+    # response = {"hand": [], "discard": [], "cardsLeft": 0, "nextTurn": False, "winThisTurn": False}
+    # response is constructed in the game timeout function
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                # add and save winners and losers (guaranteed, since this is timeout)
+                ret = game.timeout(socketio, 1 if game.player1_username == request_username else 2)
+                if ret["winThisTurn"]:
+                    with open("local_data_files/accounts.json", "r") as accs_file:
+                        accounts = json.load(accs_file)
+                    with open("local_data_files/accounts.json", "w") as accs_file:
+                        accounts[game.winner]["wins" + game.gametype] += 1
+                        accounts[
+                            game.player1_username if game.winner == game.player2_username else game.player2_username
+                        ]["losses" + game.gametype] += 1
+                        json.dump(accounts, accs_file)
+                return ret
+        # else
+        abort(Response(json.dumps({"Message": "Cannot Forfeit"}), 404))
+
+
 @app.route('/get_discard', methods=["POST"])
 @cross_origin()
 def get_discard():
@@ -1041,6 +1066,41 @@ def game_init():
                 return game.game_init(socketio, your_username)
         # else
         abort(Response(json.dumps({"Message": "Checking Unavailable"}), 404))
+
+
+@app.route('/update_timer', methods=["POST"])
+@cross_origin()
+def update_timer():
+    # update timer (on specified side) for the user whose LSK and username fit
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json['request_username']
+    game_id = request.json['game_id']
+    response = {}
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    socketio.emit("update opponent state", {
+                        "username": game.player2_username,
+                        "uuid": game_id,
+                        "timer": game.player1.timer-request.json["delta"]
+                    })
+                    if "store" in request.json and request.json["store"]:
+                        game.player1.timer -= request.json["delta"]
+                elif game.player2_username == request_username:
+                    socketio.emit("update opponent state", {
+                        "username": game.player1_username,
+                        "uuid": game_id,
+                        "timer": game.player2.timer-request.json["delta"]
+                    })
+                    if "store" in request.json and request.json["store"]:
+                        game.player2.timer -= request.json["delta"]
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Updating Storage Unavailable"}), 404))
 
 
 @app.route('/get_my_running_games', methods=["POST"])

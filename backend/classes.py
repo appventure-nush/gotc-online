@@ -31,9 +31,13 @@ class Player:
             "discardHand": False,  # in discarding hand phase (at end of turn)
             "canClickEndTurn": True,  # normally true, set to false when not your turn. also set to false upon game ending
             "index": -1,  # card index selected, to store which card was clicked on to pull up a dialog/options
-            "showForfeitButton": True  # show the forfeit button, disabled upon game ending
+            "showForfeitButton": True,  # show the forfeit button, disabled upon game ending
+            "lastmove": None,  # unix time when last move was made
+            "timeoutID": None,  # ids to cancel timers
+            "intervalID": None,
         }
-        self.latestMoveNotif = ""
+        self.latestMoveNotif = "",
+        self.timer = 600.0   # todo allow custom timing options
 
     def shuffleDeck(self):
         random.shuffle(self.deck)

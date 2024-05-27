@@ -31,13 +31,17 @@ export const playerCardsStore  = defineStore({
         // field consists of defences & community supports in play
         field: ["military-1","military-2","military-3","psychological-1","psychological-2","psychological-3","social-1","social-2","social-3","communitysupport","communitysupport"] as string[],
 
-        uuid: "", // the game id
-        playersideusername: "",
+        uuid : "", // the game id
+        playersideusername : "",
 
         // notifier shown
-        moveNotifier: "Move Notifier",
+        moveNotifier : "Move Notifier",
+        timer : 600.0, // temporary variable! due to delays in window.onTimeout functions, may not be accurate
 
         // variables (most described in backend classes.py)
+        lastmove : Date.now(),
+        timeoutID : NaN,
+        intervalID : NaN,
         showDialogNormal : false,
         showDialogDefence : false,
         showOptionDefence : false,
@@ -53,12 +57,14 @@ export const playerCardsStore  = defineStore({
         canClickEndTurn: true,
         index : -1,
         showForfeitButton : true,
-        // variables above here need to be added to beforeMount storage writer in GameAppArea.vue
+        // variables above here need to be added to beforeMount storage writer in GameAreaApp.vue
         // variables below do not need to be saved, as they do not need to be restored
         // show forfeit dialog
         showForfeit : false,
         // this variable is described in Hand.vue
         vetoShowOpponentHand : false,
+        // accurate timer functionally equivalent to backend game.player.timer so not needed to store
+        storedAccurateTimer : 600.0,
     }),
     actions:{
         async resetStore() {
@@ -431,6 +437,10 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
+                    if (json_response["nextTurn"]) {
+                        this.endTimer()
+                    }
+
                     this.handList = json_response["hand"] as {
                         name: string, enablePlay: boolean,
                         requiresDialogNormal: boolean, requiresOptionDefence: boolean,
@@ -451,6 +461,7 @@ export const playerCardsStore  = defineStore({
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
                         this.showForfeitButton = false
+                        this.endTimer()
                     }
 
                     return json_response["cardPlayed"] as string
@@ -484,6 +495,10 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
+                    if (json_response["nextTurn"]) {
+                        this.endTimer()
+                    }
+
                     this.handList = json_response["hand"] as {
                         name: string, enablePlay: boolean,
                         requiresDialogNormal: boolean, requiresOptionDefence: boolean,
@@ -500,6 +515,7 @@ export const playerCardsStore  = defineStore({
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
                         this.showForfeitButton = false
+                        this.endTimer()
                     }
 
                     this.discardHand = !json_response["nextTurn"]
@@ -544,6 +560,10 @@ export const playerCardsStore  = defineStore({
                 .then((json_text) => {
                     let json_response = JSON.parse(json_text)
 
+                    if (json_response["nextTurn"]) {
+                        this.endTimer()
+                    }
+
                     this.handList = json_response["hand"] as {
                         name: string, enablePlay: boolean,
                         requiresDialogNormal: boolean, requiresOptionDefence: boolean,
@@ -560,6 +580,7 @@ export const playerCardsStore  = defineStore({
                     if (json_response["winThisTurn"]) {
                         this.canClickEndTurn = false
                         this.showForfeitButton = false
+                        this.endTimer()
                     }
 
                     this.discardHand = !json_response["nextTurn"]
@@ -610,6 +631,7 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["winThisTurn"]) { // always true
                         this.canClickEndTurn = false
+                        this.endTimer()
                     }
 
                     this.discardHand = false
@@ -621,6 +643,140 @@ export const playerCardsStore  = defineStore({
                     console.log(error.toString())
                     return "Could not play hand"
                 });
+        },
+        /*
+        start timer basically creates a function that updates the time every (about) 200ms (and checks for timeout)
+        it does not constantly update the backend timer (the source of truth) because of delays in calculation
+        instead it is updated only in end timer
+        */
+        startTimer() {
+            // check for loss by timeout
+            if (this.storedAccurateTimer - (Date.now() - this.lastmove)/1000 < 0) {
+                this.endTimer()
+            } else {
+                let next_update_ms: number = 50 * (this.storedAccurateTimer % 0.2)
+                this.timeoutID = window.setTimeout(() => {
+                    if (this.storedAccurateTimer - (Date.now() - this.lastmove) / 1000 > 0) {
+                        fetch(`${BACKEND_URL}/update_timer`, {
+                            method: "POST",
+                            body: JSON.stringify({
+                                username: userSignInStore.username,
+                                request_username: userSignInStore.username,
+                                game_id: this.uuid,
+                                login_session_key: userSignInStore.login_session_key(),
+                                delta: (Date.now() - this.lastmove) / 1000
+                            }),
+                            headers: {
+                                "Content-type": "application/json; charset=UTF-8"
+                            }
+                        })
+                        // create timer updating function (which also needs to check for timer ending)
+                        this.timer = this.storedAccurateTimer - (Date.now() - this.lastmove) / 1000
+                        this.intervalID = window.setInterval(() => {
+                            if (this.storedAccurateTimer - (Date.now() - this.lastmove) / 1000 > 0) {
+                                fetch(`${BACKEND_URL}/update_timer`, {
+                                    method: "POST",
+                                    body: JSON.stringify({
+                                        username: userSignInStore.username,
+                                        request_username: userSignInStore.username,
+                                        game_id: this.uuid,
+                                        login_session_key: userSignInStore.login_session_key(),
+                                        delta: (Date.now() - this.lastmove) / 1000
+                                    }),
+                                    headers: {
+                                        "Content-type": "application/json; charset=UTF-8"
+                                    }
+                                })
+                                this.timer = this.storedAccurateTimer - (Date.now() - this.lastmove) / 1000
+                            } else {
+                                // timeout
+                                this.timer = 0.0
+                                this.endTimer()
+                            }
+                        }, 198) // 10ms delay is too laggy
+                        // 198ms to compensate for the fact that delays will not be exact
+                    } else {
+                        // timeout
+                        this.timer = 0.0
+                        this.endTimer()
+                    }
+                }, next_update_ms)
+            }
+        },
+        endTimer() {
+            // todo call in log out
+            // todo: update opponent's timer if opponent is logged out (not connected to socket)
+            window.clearTimeout(this.timeoutID)
+            window.clearInterval(this.intervalID)
+            let delta: number = (Date.now() - this.lastmove)/1000
+            this.timer = Math.max(0, this.storedAccurateTimer-delta)
+            this.storedAccurateTimer -= delta
+            if (this.storedAccurateTimer < 0) {
+                this.showDialogNormal = false // no stray dialogs
+                this.showOptionDefence = false
+                this.showDialogDefence = false
+                this.showOptionField = false
+                this.showDialogField = false
+                this.showDialogHand = false
+                this.showOptionHand = false
+                this.showDiscardPlay = false
+                this.showOptionDefence2 = false
+                this.selectionDefence = []
+                this.showForfeit = false
+                this.showForfeitButton = false
+
+                fetch(`${BACKEND_URL}/timeout`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        username: userSignInStore.username,
+                        request_username: userSignInStore.username,
+                        game_id: this.uuid,
+                        login_session_key: userSignInStore.login_session_key(),
+                    }),
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    }
+                })
+                    .then((response) => {
+                        if (!response.ok) return Promise.reject(response)
+                        else return response.text()
+                    })
+                    .then((json_text) => {
+                        let json_response = JSON.parse(json_text)
+
+                        this.moveNotifier = json_response["moveNotifier"] as string
+                        this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                        if (json_response["winThisTurn"]) { // always true
+                            this.canClickEndTurn = false
+                        }
+
+                        this.discardHand = false
+
+                        return "Success"
+
+                    })
+                    .catch(error => {
+                        console.log(error.toString())
+                        return "Could not play hand"
+                    });
+            } else {
+                // send over delta to game server
+                fetch(`${BACKEND_URL}/update_timer`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        username: userSignInStore.username,
+                        request_username: userSignInStore.username,
+                        game_id: this.uuid,
+                        login_session_key: userSignInStore.login_session_key(),
+                        delta: delta,
+                        store: true
+                    }),
+                    headers: {
+                        "Content-type": "application/json; charset=UTF-8"
+                    }
+                })
+            }
         }
     },
 })(globalPiniaInstance)

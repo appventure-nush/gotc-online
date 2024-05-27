@@ -220,7 +220,7 @@ export default defineComponent({
     },
 
     async leaving(event: BeforeUnloadEvent) {
-      event.preventDefault()
+      event.preventDefault()  // todo better handling? do not disconnect immediately
       await fetch(`${BACKEND_URL}/disconnect`, {
         method: "POST",
         body: JSON.stringify({

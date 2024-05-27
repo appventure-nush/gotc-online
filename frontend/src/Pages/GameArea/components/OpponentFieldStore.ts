@@ -11,6 +11,7 @@ export const opponentFieldStore  = defineStore({
         field : ["digital-1","digital-2","digital-3","economic-1","economic-2","economic-3","civil-1","civil-2","civil-3"] as string[], // defences & community supports in play
         crisis: "back-black" as string,
         cardsLeft : 46 as number,
+        timer: 600.0,
 
         uuid: "",
         opponentsideusername: "NO GAME INITIATED",

@@ -78,15 +78,33 @@ socket.on("update your state", (args) => {
             state.yourField.canClickEndTurn = args["storage"]["canClickEndTurn"]
             state.yourField.index = args["storage"]["index"]
             state.yourField.showForfeitButton = args["storage"]["showForfeitButton"]
+            state.yourField.lastmove = args["storage"]["lastmove"]
+            state.yourField.timeoutID = args["storage"]["timeoutID"]
+            state.yourField.intervalID = args["storage"]["intervalID"]
         }
         if ("moveNotifier" in args) {
             state.yourField.moveNotifier =
                 (args["storage"]["moveNotifier"] != undefined) ?
-                    args["storage"]["moveNotifier"] + "\n(" + args["moveNotifier"] + ")" :  args["moveNotifier"]
+                    args["storage"]["moveNotifier"] + "\n(" + args["moveNotifier"] + ")" : args["moveNotifier"]
             console.log(state.yourField.moveNotifier)
         }
         if ("canClickEndTurn" in args) {
             state.yourField.canClickEndTurn = args["canClickEndTurn"]
+        }
+        if ("timer" in args) {
+            state.yourField.timer = args["timer"]
+            state.yourField.storedAccurateTimer = args["timer"]
+        }
+        if ("fresh" in args) {
+            // new game, or (re)fresh -> reinitialise last move counter as a move was just played
+            if (args["fresh"]) {
+                state.yourField.lastmove = Date.now()
+            }
+        }
+        if ("startTimer" in args) {
+            if (args["startTimer"]) {
+                state.yourField.startTimer()
+            }
         }
     }
 })
@@ -115,6 +133,12 @@ socket.on("update opponent state", (args) => {
         }
         if ("gameEnd" in args) {
             state.yourField.showForfeitButton = !args["gameEnd"]
+            // cleanup
+            window.clearTimeout(state.yourField.timeoutID)
+            window.clearInterval(state.yourField.intervalID)
+        }
+        if ("timer" in args) {
+            state.oppField.timer = args["timer"]
         }
     }
 })
