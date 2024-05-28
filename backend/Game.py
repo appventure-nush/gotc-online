@@ -323,7 +323,7 @@ class Game:
                 response["nextTurn"] = True
                 if other_player.disconnected:
                     response["oppTimer"] = other_player.timer
-                    other_player.storage["lastmove"] = time.time()
+                    other_player.storage["lastmove"] = time.time()*1000
 
         # update both player's displays
 
@@ -502,7 +502,7 @@ class Game:
                 response["nextTurn"] = True
                 if other_player.disconnected:
                     response["oppTimer"] = other_player.timer
-                    other_player.storage["lastmove"] = time.time()
+                    other_player.storage["lastmove"] = time.time()*1000
 
         # update both player's displays
 
@@ -798,7 +798,7 @@ class Game:
                     response["nextTurn"] = True
                     if other_player.disconnected:
                         response["oppTimer"] = other_player.timer
-                        other_player.storage["lastmove"] = time.time()
+                        other_player.storage["lastmove"] = time.time()*1000
 
         # update both player's displays
 

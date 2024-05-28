@@ -1088,7 +1088,7 @@ def update_timer():
                     socketio.emit("update opponent state", {
                         "username": game.player2_username,
                         "uuid": game_id,
-                        "timer": game.player1.timer-request.json["delta"]
+                        "timer": game.player1.timer - request.json["delta"]
                     })
                     if "store" in request.json and request.json["store"]:
                         game.player1.timer -= request.json["delta"]
@@ -1098,7 +1098,7 @@ def update_timer():
                     socketio.emit("update opponent state", {
                         "username": game.player1_username,
                         "uuid": game_id,
-                        "timer": game.player2.timer-request.json["delta"]
+                        "timer": game.player2.timer - request.json["delta"]
                     })
                     if "store" in request.json and request.json["store"]:
                         game.player2.timer -= request.json["delta"]
@@ -1122,11 +1122,14 @@ def opponent_handle_timer():
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
+                    if game.player1.disconnected:
+                        return  # prevent double sending
                     game.player1.disconnected = True
                     socketio.emit("update opponent state", {
                         "username": game.player2_username,
                         "uuid": game_id,
-                        "timer": game.player1.timer-request.json["delta"],
+                        "timer": game.player1.timer - (
+                            request.json["delta"] if game.turn == game.player1_username else 0),
                         "takeover": True,
                         "startNow": game.turn == game.player1_username,
                         "opponentLastMoveAt": game.player1.storage["lastmove"]
@@ -1134,11 +1137,14 @@ def opponent_handle_timer():
                     if "store" in request.json and request.json["store"]:
                         game.player1.timer -= request.json["delta"]
                 elif game.player2_username == request_username:
+                    if game.player2.disconnected:
+                        return  # prevent double sending
                     game.player2.disconnected = True
                     socketio.emit("update opponent state", {
                         "username": game.player1_username,
                         "uuid": game_id,
-                        "timer": game.player2.timer-request.json["delta"],
+                        "timer": game.player2.timer - (
+                            request.json["delta"] if game.turn == game.player2_username else 0),
                         "takeover": True,
                         "startNow": game.turn == game.player2_username,
                         "opponentLastMoveAt": game.player2.storage["lastmove"]

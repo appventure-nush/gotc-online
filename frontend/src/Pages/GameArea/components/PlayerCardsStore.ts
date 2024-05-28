@@ -442,11 +442,11 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
-                        if ("opptimer" in json_response) {
+                        if ("oppTimer" in json_response) {
                             this.runOpponentTimerOnTurnSwitch = false
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
-                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                                opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
                             }, 198)
                         }
                     }
@@ -507,11 +507,11 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
-                        if ("opptimer" in json_response) {
+                        if ("oppTimer" in json_response) {
                             this.runOpponentTimerOnTurnSwitch = false
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
-                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                                opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
                             }, 198)
                         }
                     }
@@ -579,11 +579,11 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
-                        if ("opptimer" in json_response) {
+                        if ("oppTimer" in json_response) {
                             this.runOpponentTimerOnTurnSwitch = false
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
-                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                                opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
                             }, 198)
                         }
                     }
