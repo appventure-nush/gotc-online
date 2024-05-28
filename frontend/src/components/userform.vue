@@ -88,6 +88,7 @@ export default defineComponent({
     },
 
     signout_submit(_e : Event){
+      this.gameCleanUp()
       this.result = "Sending sign out request..."
       fetch(`${BACKEND_URL}/sign_out`, {
         method: "POST",
@@ -199,19 +200,18 @@ export default defineComponent({
       }
     },
 
-    signout(json_response_text : String){
-      clearInterval(userSignInStore .activity_pinger_id)
-      this.userStore.username = ""
-      this.userStore.username = ""
-      this.userform_status_top_text = "Sign In:"
-      this.result = json_response_text
-      // reset the PlayerCardsStore
-      this.playerStore.resetStore()
+    signout(json_response_text: String) {
+      clearInterval(userSignInStore.activity_pinger_id)
+        this.userStore.username = ""
+        this.userform_status_top_text = "Sign In:"
+        this.result = json_response_text
+        // reset the PlayerCardsStore
+        this.playerStore.resetStore()
 
-      // DEPRECATED: use the UserSignInStore instead!
-      // emit sign out event to notify listeners of a sign out
-      // emitted on document for ease of listening
-      window.document.dispatchEvent(new CustomEvent("SignOutEvent"))
+        // DEPRECATED: use the UserSignInStore instead!
+        // emit sign out event to notify listeners of a sign out
+        // emitted on document for ease of listening
+        window.document.dispatchEvent(new CustomEvent("SignOutEvent"))
     },
 
     refreshText(json_response : any){
@@ -219,36 +219,57 @@ export default defineComponent({
       this.result = json_response["text"]
     },
 
-    async leaving(event: BeforeUnloadEvent) {
-      event.preventDefault()  // todo better handling? do not disconnect immediately
-      await fetch(`${BACKEND_URL}/disconnect`, {
+    async gameCleanUp() {
+      window.clearTimeout(playerCardsStore.timeoutID)
+      window.clearInterval(playerCardsStore.intervalID)
+      window.clearInterval(playerCardsStore.tickOpponentTimer)
+      await fetch(`${BACKEND_URL}/opponent_handle_timer`, {
         method: "POST",
         body: JSON.stringify({
-          username: this.userStore.username,
-          login_session_key: localStorage.getItem("LoginSessionKey")
+          username: userSignInStore.username,
+          request_username: userSignInStore.username,
+          game_id: playerCardsStore.uuid,
+          login_session_key: userSignInStore.login_session_key(),
+          delta: (Date.now() - playerCardsStore.lastmove) / 1000
         }),
         headers: {
           "Content-type": "application/json; charset=UTF-8"
         }
-      })
-          .then((response) => {
-            if(!response.ok) return Promise.reject(response)
-            else return response.text()
-          })
-          .then((json_text) => {
-            let json_response = JSON.parse(json_text)
-            if(json_response["signout_success"] === true) {
-              this.signout(json_response["text"])
-            }
-          })
+      }).then(() => {return "Done"})
+    },
 
-          .catch(error => {
-            this.result = error.toString()
-          })
+    async leaving(event: BeforeUnloadEvent) {
+      event.returnValue = ""
+      await this.gameCleanUp().then(async () => {
+        await fetch(`${BACKEND_URL}/disconnect`, {
+          method: "POST",
+          body: JSON.stringify({
+            username: this.userStore.username,
+            login_session_key: localStorage.getItem("LoginSessionKey")
+          }),
+          headers: {
+            "Content-type": "application/json; charset=UTF-8"
+          }
+        })
+            .then((response) => {
+              if (!response.ok) return Promise.reject(response)
+              else return response.text()
+            })
+            .then((json_text) => {
+              let json_response = JSON.parse(json_text)
+              if (json_response["signout_success"] === true) {
+                this.signout(json_response["text"])
+              }
+            })
+
+            .catch(error => {
+              this.result = error.toString()
+            })
+      })
     }
   },
   created() {
-    window.addEventListener("beforeunload", this.leaving);
+    window.addEventListener("unload", this.leaving);
   },
 })
 

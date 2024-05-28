@@ -136,9 +136,25 @@ socket.on("update opponent state", (args) => {
             // cleanup
             window.clearTimeout(state.yourField.timeoutID)
             window.clearInterval(state.yourField.intervalID)
+            window.clearInterval(state.yourField.tickOpponentTimer)
         }
         if ("timer" in args) {
             state.oppField.timer = args["timer"]
+        }
+        if ("takeover" in args) {
+            if (args["takeover"]) {
+                if (args["startNow"]) {
+                    let a = Date.now()
+                    state.yourField.tickOpponentTimer = window.setInterval(() => {
+                        state.oppField.timer = args["timer"]-(Date.now()-a)/1000
+                    }, 198)
+                } else {
+                    state.yourField.runOpponentTimerOnTurnSwitch = true
+                }
+            } else {
+                state.yourField.runOpponentTimerOnTurnSwitch = false
+                window.clearInterval(state.yourField.tickOpponentTimer)
+            }
         }
     }
 })

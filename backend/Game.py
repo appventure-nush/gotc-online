@@ -1,4 +1,5 @@
 import datetime
+import time
 from typing import Literal
 
 from classes import *
@@ -144,7 +145,8 @@ class Game:
         if self.player1_username == username or self.player2_username == username:
             # you are a player in the current game
             curr_player, other_player = (self.player1, self.player2) if self.player1_username == username else (
-            self.player2, self.player1)
+                self.player2, self.player1)
+            curr_player.disconnected = False
             returned = {"canClickEndTurn": self.turn == curr_player.name}
             fresh = False
             if curr_player.crisis > other_player.crisis:
@@ -192,7 +194,8 @@ class Game:
                                                           "crisis": curr_player.crisis,
                                                           "opponentSideUsername": curr_player.name,
                                                           "uuid": self.internal_id,
-                                                          "timer": other_player.timer})
+                                                          "timer": curr_player.timer,
+                                                          "takeover": False})
                 return ["First", self.turn == curr_player, fresh]
             else:
                 notifier = f"Resumed game against {other_player.name}.\n{curr_player.latestMoveNotif}"
@@ -236,7 +239,8 @@ class Game:
                                                           "crisis": curr_player.crisis,
                                                           "opponentSideUsername": curr_player.name,
                                                           "uuid": self.internal_id,
-                                                          "timer": other_player.timer})
+                                                          "timer": curr_player.timer,
+                                                          "takeover": False})
                 return ["Second", self.turn == curr_player, fresh]
         else:
             # you are a spectator
@@ -316,7 +320,10 @@ class Game:
                 your_move_notifier = "Opponent's turn."
                 opponent_move_notifier = f"Your turn. You drew {lists.LOOKUP[poppedCard]}."
 
-            response["nextTurn"] = True
+                response["nextTurn"] = True
+                if other_player.disconnected:
+                    response["oppTimer"] = other_player.timer
+                    other_player.storage["lastmove"] = time.time()
 
         # update both player's displays
 
@@ -493,6 +500,9 @@ class Game:
                 opponent_move_notifier = f"Your turn. You drew {lists.LOOKUP[poppedCard]}."
 
                 response["nextTurn"] = True
+                if other_player.disconnected:
+                    response["oppTimer"] = other_player.timer
+                    other_player.storage["lastmove"] = time.time()
 
         # update both player's displays
 
@@ -786,6 +796,9 @@ class Game:
                     opponent_move_notifier += f"\nYour turn. You drew {lists.LOOKUP[poppedCard]}."
 
                     response["nextTurn"] = True
+                    if other_player.disconnected:
+                        response["oppTimer"] = other_player.timer
+                        other_player.storage["lastmove"] = time.time()
 
         # update both player's displays
 

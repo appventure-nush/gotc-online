@@ -1,5 +1,6 @@
 import {defineStore} from "pinia";
 import {userSignInStore} from "../../../components/UserSignInStore";
+import {opponentFieldStore} from "./OpponentFieldStore";
 import {globalPiniaInstance} from "../../../global";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
@@ -42,6 +43,7 @@ export const playerCardsStore  = defineStore({
         lastmove : Date.now(),
         timeoutID : NaN,
         intervalID : NaN,
+        tickOpponentTimer : NaN,
         showDialogNormal : false,
         showDialogDefence : false,
         showOptionDefence : false,
@@ -65,6 +67,7 @@ export const playerCardsStore  = defineStore({
         vetoShowOpponentHand : false,
         // accurate timer functionally equivalent to backend game.player.timer so not needed to store
         storedAccurateTimer : 600.0,
+        runOpponentTimerOnTurnSwitch : false,
     }),
     actions:{
         async resetStore() {
@@ -439,6 +442,13 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
+                        if ("opptimer" in json_response) {
+                            this.runOpponentTimerOnTurnSwitch = false
+                            let a = Date.now()
+                            this.tickOpponentTimer = window.setInterval(() => {
+                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                            }, 198)
+                        }
                     }
 
                     this.handList = json_response["hand"] as {
@@ -497,6 +507,13 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
+                        if ("opptimer" in json_response) {
+                            this.runOpponentTimerOnTurnSwitch = false
+                            let a = Date.now()
+                            this.tickOpponentTimer = window.setInterval(() => {
+                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                            }, 198)
+                        }
                     }
 
                     this.handList = json_response["hand"] as {
@@ -562,6 +579,13 @@ export const playerCardsStore  = defineStore({
 
                     if (json_response["nextTurn"]) {
                         this.endTimer()
+                        if ("opptimer" in json_response) {
+                            this.runOpponentTimerOnTurnSwitch = false
+                            let a = Date.now()
+                            this.tickOpponentTimer = window.setInterval(() => {
+                                opponentFieldStore.timer = json_response["opptimer"]-(Date.now()-a)/1000
+                            }, 198)
+                        }
                     }
 
                     this.handList = json_response["hand"] as {

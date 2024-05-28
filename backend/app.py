@@ -1083,6 +1083,8 @@ def update_timer():
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
+                    if type(game.player1.timer) == tuple:
+                        game.player1.timer = game.player1.timer[0]
                     socketio.emit("update opponent state", {
                         "username": game.player2_username,
                         "uuid": game_id,
@@ -1091,10 +1093,55 @@ def update_timer():
                     if "store" in request.json and request.json["store"]:
                         game.player1.timer -= request.json["delta"]
                 elif game.player2_username == request_username:
+                    if type(game.player2.timer) == tuple:
+                        game.player2.timer = game.player2.timer[0]
                     socketio.emit("update opponent state", {
                         "username": game.player1_username,
                         "uuid": game_id,
                         "timer": game.player2.timer-request.json["delta"]
+                    })
+                    if "store" in request.json and request.json["store"]:
+                        game.player2.timer -= request.json["delta"]
+                return response
+        # else
+        abort(Response(json.dumps({"Message": "Updating Storage Unavailable"}), 404))
+
+
+@app.route('/opponent_handle_timer', methods=["POST"])
+@cross_origin()
+def opponent_handle_timer():
+    # update timer (on opponent side) for the user whose LSK and username fit, due to user logout
+    sent_login_sesh_key = request.json['login_session_key']
+    your_username = request.json['username']
+    request_username = request.json['request_username']
+    game_id = request.json['game_id']
+    response = {}
+    if request.method == "POST":
+        for i in logged_in:
+            keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
+            if (i.name == your_username) and keys_equal:
+                game: Game = games[game_id]
+                if game.player1_username == request_username:
+                    game.player1.disconnected = True
+                    socketio.emit("update opponent state", {
+                        "username": game.player2_username,
+                        "uuid": game_id,
+                        "timer": game.player1.timer-request.json["delta"],
+                        "takeover": True,
+                        "startNow": game.turn == game.player1_username,
+                        "opponentLastMoveAt": game.player1.storage["lastmove"]
+                    })
+                    if "store" in request.json and request.json["store"]:
+                        game.player1.timer -= request.json["delta"]
+                elif game.player2_username == request_username:
+                    game.player2.disconnected = True
+                    socketio.emit("update opponent state", {
+                        "username": game.player1_username,
+                        "uuid": game_id,
+                        "timer": game.player2.timer-request.json["delta"],
+                        "takeover": True,
+                        "startNow": game.turn == game.player2_username,
+                        "opponentLastMoveAt": game.player2.storage["lastmove"]
                     })
                     if "store" in request.json and request.json["store"]:
                         game.player2.timer -= request.json["delta"]

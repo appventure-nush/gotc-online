@@ -35,9 +35,12 @@ class Player:
             "lastmove": None,  # unix time when last move was made
             "timeoutID": None,  # ids to cancel timers
             "intervalID": None,
+            "tickOpponentTimer": None,
+            # "lastSeenOpponent": None,  # unix time when opponent was last seen
         }
         self.latestMoveNotif = "",
-        self.timer = 600.0   # todo allow custom timing options
+        self.timer = 600.0,   # todo allow custom timing options
+        self.disconnected = False
 
     def shuffleDeck(self):
         random.shuffle(self.deck)

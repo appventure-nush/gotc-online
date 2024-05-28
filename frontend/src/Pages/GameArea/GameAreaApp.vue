@@ -63,7 +63,8 @@ export default defineComponent({
             showForfeitButton : state.showForfeitButton,
             lastmove : state.lastmove,
             timeoutID : state.timeoutID,
-            intervalID : state.intervalID
+            intervalID : state.intervalID,
+            tickOpponentTimer : state.tickOpponentTimer
             // moveNotifier: state.moveNotifier, movenotifier is now saved in backend
             // vetoShowOpponentHand: state.vetoShowOpponentHand, needn't be saved
           }
