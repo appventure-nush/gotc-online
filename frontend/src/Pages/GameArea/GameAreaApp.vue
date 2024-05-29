@@ -75,6 +75,25 @@ export default defineComponent({
       })
     }, {deep:true}) // be recursive for lists
   },
+  beforeRouteLeave() {
+    // pretend this is a complete disconnect
+    window.clearTimeout(playerCardsStore.timeoutID)
+    window.clearInterval(playerCardsStore.intervalID)
+    window.clearInterval(playerCardsStore.tickOpponentTimer)
+    fetch(`${BACKEND_URL}/opponent_handle_timer`, {
+      method: "POST",
+      body: JSON.stringify({
+        username: userSignInStore.username,
+        request_username: userSignInStore.username,
+        game_id: playerCardsStore.uuid,
+        login_session_key: userSignInStore.login_session_key(),
+        delta: (Date.now() - playerCardsStore.lastmove) / 1000
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8"
+      }
+    })
+  },
   created() {
     this.$watch(
         () => this.$route.params,

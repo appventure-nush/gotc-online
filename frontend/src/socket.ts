@@ -60,6 +60,13 @@ socket.on("update your state", (args) => {
         if ("hand" in args) {
             state.yourField.handList = args["hand"]
         }
+        if ("startTimer" in args) {
+            if (args["startTimer"]) {
+                // clear old timers
+                window.clearTimeout(state.yourField.timeoutID)
+                window.clearInterval(state.yourField.intervalID)
+            }
+        }
         // notifications are specific to the person
         if ("storage" in args && args["storage"].length != 0) {
             // update all the other game logic variables (described in backend classes.py)
@@ -146,6 +153,7 @@ socket.on("update opponent state", (args) => {
         }
         if ("takeover" in args) {
             if (args["takeover"]) {
+                window.clearInterval(state.yourField.tickOpponentTimer) // clear old timers if any
                 if (args["startNow"]) {
                     let a = Date.now()
                     state.yourField.tickOpponentTimer = window.setInterval(() => {

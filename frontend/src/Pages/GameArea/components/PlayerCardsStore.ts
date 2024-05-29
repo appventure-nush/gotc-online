@@ -871,6 +871,7 @@ export const playerCardsStore  = defineStore({
                             }
                         }, 198) // 10ms delay is too laggy
                         // 198ms to compensate for the fact that delays will not be exact
+                        console.log("started "+this.intervalID)
                     } else {
                         // timeout
                         this.timer = 0.0

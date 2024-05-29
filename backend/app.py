@@ -1123,7 +1123,7 @@ def opponent_handle_timer():
                 game: Game = games[game_id]
                 if game.player1_username == request_username:
                     if game.player1.disconnected:
-                        return  # prevent double sending
+                        return "double sent"  # prevent double sending
                     game.player1.disconnected = True
                     socketio.emit("update opponent state", {
                         "username": game.player2_username,
@@ -1139,7 +1139,7 @@ def opponent_handle_timer():
                         game.player1.timer -= request.json["delta"]
                 elif game.player2_username == request_username:
                     if game.player2.disconnected:
-                        return  # prevent double sending
+                        return "double sent"  # prevent double sending
                     game.player2.disconnected = True
                     socketio.emit("update opponent state", {
                         "username": game.player1_username,

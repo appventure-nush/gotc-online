@@ -146,6 +146,8 @@ class Game:
             # you are a player in the current game
             curr_player, other_player = (self.player1, self.player2) if self.player1_username == username else (
                 self.player2, self.player1)
+            if type(other_player.timer) == tuple:
+                other_player.timer = other_player.timer[0]
             curr_player.disconnected = False
             returned = {"canClickEndTurn": self.turn == curr_player.name}
             fresh = False
