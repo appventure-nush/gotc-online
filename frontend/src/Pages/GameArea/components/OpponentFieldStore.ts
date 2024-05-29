@@ -15,6 +15,7 @@ export const opponentFieldStore  = defineStore({
 
         uuid: "",
         opponentsideusername: "NO GAME INITIATED",
+        disconnected: false
 
     }),
     getters: {

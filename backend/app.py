@@ -998,7 +998,7 @@ def timeout():
                         json.dump(accounts, accs_file)
                 return ret
         # else
-        abort(Response(json.dumps({"Message": "Cannot Forfeit"}), 404))
+        abort(Response(json.dumps({"Message": "Cannot Timeout"}), 404))
 
 
 @app.route('/get_discard', methods=["POST"])
@@ -1132,7 +1132,8 @@ def opponent_handle_timer():
                             request.json["delta"] if game.turn == game.player1_username else 0),
                         "takeover": True,
                         "startNow": game.turn == game.player1_username,
-                        "opponentLastMoveAt": game.player1.storage["lastmove"]
+                        "opponentLastMoveAt": game.player1.storage["lastmove"],
+                        "opponentDisconnected": True
                     })
                     if "store" in request.json and request.json["store"]:
                         game.player1.timer -= request.json["delta"]
@@ -1147,7 +1148,8 @@ def opponent_handle_timer():
                             request.json["delta"] if game.turn == game.player2_username else 0),
                         "takeover": True,
                         "startNow": game.turn == game.player2_username,
-                        "opponentLastMoveAt": game.player2.storage["lastmove"]
+                        "opponentLastMoveAt": game.player2.storage["lastmove"],
+                        "opponentDisconnected": True
                     })
                     if "store" in request.json and request.json["store"]:
                         game.player2.timer -= request.json["delta"]

@@ -173,7 +173,13 @@ class Game:
                                                               "crisis": other_player.crisis,
                                                               "opponentSideUsername": other_player.name,
                                                               "uuid": self.internal_id,
-                                                              "timer": other_player.timer})
+                                                              "timer": other_player.timer - (
+                                                                  time.time() - other_player.storage["lastmove"]/1000
+                                                                  if other_player.name == self.turn else 0
+                                                              ),
+                                                              "takeover": other_player.disconnected,
+                                                              "startNow": other_player.name == self.turn,
+                                                              "opponentDisconnected": other_player.disconnected})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),
@@ -195,7 +201,8 @@ class Game:
                                                           "opponentSideUsername": curr_player.name,
                                                           "uuid": self.internal_id,
                                                           "timer": curr_player.timer,
-                                                          "takeover": False})
+                                                          "takeover": False,
+                                                          "opponentDisconnected": False})
                 return ["First", self.turn == curr_player, fresh]
             else:
                 notifier = f"Resumed game against {other_player.name}.\n{curr_player.latestMoveNotif}"
@@ -218,7 +225,13 @@ class Game:
                                                               "crisis": other_player.crisis,
                                                               "opponentSideUsername": other_player.name,
                                                               "uuid": self.internal_id,
-                                                              "timer": other_player.timer})
+                                                              "timer": other_player.timer - (
+                                                                  time.time() - other_player.storage["lastmove"]/1000
+                                                                  if other_player.name == self.turn else 0
+                                                              ),
+                                                              "takeover": other_player.disconnected,
+                                                              "startNow": other_player.name == self.turn,
+                                                              "opponentDisconnected": other_player.disconnected})
                 returned |= {"username": username,
                              "hand": curr_player.hand,
                              "cardsLeft": len(curr_player.deck),
@@ -240,7 +253,8 @@ class Game:
                                                           "opponentSideUsername": curr_player.name,
                                                           "uuid": self.internal_id,
                                                           "timer": curr_player.timer,
-                                                          "takeover": False})
+                                                          "takeover": False,
+                                                          "opponentDisconnected": False})
                 return ["Second", self.turn == curr_player, fresh]
         else:
             # you are a spectator

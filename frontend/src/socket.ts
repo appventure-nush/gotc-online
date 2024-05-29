@@ -141,12 +141,67 @@ socket.on("update opponent state", (args) => {
         if ("timer" in args) {
             state.oppField.timer = args["timer"]
         }
+        if ("opponentDisconnected" in args) {
+            state.oppField.disconnected = args["opponentDisconnected"]
+        }
         if ("takeover" in args) {
             if (args["takeover"]) {
                 if (args["startNow"]) {
                     let a = Date.now()
                     state.yourField.tickOpponentTimer = window.setInterval(() => {
                         state.oppField.timer = args["timer"]-(Date.now()-a)/1000
+                        if (state.oppField.timer < 0) {
+                            state.yourField.showDialogNormal = false // no stray dialogs
+                            state.yourField.showOptionDefence = false
+                            state.yourField.showDialogDefence = false
+                            state.yourField.showOptionField = false
+                            state.yourField.showDialogField = false
+                            state.yourField.showDialogHand = false
+                            state.yourField.showOptionHand = false
+                            state.yourField.showDiscardPlay = false
+                            state.yourField.showOptionDefence2 = false
+                            state.yourField.selectionDefence = []
+                            state.yourField.showForfeit = false
+                            state.yourField.showForfeitButton = false
+
+                            fetch(`${BACKEND_URL}/timeout`, {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    username: userSignInStore.username,
+                                    request_username: state.oppField.opponentsideusername,
+                                    game_id: state.yourField.uuid,
+                                    login_session_key: userSignInStore.login_session_key(),
+                                }),
+                                headers: {
+                                    "Content-type": "application/json; charset=UTF-8"
+                                }
+                            })
+                                .then((response) => {
+                                    if (!response.ok) return Promise.reject(response)
+                                    else return response.text()
+                                })
+                                .then((json_text) => {
+                                    let json_response = JSON.parse(json_text)
+
+                                    // note that json response is returning opponent's move notifier
+                                    // in this special case
+                                    state.yourField.moveNotifier = "Your opponent ran out of time!\nYou win!"
+                                    state.yourField.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                                    if (json_response["winThisTurn"]) { // always true
+                                        state.yourField.canClickEndTurn = false
+                                    }
+
+                                    state.yourField.discardHand = false
+
+                                    return "Success"
+
+                                })
+                                .catch(error => {
+                                    console.log(error.toString())
+                                    return "Could not timeout"
+                                });
+                        }
                     }, 198)
                 } else {
                     state.yourField.runOpponentTimerOnTurnSwitch = true

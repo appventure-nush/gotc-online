@@ -47,7 +47,7 @@ export default defineComponent({
     </div>
     <div v-else class="utilbar-component-div utilbar-signed-in" >
       <p v-if="oppStore.opponentsideusername==='NO GAME INITIATED'" class="playerinfo" style="font-size: 1.5em"><b>NO GAME INITIATED</b></p>
-      <p v-else class="playerinfo">Playing Against: <b>{{oppStore.opponentsideusername}}</b> Time: {{displayFormattedTime(oppStore.timer)}}<br>Signed In As: <b>{{userStore.username}}</b> Time: {{displayFormattedTime(playerCards.timer)}}</p>
+      <p v-else class="playerinfo">Playing Against: <b>{{oppStore.opponentsideusername}}</b> Time: {{displayFormattedTime(oppStore.timer)}}{{oppStore.disconnected ? ' (disconnected)' : ''}}<br>Signed In As: <b>{{userStore.username}}</b> Time: {{displayFormattedTime(playerCards.timer)}}</p>
       <router-link to="/" v-slot="{href, route, navigate}">
         <p class="back-temp">Click to go back to MainPage.</p>
       </router-link>
@@ -113,7 +113,7 @@ export default defineComponent({
   margin: auto 0;
   text-align: center;
   height: fit-content;
-  max-width: 20vw;
+  max-width: 25vw;
   max-height: 2.2em;
   overflow: hidden;
   text-overflow: ellipsis;

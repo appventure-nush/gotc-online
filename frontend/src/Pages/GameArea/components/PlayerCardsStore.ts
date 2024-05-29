@@ -447,6 +447,58 @@ export const playerCardsStore  = defineStore({
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
                                 opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
+                                if (opponentFieldStore.timer < 0) {
+                                    this.showDialogNormal = false // no stray dialogs
+                                    this.showOptionDefence = false
+                                    this.showDialogDefence = false
+                                    this.showOptionField = false
+                                    this.showDialogField = false
+                                    this.showDialogHand = false
+                                    this.showOptionHand = false
+                                    this.showDiscardPlay = false
+                                    this.showOptionDefence2 = false
+                                    this.selectionDefence = []
+                                    this.showForfeit = false
+                                    this.showForfeitButton = false
+
+                                    fetch(`${BACKEND_URL}/timeout`, {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                            username: userSignInStore.username,
+                                            request_username: opponentFieldStore.opponentsideusername,
+                                            game_id: this.uuid,
+                                            login_session_key: userSignInStore.login_session_key(),
+                                        }),
+                                        headers: {
+                                            "Content-type": "application/json; charset=UTF-8"
+                                        }
+                                    })
+                                        .then((response) => {
+                                            if (!response.ok) return Promise.reject(response)
+                                            else return response.text()
+                                        })
+                                        .then((json_text) => {
+                                            let json_response = JSON.parse(json_text)
+
+                                            // note that json response is returning opponent's move notifier
+                                            // in this special case
+                                            this.moveNotifier = "Your opponent ran out of time!\nYou win!"
+                                            this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                                            if (json_response["winThisTurn"]) { // always true
+                                                this.canClickEndTurn = false
+                                            }
+
+                                            this.discardHand = false
+
+                                            return "Success"
+
+                                        })
+                                        .catch(error => {
+                                            console.log(error.toString())
+                                            return "Could not timeout"
+                                        });
+                                }
                             }, 198)
                         }
                     }
@@ -512,6 +564,56 @@ export const playerCardsStore  = defineStore({
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
                                 opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
+                                if (opponentFieldStore.timer < 0) {
+                                    this.showDialogNormal = false // no stray dialogs
+                                    this.showOptionDefence = false
+                                    this.showDialogDefence = false
+                                    this.showOptionField = false
+                                    this.showDialogField = false
+                                    this.showDialogHand = false
+                                    this.showOptionHand = false
+                                    this.showDiscardPlay = false
+                                    this.showOptionDefence2 = false
+                                    this.selectionDefence = []
+                                    this.showForfeit = false
+                                    this.showForfeitButton = false
+
+                                    fetch(`${BACKEND_URL}/timeout`, {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                            username: userSignInStore.username,
+                                            request_username: opponentFieldStore.opponentsideusername,
+                                            game_id: this.uuid,
+                                            login_session_key: userSignInStore.login_session_key(),
+                                        }),
+                                        headers: {
+                                            "Content-type": "application/json; charset=UTF-8"
+                                        }
+                                    })
+                                        .then((response) => {
+                                            if (!response.ok) return Promise.reject(response)
+                                            else return response.text()
+                                        })
+                                        .then((json_text) => {
+                                            let json_response = JSON.parse(json_text)
+
+                                            this.moveNotifier = "Your opponent ran out of time!\nYou win!"
+                                            this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                                            if (json_response["winThisTurn"]) { // always true
+                                                this.canClickEndTurn = false
+                                            }
+
+                                            this.discardHand = false
+
+                                            return "Success"
+
+                                        })
+                                        .catch(error => {
+                                            console.log(error.toString())
+                                            return "Could not timeout"
+                                        });
+                                }
                             }, 198)
                         }
                     }
@@ -584,6 +686,56 @@ export const playerCardsStore  = defineStore({
                             let a = Date.now()
                             this.tickOpponentTimer = window.setInterval(() => {
                                 opponentFieldStore.timer = json_response["oppTimer"]-(Date.now()-a)/1000
+                                if (opponentFieldStore.timer < 0) {
+                                    this.showDialogNormal = false // no stray dialogs
+                                    this.showOptionDefence = false
+                                    this.showDialogDefence = false
+                                    this.showOptionField = false
+                                    this.showDialogField = false
+                                    this.showDialogHand = false
+                                    this.showOptionHand = false
+                                    this.showDiscardPlay = false
+                                    this.showOptionDefence2 = false
+                                    this.selectionDefence = []
+                                    this.showForfeit = false
+                                    this.showForfeitButton = false
+
+                                    fetch(`${BACKEND_URL}/timeout`, {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                            username: userSignInStore.username,
+                                            request_username: opponentFieldStore.opponentsideusername,
+                                            game_id: this.uuid,
+                                            login_session_key: userSignInStore.login_session_key(),
+                                        }),
+                                        headers: {
+                                            "Content-type": "application/json; charset=UTF-8"
+                                        }
+                                    })
+                                        .then((response) => {
+                                            if (!response.ok) return Promise.reject(response)
+                                            else return response.text()
+                                        })
+                                        .then((json_text) => {
+                                            let json_response = JSON.parse(json_text)
+
+                                            this.moveNotifier = "Your opponent ran out of time!\nYou win!"
+                                            this.canClickEndTurn = json_response["canClickEndTurn"] as boolean
+
+                                            if (json_response["winThisTurn"]) { // always true
+                                                this.canClickEndTurn = false
+                                            }
+
+                                            this.discardHand = false
+
+                                            return "Success"
+
+                                        })
+                                        .catch(error => {
+                                            console.log(error.toString())
+                                            return "Could not timeout"
+                                        });
+                                }
                             }, 198)
                         }
                     }
@@ -614,7 +766,7 @@ export const playerCardsStore  = defineStore({
                 })
                 .catch(error => {
                     console.log(error.toString())
-                    return "Could not play hand"
+                    return "Could not pass turn"
                 });
         },
         forfeitGame() {
@@ -665,7 +817,7 @@ export const playerCardsStore  = defineStore({
                 })
                 .catch(error => {
                     console.log(error.toString())
-                    return "Could not play hand"
+                    return "could not forfeit"
                 });
         },
         /*
@@ -728,8 +880,6 @@ export const playerCardsStore  = defineStore({
             }
         },
         endTimer() {
-            // todo call in log out
-            // todo: update opponent's timer if opponent is logged out (not connected to socket)
             window.clearTimeout(this.timeoutID)
             window.clearInterval(this.intervalID)
             let delta: number = (Date.now() - this.lastmove)/1000
@@ -782,7 +932,7 @@ export const playerCardsStore  = defineStore({
                     })
                     .catch(error => {
                         console.log(error.toString())
-                        return "Could not play hand"
+                        return "Could not timeout"
                     });
             } else {
                 // send over delta to game server
