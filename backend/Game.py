@@ -10,9 +10,9 @@ import flask_socketio
 class Game:
     # the main game class, contains variables for the entire game
     def __init__(self, player1_username: str, player2_username: str, internal_id: str,  # uuid
-                 gametype: Literal["computer", "random", "challenge"]):
-        self.player1 = Player(player1_username)
-        self.player2 = Player(player2_username)
+                 gametype: Literal["computer", "random", "challenge"], alloc_time: float = 600.0):
+        self.player1 = Player(player1_username, alloc_time)
+        self.player2 = Player(player2_username, alloc_time)
         while self.player1.crisis == self.player2.crisis:
             # crises cannot be equal
             self.player1 = Player(player1_username)

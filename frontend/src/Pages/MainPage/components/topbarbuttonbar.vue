@@ -32,23 +32,27 @@ export default defineComponent( {
       (document.getElementById("playdialog") as HTMLDialogElement).close()
     },
     async requestmatch() {
-      let x = await fetch(`${BACKEND_URL}/request_match`, {
-        method: "POST",
-        body: JSON.stringify({
-          username: this.userStore.username,
-          login_session_key: localStorage.getItem("LoginSessionKey"),
-          requested_username: (document.getElementById("input") as HTMLInputElement).value
-        }),
-        headers: {
-          "Content-type": "application/json; charset=UTF-8"
+      if ((document.getElementById("input2") as HTMLInputElement).reportValidity()) {
+        let x = await fetch(`${BACKEND_URL}/request_match`, {
+          method: "POST",
+          body: JSON.stringify({
+            username: this.userStore.username,
+            login_session_key: localStorage.getItem("LoginSessionKey"),
+            requested_username: (document.getElementById("input") as HTMLInputElement).value,
+            // convert to int on backend
+            proposed_time: (document.getElementById("input2") as HTMLInputElement).value
+          }),
+          headers: {
+            "Content-type": "application/json; charset=UTF-8"
+          }
+        })
+            .then((response) => response.json())
+        if (x["status"] == "Opponent not logged in") {
+          alert("Opponent is not logged in.")
+        } else {
+          (document.getElementById("playdialog") as HTMLDialogElement).close();
+          (document.getElementById("connectingdialog") as HTMLDialogElement).show()
         }
-      })
-          .then((response) => response.json())
-      if (x["status"] == "Opponent not logged in") {
-        alert("Opponent is not logged in.")
-      } else {
-        (document.getElementById("playdialog") as HTMLDialogElement).close();
-        (document.getElementById("connectingdialog") as HTMLDialogElement).show()
       }
     },
     async randomopponent() {
@@ -96,14 +100,18 @@ export default defineComponent( {
           </header>
           <div class="enclosedialog">
             <div class="center">
-              <button class="enclosedialog" @click="randomopponent()" type='button'>Random Opponent</button>
-              <button class="enclosedialog" @click="$router.push('/GameArea/default')">VS Computer</button>
+              <button class="enclosedialog" @click="randomopponent()" type='button'>Random Opponent (10min per side)</button>
+              <button class="enclosedialog" @click="$router.push('/GameArea/default')">VS Computer (WIP)</button>
             </div>
             <br>
             <div class="center dialogtext">OR<br></div>
             <div class="dialogtext">Send play request to</div>
             <br>
             <div class="center"><input id="input"/><button class="enclosedialog" @click="requestmatch()" type='button'>Send</button></div>
+            <div class="dialogtext">Time (1-60min per side):</div>
+            <br>
+            <!-- the regex allows integers from 1 to 60 as input -->
+            <div class="center"><input id="input2" type="number" min="1" max="60" pattern="([1-9]|[1-5]\d|60)" value="10"/></div>
           </div>
         </form>
       </dialog>

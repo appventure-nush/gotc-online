@@ -7,7 +7,7 @@ import lists
 
 class Player:
     # stores information about an individual player in a game
-    def __init__(self, name):
+    def __init__(self, name, alloc_time: float = 600.0):
         self.name = name
         self.deck: list[str] = lists.STANDARD_DECK.copy()
         random.shuffle(self.deck)  # upon creation of the user, shuffle the deck
@@ -39,7 +39,7 @@ class Player:
             # "lastSeenOpponent": None,  # unix time when opponent was last seen
         }
         self.latestMoveNotif = "",
-        self.timer = 600.0,   # todo allow custom timing options
+        self.timer = alloc_time,
         self.disconnected = False
 
     def shuffleDeck(self):

@@ -225,14 +225,15 @@ socket.on("update opponent state", (args) => {
 socket.on("challenge", async (args) => {
     // are we the opponent?
     if (args["opponent"] == state.userStore.username) {
-        if (window.confirm(args["username"] + " has challenged you. Accept?")) {
+        if (window.confirm(args["username"] + " has challenged you.\nTime: "+args["time"]+" min(s).\nAccept?")) {
             // yes
             let x = await fetch(`${BACKEND_URL}/accept_match`, {
                 method: "POST",
                 body: JSON.stringify({
                     username: state.userStore.username,
                     requested_username: args["username"],
-                    login_session_key: localStorage.getItem("LoginSessionKey")
+                    login_session_key: localStorage.getItem("LoginSessionKey"),
+                    proposed_time: args["time"]
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"

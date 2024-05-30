@@ -454,9 +454,10 @@ def request_match():
         if target_user_logged_in:
             # is the requested person logged in?
             requested = request.json['requested_username']
+            proposed_time = int(request.json['proposed_time'])
             for i in logged_in:
                 if i.name == requested:
-                    socketio.emit("challenge", {"username": username, "opponent": requested})
+                    socketio.emit("challenge", {"username": username, "opponent": requested, "time": proposed_time})
                     return jsonify({"status": "Challenging opponent", "opponent": requested})
             return jsonify({"status": "Opponent not logged in"})
         abort(Response(json.dumps({"Message": "Finding Opponent Unavailable"}), 404))
@@ -479,13 +480,14 @@ def accept_match():
         if target_user_logged_in:
             # is the requested person logged in?
             requested = request.json['requested_username']
+            alloc_time = request.json["proposed_time"]*60  # minutes to seconds
             for i in logged_in:
                 if i.name == requested:
                     opponent = i
                     random_uuid = str(uuid.uuid4())
                     # can get away with using the same
                     socketio.emit("match request", {"username": opponent.name, "id": random_uuid})
-                    games[random_uuid] = Game(opponent.name, username, random_uuid, "challenge")
+                    games[random_uuid] = Game(opponent.name, username, random_uuid, "challenge", alloc_time)
                     user.games.append(random_uuid)
                     opponent.games.append(random_uuid)
                     return jsonify({"status": "Found opponent", "opponent": opponent.name, "id": random_uuid})
@@ -1121,6 +1123,8 @@ def opponent_handle_timer():
             keys_equal = secrets.compare_digest(i.login_session_key, sent_login_sesh_key)
             if (i.name == your_username) and keys_equal:
                 game: Game = games[game_id]
+                if game.winner is not None:
+                    return "game is over"
                 if game.player1_username == request_username:
                     if game.player1.disconnected:
                         return "double sent"  # prevent double sending
