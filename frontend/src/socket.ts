@@ -16,9 +16,9 @@ export const state = reactive({
     oppField: opponentFieldStore
 })
 
-const URL = import.meta.env.VITE_BACKEND_URL
+const VITE_BACKEND_SOCKETIO_URI = import.meta.env.VITE_BACKEND_SOCKETIO_URI
 
-export const socket = io(URL, {
+export const socket = io(VITE_BACKEND_SOCKETIO_URI, {
     path : VITE_BACKEND_SOCKETIO_SUBDIRECTORY,
     withCredentials: true
 })
